@@ -3,22 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Portal Pendaftaran Kegiatan - Disdikbud Kab. Karanganyar</title>
+  <title>Portal Pendaftaran Kegiatan - Bidang SMP DISDIKBUD Karanganyar</title>
   
-  <!-- SEO & Open Graph Metadata (Multi-Kegiatan) -->
-  <meta name="description" content="Portal Formulir Pendaftaran dan Dashboard Logistik Kegiatan Resmi Dinas Pendidikan dan Kebudayaan Kabupaten Karanganyar.">
-  <meta property="og:title" content="Portal Kegiatan Disdikbud Karanganyar">
-  <meta property="og:description" content="Pendaftaran Peserta Kegiatan Resmi Dinas Pendidikan dan Kebudayaan Kabupaten Karanganyar.">
-  <meta property="og:image" content="https://lh3.googleusercontent.com/d/1e1LH5ZgYyLjclSNXwMAU5Zy_PKiju5z-">
-  <meta property="og:type" content="website">
-
-  <!-- Favicon Logo Karanganyar -->
-  <link rel="icon" type="image/png" href="https://lh3.googleusercontent.com/d/1e1LH5ZgYyLjclSNXwMAU5Zy_PKiju5z-">
-
-  <!-- Google Fonts: Plus Jakarta Sans -->
+  <!-- Favicon & Fonts -->
+  <link rel="icon" type="image/png" href="https://i.ibb.co.com/KpqwmHd6/Logo-Jemprot-2-1-removebg-preview.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
     * {
@@ -35,147 +26,84 @@
       font-family: 'Plus Jakarta Sans', sans-serif;
     }
 
-    /* Iframe Layar Penuh */
-    #gasFrame {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      border: none;
-      display: block;
-      z-index: 10;
-      background-color: #f8fafc;
-    }
-
-    /* Layar Loading Elegan */
-    #loadingScreen {
-      position: fixed;
-      top: 0;
-      left: 0;
+    #app-container {
+      display: flex;
+      flex-direction: column;
       width: 100%;
       height: 100%;
-      background: linear-gradient(135deg, #7c2d12 0%, #ea580c 100%);
+      position: relative;
+    }
+
+    /* Iframe Pembungkus Google Apps Script Web App */
+    #gas-frame {
+      width: 100%;
+      flex-grow: 1;
+      border: none;
+      display: block;
+      background-color: #f8fafc;
+      transition: opacity 0.3s ease;
+    }
+
+    /* Indikator Loading Awal */
+    #loading-spinner {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      z-index: 20;
+      gap: 14px;
       color: #ffffff;
-      padding: 20px;
-      padding-bottom: 60px;
-      text-align: center;
-      transition: opacity 0.4s ease, visibility 0.4s ease;
+      z-index: 10;
+      pointer-events: none;
     }
 
-    .logo-box {
-      width: 90px;
-      height: 90px;
-      background: #ffffff;
-      border-radius: 20px;
-      padding: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
-      margin-bottom: 24px;
-      animation: pulseLogo 2s infinite ease-in-out;
-    }
-
-    .logo-box img {
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain;
-    }
-
-    .loading-title {
-      font-size: 1.25rem;
-      font-weight: 800;
-      letter-spacing: 0.03em;
-      margin-bottom: 6px;
-      text-transform: uppercase;
-    }
-
-    .loading-subtitle {
-      font-size: 0.88rem;
-      color: rgba(255, 255, 255, 0.85);
-      margin-bottom: 28px;
-    }
-
-    /* Spinner Animasi */
     .spinner {
-      width: 36px;
-      height: 36px;
-      border: 3.5px solid rgba(255, 255, 255, 0.25);
-      border-top-color: #ffffff;
+      width: 44px;
+      height: 44px;
+      border: 4px solid rgba(234, 88, 12, 0.2);
+      border-top-color: #ea580c;
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
-    }
-
-    /* Tombol Buka Langsung (Fallback jika perangkat lambat / blokir iframe) */
-    .btn-fallback {
-      margin-top: 32px;
-      display: inline-block;
-      padding: 10px 20px;
-      background: rgba(255, 255, 255, 0.15);
-      color: #ffffff;
-      text-decoration: none;
-      font-size: 0.85rem;
-      font-weight: 600;
-      border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      backdrop-filter: blur(8px);
-      transition: all 0.2s;
-    }
-
-    .btn-fallback:hover {
-      background: #ffffff;
-      color: #c2410c;
     }
 
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
 
-    @keyframes pulseLogo {
-      0%, 100% { transform: scale(1); }
-      50% { transform: scale(1.06); }
-    }
-
-    /* Sticky Persistent Footer */
+    /* =========================================================================
+       STICKY PERSISTENT FOOTER (DISERAGAMKAN SAMA PERSIS DENGAN GAS)
+       ========================================================================= */
     .sticky-app-footer {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
       width: 100%;
-      z-index: 30;
-      background: rgba(15, 23, 42, 0.94);
+      flex-shrink: 0;
+      z-index: 1040;
+      background: rgba(15, 23, 42, 0.95);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
-      border-top: 1px solid rgba(234, 88, 12, 0.4);
-      box-shadow: 0 -4px 18px rgba(0, 0, 0, 0.25);
-      padding: 7px 12px;
+      border-top: 1.5px solid rgba(234, 88, 12, 0.5);
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+      padding: 10px 16px;
       text-align: center;
       white-space: nowrap;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
-      font-family: 'Plus Jakarta Sans', sans-serif;
+      gap: 10px;
       user-select: none;
     }
 
     .sticky-app-footer .footer-text {
-      font-size: 0.72rem;
-      font-weight: 600;
+      font-size: 0.86rem;
+      font-weight: 700;
       letter-spacing: 0.08em;
       color: #94a3b8;
     }
 
     .sticky-app-footer .footer-logo {
-      height: 20px;
-      max-height: 22px;
+      height: 28px;
+      max-height: 32px;
       width: auto;
       object-fit: contain;
       vertical-align: middle;
@@ -190,92 +118,84 @@
 
     .sticky-app-footer .footer-badge {
       color: #f97316;
-      font-weight: 700;
-      font-size: 0.75rem;
+      font-weight: 800;
+      font-size: 0.88rem;
       letter-spacing: 0.04em;
     }
 
     @media (max-width: 576px) {
       .sticky-app-footer {
-        padding: 5px 8px;
-        gap: 4px;
+        padding: 8px 12px;
+        gap: 8px;
       }
       .sticky-app-footer .footer-text {
-        font-size: 0.65rem;
+        font-size: 0.76rem;
         letter-spacing: 0.04em;
       }
       .sticky-app-footer .footer-logo {
-        height: 17px;
+        height: 24px;
       }
       .sticky-app-footer .footer-badge {
-        font-size: 0.68rem;
+        font-size: 0.78rem;
       }
     }
   </style>
 </head>
 <body>
 
-  <!-- Layar Loading Pembuka -->
-  <div id="loadingScreen">
-    <div class="logo-box">
-      <img src="https://lh3.googleusercontent.com/d/1e1LH5ZgYyLjclSNXwMAU5Zy_PKiju5z-" alt="Logo Kabupaten Karanganyar">
+  <div id="app-container">
+    <!-- Indikator Loading Saat Halaman Dibuka -->
+    <div id="loading-spinner">
+      <div class="spinner"></div>
+      <span style="font-size: 0.88rem; font-weight: 600; letter-spacing: 0.03em;">Memuat Aplikasi Pendaftaran...</span>
     </div>
-    <h1 class="loading-title">Disdikbud Karanganyar</h1>
-    <p class="loading-subtitle">Memuat Formulir Pendaftaran Kegiatan...</p>
-    <div class="spinner"></div>
 
-    <!-- Tombol Buka Manual (Muncul otomatis setelah 5 detik bila jaringan lambat) -->
-    <a id="btnFallback" href="https://script.google.com/macros/s/AKfycbwRgOfnsNZ4oJjMEuiB3N2cy-TxnaafjYpGyMsx4T7ZmLQT5V2XGfDsVcB3SCpurD3fHQ/exec" target="_blank" class="btn-fallback" style="display: none;">
-      Klik di sini jika halaman tidak terbuka otomatis
-    </a>
+    <!-- Iframe Google Apps Script -->
+    <!-- CATATAN: Pastikan URL di bawah ini mengarah ke Web App Google Apps Script Anda (akhiran /exec) -->
+    <iframe 
+      id="gas-frame" 
+      src="" 
+      allow="clipboard-read; clipboard-write; camera; geolocation"
+      onload="onFrameLoaded()">
+    </iframe>
+
+    <!-- Sticky Persistent Footer (Ukuran Seragam & Proporsional) -->
+    <footer class="sticky-app-footer">
+      <span class="footer-text">DIGITALLY SHAPED BY</span>
+      <img 
+        src="https://i.ibb.co.com/KpqwmHd6/Logo-Jemprot-2-1-removebg-preview.png" 
+        alt="Logo JeMPROT" 
+        class="footer-logo">
+      <span class="footer-badge">[BID SMP 2026]</span>
+    </footer>
   </div>
 
-  <!-- Google Apps Script Fullscreen Iframe -->
-  <iframe 
-    id="gasFrame"
-    src="https://script.google.com/macros/s/AKfycbxE_LTOjjRE6SLh9ptVjUuWYShDEmxmYUB-NEYFeIw2c9DSFQd53oH1H49su3JPxlMr0w/exec" 
-    allow="clipboard-write; camera; geolocation"
-    title="Portal Pendaftaran Kegiatan - Disdikbud Karanganyar"
-    onload="hideLoading()">
-  </iframe>
-
-  <!-- Footer Persisten Sticky Selalu di Bawah -->
-  <footer class="sticky-app-footer">
-    <span class="footer-text">DIGITALLY SHAPED BY</span>
-    <img 
-      src="https://i.ibb.co.com/KpqwmHd6/Logo-Jemprot-2-1-removebg-preview.png" 
-      alt="Logo JeMPROT" 
-      class="footer-logo">
-    <span class="footer-badge">[BID SMP 2026]</span>
-  </footer>
-
   <script>
-    // Sembunyikan loading screen saat web app GAS selesai dimuat
-    function hideLoading() {
-      const loader = document.getElementById("loadingScreen");
-      if (loader) {
-        loader.style.opacity = "0";
-        setTimeout(() => {
-          loader.style.display = "none";
-        }, 400);
+    // URL Web App Google Apps Script Anda:
+    // Jika URL Anda sebelumnya sudah ada, cukup masukkan kembali URL deployment GAS (/exec) Anda di sini.
+    const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbxpAm8DD70jvWtT5Ua86acwoatp3hYA8rzf1-NqjBbDUK8z3FANF88UnNKNKHfJJN9Y2w/exec";
+
+    // Set src iframe saat halaman dimuat
+    const frame = document.getElementById("gas-frame");
+    if (frame && (!frame.src || frame.src === window.location.href)) {
+      // Jika di URL browser ada parameter query tambahan (misal ?v=...), teruskan ke iframe
+      const currentQuery = window.location.search || "";
+      frame.src = DEFAULT_GAS_URL + currentQuery;
+    }
+
+    function onFrameLoaded() {
+      const spinner = document.getElementById("loading-spinner");
+      if (spinner) {
+        spinner.style.display = "none";
       }
     }
 
-    // Tampilkan tombol cadangan setelah 5 detik bila koneksi pengguna lambat
-    setTimeout(() => {
-      const btn = document.getElementById("btnFallback");
-      if (btn) btn.style.display = "inline-block";
-    }, 5000);
-
-    // Sinkronisasi otomatis Judul Tab Browser sesuai Kegiatan Aktif di GAS
+    // Dengarkan pesan sinkronisasi otomatis judul kegiatan dari aplikasi Google Apps Script
     window.addEventListener("message", function(event) {
       if (event.data && event.data.type === "UPDATE_EVENT_TITLE" && event.data.title) {
-        document.title = event.data.title + " - Disdikbud Karanganyar";
-        const titleEl = document.querySelector(".loading-title");
-        if (titleEl) titleEl.innerText = event.data.title;
+        document.title = event.data.title + " - Bidang SMP DISDIKBUD Karanganyar";
       }
     });
   </script>
-
 </body>
 </html>
