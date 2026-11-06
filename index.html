@@ -255,7 +255,7 @@
     <!-- Iframe Google Apps Script -->
     <iframe 
       id="gas-frame" 
-      src="https://script.google.com/macros/s/AKfycby7vTfQlWWefmjw5KFLoSE_4c3ZPkpe8D65NG4kmltSRGDgzgdB7FPGB1N_difIOSkNCA/exec" 
+      src="https://script.google.com/macros/s/AKfycbzuefL5VIGldvzfedGUgHpB-CSHAF3u0FX-xhiN_JIn79ahuQerE7dCSunD_u-xaQ_mUw/exec" 
       allow="clipboard-read; clipboard-write; camera; geolocation"
       onload="onFrameLoaded()">
     </iframe>
@@ -273,7 +273,7 @@
 
   <script>
     // URL Web App Google Apps Script Aktif:
-    const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbz5OHNb-rR_e1O60zraS7xTnu-CJK6kgTPdMj5RiqAUvGrcdTRQwql_FM1CStxXlY4T6Q/exec";
+    const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycbzuefL5VIGldvzfedGUgHpB-CSHAF3u0FX-xhiN_JIn79ahuQerE7dCSunD_u-xaQ_mUw/exec";
 
     // Set src iframe saat halaman dimuat (jika ada parameter query tambahan)
     const frame = document.getElementById("gas-frame");
@@ -285,7 +285,7 @@
     }
 
     // =========================================================================
-    // KONTROL WAKTU SPLASH SCREEN (3 DETIK & TRANSISI FADE OUT HALUS)
+    // KONTROL WAKTU SPLASH SCREEN (3.5 DETIK & TRANSISI FADE OUT HALUS)
     // =========================================================================
     let iframeReady = false;
     let minTimePassed = false;
@@ -303,17 +303,17 @@
     }
 
     function checkDismissSplash() {
-      // Hilang saat durasi 3 detik terpenuhi DAN iframe sudah selesai dimuat
+      // Hilang saat durasi 3.5 detik terpenuhi DAN iframe sudah selesai dimuat
       if (minTimePassed && iframeReady) {
         triggerFadeOut();
       }
     }
 
-    // 1. Timer minimal tepat 3 detik
+    // 1. Timer minimal tepat 3.5 detik
     setTimeout(() => {
       minTimePassed = true;
       checkDismissSplash();
-    }, 3000);
+    }, 3500);
 
     // 2. Event saat iframe selesai memuat halaman
     function onFrameLoaded() {
@@ -321,10 +321,10 @@
       checkDismissSplash();
     }
 
-    // 3. Batas waktu pengaman maksimal (4.5 detik) agar tidak pernah macet
+    // 3. Batas waktu pengaman maksimal (5 detik) agar tidak pernah macet
     setTimeout(() => {
       triggerFadeOut();
-    }, 4500);
+    }, 5000);
 
     // Sinkronisasi otomatis judul tab browser dengan kegiatan aktif
     window.addEventListener("message", function(event) {
