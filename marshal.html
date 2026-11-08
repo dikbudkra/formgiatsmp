@@ -191,7 +191,7 @@
       position: relative;
     }
 
-    /* PIN Lockscreen */
+    /* Password Lockscreen */
     #lockscreenOverlay {
       position: fixed;
       inset: 0;
@@ -213,7 +213,7 @@
 </head>
 <body>
 
-  <!-- ==================== PIN LOCKSCREEN MODAL ==================== -->
+  <!-- ==================== PASSWORD LOCKSCREEN MODAL ==================== -->
   <div id="lockscreenOverlay">
     <div class="card card-modern p-4 p-md-5 text-center shadow-2xl" style="max-width: 420px; width: 100%;">
       <img src="https://lh3.googleusercontent.com/d/1e1LH5ZgYyLjclSNXwMAU5Zy_PKiju5z-" alt="Logo Kabupaten Karanganyar" style="height: 64px; object-fit: contain;" class="mx-auto mb-3">
@@ -222,15 +222,14 @@
 
       <form onsubmit="handlePinLogin(event)">
         <div class="mb-3">
-          <label class="form-label fw-bold small text-secondary" for="inputPinPanitia">MASUKKAN PIN PANITIA</label>
+          <label class="form-label fw-bold small text-secondary" for="inputPinPanitia">MASUKKAN PASSWORD PANITIA</label>
           <div class="input-group">
             <span class="input-group-text bg-light"><i class="bi bi-shield-lock-fill text-primary"></i></span>
-            <input type="password" class="form-control pin-input" id="inputPinPanitia" maxlength="8" placeholder="••••••" required autofocus>
+            <input type="password" class="form-control pin-input" id="inputPinPanitia" maxlength="25" placeholder="••••••••" required autofocus>
             <button class="btn btn-outline-secondary" type="button" onclick="togglePinVisibility()">
               <i class="bi bi-eye" id="iconEye"></i>
             </button>
           </div>
-          <div class="form-text text-start small">Default PIN: <code>123456</code> (dapat diubah di Pengaturan).</div>
         </div>
 
         <button type="submit" class="btn btn-primary w-100 rounded-pill py-2.5 fw-bold shadow-sm" id="btnLoginSubmit">
@@ -308,7 +307,7 @@
     <div class="nav-group-title">Logistik &amp; Distribusi</div>
     <div class="nav-sidebar-link" onclick="switchTab('tabRekapKaos', this)">
       <i class="bi bi-tag-fill text-info"></i>
-      <span>Rekap Kaos &amp; Lengan</span>
+      <span>Rekap Data &amp; Logistik</span>
     </div>
     <div class="nav-sidebar-link" onclick="switchTab('tabMonitoringSekolah', this)">
       <i class="bi bi-buildings text-danger"></i>
@@ -574,41 +573,138 @@
       </div>
     </section>
 
-    <!-- ==================== TAB 4: REKAP KAOS & LOGISTIK ==================== -->
+    <!-- ==================== TAB 4: REKAP DATA & LOGISTIK ==================== -->
     <section id="tabRekapKaos" class="tab-pane d-none">
       <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
-          <h3 class="h4 fw-bold text-dark mb-0">Rekap Ukuran Kaos &amp; Lengan</h3>
-          <p class="text-muted small mb-0">Distribusi perlengkapan kaos peserta siap cetak &amp; konveksi</p>
+          <h3 class="h4 fw-bold text-dark mb-0">Rekapitulasi Data &amp; Logistik</h3>
+          <p class="text-muted small mb-0">Distribusi gender, status kepegawaian, rincian golongan, dan kaos per model lengan</p>
         </div>
-        <button class="btn btn-outline-success btn-sm rounded-pill px-3 fw-bold" onclick="exportKaosToExcel()">
-          <i class="bi bi-file-earmark-excel-fill me-1"></i> Ekspor Excel
-        </button>
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-success btn-sm rounded-pill px-3 fw-bold" onclick="exportComprehensiveRecapXLSX()">
+            <i class="bi bi-file-earmark-excel-fill me-1"></i> Ekspor Excel Lengkap
+          </button>
+          <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 fw-semibold" onclick="exportComprehensiveRecapCSV()">
+            Ekspor CSV
+          </button>
+        </div>
       </div>
 
+      <!-- KARTU STATISTIK GENDER & KEPEGAWAIAN -->
+      <div class="row g-3 mb-4">
+        <!-- 1. Komposisi Gender -->
+        <div class="col-md-4">
+          <div class="card card-modern p-4 h-100">
+            <h6 class="fw-bold text-dark mb-3 d-flex align-items-center">
+              <i class="bi bi-gender-ambiguous text-primary me-2"></i> Komposisi Gender Peserta
+            </h6>
+            <div class="row g-2 text-center">
+              <div class="col-6">
+                <div class="p-3 border rounded-3 bg-primary-subtle text-primary">
+                  <div class="small fw-semibold">Laki-laki (Putra)</div>
+                  <h3 class="fw-bold mb-0" id="rekapGenderL">0</h3>
+                </div>
+              </div>
+              <div class="col-6">
+                <div class="p-3 border rounded-3 bg-danger-subtle text-danger">
+                  <div class="small fw-semibold">Perempuan (Putri)</div>
+                  <h3 class="fw-bold mb-0" id="rekapGenderP">0</h3>
+                </div>
+              </div>
+            </div>
+            <div class="mt-3 text-center small text-muted">
+              Total Peserta: <strong id="rekapGenderTotal" class="text-dark">0</strong> Orang
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Status Kepegawaian & Gender (PNS, PPPK, Non-ASN) -->
+        <div class="col-md-8">
+          <div class="card card-modern p-4 h-100">
+            <h6 class="fw-bold text-dark mb-3 d-flex align-items-center">
+              <i class="bi bi-award-fill text-primary me-2"></i> Komposisi Status Kepegawaian &amp; Gender
+            </h6>
+            <div class="row g-2 text-center">
+              <div class="col-4">
+                <div class="p-2.5 border rounded-3 bg-light">
+                  <div class="text-muted small fw-semibold">PNS</div>
+                  <h4 class="fw-bold text-primary mb-1" id="rekapPnsTotal">0</h4>
+                  <div class="small text-muted" style="font-size: 0.72rem;">L: <strong id="rekapPnsL">0</strong> | P: <strong id="rekapPnsP">0</strong></div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="p-2.5 border rounded-3 bg-light">
+                  <div class="text-muted small fw-semibold">PPPK</div>
+                  <h4 class="fw-bold text-success mb-1" id="rekapPppkTotal">0</h4>
+                  <div class="small text-muted" style="font-size: 0.72rem;">L: <strong id="rekapPppkL">0</strong> | P: <strong id="rekapPppkP">0</strong></div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="p-2.5 border rounded-3 bg-light">
+                  <div class="text-muted small fw-semibold">Non-ASN</div>
+                  <h4 class="fw-bold text-secondary mb-1" id="rekapNonAsnTotal">0</h4>
+                  <div class="small text-muted" style="font-size: 0.72rem;">L: <strong id="rekapNonAsnL">0</strong> | P: <strong id="rekapNonAsnP">0</strong></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Rincian Golongan PNS & PPPK -->
+            <div class="mt-3 pt-2 border-top">
+              <div class="small fw-bold text-dark mb-1">Rincian Golongan Ruang:</div>
+              <div class="d-flex align-items-center gap-2 mb-1.5 flex-wrap">
+                <span class="badge bg-primary text-white" style="font-size: 0.72rem;">PNS</span>
+                <div id="badgeGolonganPnsList" class="d-flex flex-wrap gap-1">
+                  <span class="text-muted small fst-italic" style="font-size: 0.75rem;">Belum ada data PNS</span>
+                </div>
+              </div>
+              <div class="d-flex align-items-center gap-2 flex-wrap">
+                <span class="badge bg-success text-white" style="font-size: 0.72rem;">PPPK</span>
+                <div id="badgeGolonganPppkList" class="d-flex flex-wrap gap-1">
+                  <span class="text-muted small fst-italic" style="font-size: 0.75rem;">Belum ada data PPPK</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KARTU 2 TABEL KAOS LENGKAP -->
       <div class="row g-4">
-        <div class="col-lg-8">
+        <!-- TABEL 1: KAOS BERDASARKAN GENDER (L/P) -->
+        <div class="col-12">
           <div class="card card-modern p-4">
-            <h5 class="fw-bold text-dark mb-3"><i class="bi bi-grid-3x3 text-primary me-2"></i>Matriks Ukuran &amp; Panjang Lengan</h5>
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+              <h5 class="fw-bold text-dark mb-0">
+                <i class="bi bi-tag-fill text-warning me-2"></i> 1. Rekap Ukuran Kaos Berdasarkan Gender (Laki-laki / Perempuan)
+              </h5>
+              <span class="badge bg-light text-secondary border">Tabel Distribusi Peserta</span>
+            </div>
             <div class="table-responsive">
-              <table class="table table-bordered text-center align-middle mb-0">
-                <thead class="table-light small fw-bold">
+              <table class="table table-bordered text-center align-middle mb-0" style="font-size: 0.85rem;">
+                <thead class="table-light fw-bold">
                   <tr>
-                    <th>Ukuran Kaos</th>
-                    <th>Lengan Pendek</th>
-                    <th>Lengan Panjang (Hijab)</th>
-                    <th>Total Kaos</th>
+                    <th class="text-start ps-3">Kategori Peserta</th>
+                    <th>S</th><th>M</th><th>L</th><th>XL</th><th>XXL</th><th>3XL</th><th>4XL</th>
+                    <th class="table-warning text-dark">TOTAL KAOS</th>
                   </tr>
                 </thead>
-                <tbody id="tbodyMatriksKaos" class="fw-semibold">
-                  <!-- Generated via JS -->
+                <tbody class="fw-semibold">
+                  <tr>
+                    <td class="text-start ps-3 fw-bold text-primary"><i class="bi bi-gender-male me-1.5"></i>Laki-laki</td>
+                    <td id="kL_S">0</td><td id="kL_M">0</td><td id="kL_L">0</td><td id="kL_XL">0</td><td id="kL_XXL">0</td><td id="kL_3XL">0</td><td id="kL_4XL">0</td>
+                    <td class="fw-bold table-primary" id="kL_Total">0</td>
+                  </tr>
+                  <tr>
+                    <td class="text-start ps-3 fw-bold text-danger"><i class="bi bi-gender-female me-1.5"></i>Perempuan</td>
+                    <td id="kP_S">0</td><td id="kP_M">0</td><td id="kP_L">0</td><td id="kP_XL">0</td><td id="kP_XXL">0</td><td id="kP_3XL">0</td><td id="kP_4XL">0</td>
+                    <td class="fw-bold table-danger" id="kP_Total">0</td>
+                  </tr>
                 </tbody>
-                <tfoot class="table-light fw-bold">
-                  <tr id="tfootMatriksKaos">
-                    <td>TOTAL KESELURUHAN</td>
-                    <td id="totKaosPendek">0</td>
-                    <td id="totKaosPanjang">0</td>
-                    <td id="totKaosGrand" class="text-primary fs-6">0</td>
+                <tfoot class="table-light fw-bold border-top">
+                  <tr>
+                    <td class="text-start ps-3 text-dark"><i class="bi bi-calculator me-1.5"></i>Total Kaos</td>
+                    <td id="kT_S">0</td><td id="kT_M">0</td><td id="kT_L">0</td><td id="kT_XL">0</td><td id="kT_XXL">0</td><td id="kT_3XL">0</td><td id="kT_4XL">0</td>
+                    <td class="fw-bold table-warning text-primary fs-6" id="kT_Total">0</td>
                   </tr>
                 </tfoot>
               </table>
@@ -616,11 +712,44 @@
           </div>
         </div>
 
-        <div class="col-lg-4">
+        <!-- TABEL 2: KAOS RINCIAN LENGAN PENDEK & PANJANG PER UKURAN -->
+        <div class="col-12">
           <div class="card card-modern p-4">
-            <h5 class="fw-bold text-dark mb-3"><i class="bi bi-pie-chart text-warning me-2"></i>Ringkasan Logistik</h5>
-            <div id="boxSummaryKaos" class="space-y-3 small">
-              <!-- Summary items -->
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+              <h5 class="fw-bold text-dark mb-0">
+                <i class="bi bi-layers-fill text-info me-2"></i> 2. Rincian Kaos Lengan Pendek &amp; Lengan Panjang per Ukuran
+              </h5>
+              <span class="badge bg-light text-secondary border">Siap Konveksi</span>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-bordered text-center align-middle mb-0" style="font-size: 0.85rem;">
+                <thead class="table-light fw-bold">
+                  <tr>
+                    <th class="text-start ps-3">Model Lengan</th>
+                    <th>S</th><th>M</th><th>L</th><th>XL</th><th>XXL</th><th>3XL</th><th>4XL</th>
+                    <th class="table-warning text-dark">TOTAL KAOS</th>
+                  </tr>
+                </thead>
+                <tbody class="fw-semibold">
+                  <tr>
+                    <td class="text-start ps-3 fw-bold text-success"><i class="bi bi-check2-circle me-1.5"></i>Lengan Pendek</td>
+                    <td id="kLen_Pendek_S">0</td><td id="kLen_Pendek_M">0</td><td id="kLen_Pendek_L">0</td><td id="kLen_Pendek_XL">0</td><td id="kLen_Pendek_XXL">0</td><td id="kLen_Pendek_3XL">0</td><td id="kLen_Pendek_4XL">0</td>
+                    <td class="fw-bold table-success" id="kLen_Pendek_Total">0</td>
+                  </tr>
+                  <tr>
+                    <td class="text-start ps-3 fw-bold text-info"><i class="bi bi-check2-circle me-1.5"></i>Lengan Panjang</td>
+                    <td id="kLen_Panjang_S">0</td><td id="kLen_Panjang_M">0</td><td id="kLen_Panjang_L">0</td><td id="kLen_Panjang_XL">0</td><td id="kLen_Panjang_XXL">0</td><td id="kLen_Panjang_3XL">0</td><td id="kLen_Panjang_4XL">0</td>
+                    <td class="fw-bold table-info" id="kLen_Panjang_Total">0</td>
+                  </tr>
+                </tbody>
+                <tfoot class="table-light fw-bold border-top">
+                  <tr>
+                    <td class="text-start ps-3 text-dark"><i class="bi bi-calculator me-1.5"></i>Total per Ukuran</td>
+                    <td id="kLen_Total_S">0</td><td id="kLen_Total_M">0</td><td id="kLen_Total_L">0</td><td id="kLen_Total_XL">0</td><td id="kLen_Total_XXL">0</td><td id="kLen_Total_3XL">0</td><td id="kLen_Total_4XL">0</td>
+                    <td class="fw-bold table-warning text-primary fs-6" id="kLen_Total_Grand">0</td>
+                  </tr>
+                </tfoot>
+              </table>
             </div>
           </div>
         </div>
@@ -851,26 +980,26 @@
       <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
           <h3 class="h4 fw-bold text-dark mb-0">Pengaturan Sistem &amp; Database</h3>
-          <p class="text-muted small mb-0">Ubah PIN Panitia, cek status koneksi Spreadsheet, dan sinkronisasi struktur tabel</p>
+          <p class="text-muted small mb-0">Ubah Password Panitia, cek status koneksi Spreadsheet, dan sinkronisasi struktur tabel</p>
         </div>
       </div>
 
       <div class="row g-4">
-        <!-- Ganti PIN Panitia -->
+        <!-- Ganti Password Panitia -->
         <div class="col-md-6">
           <div class="card card-modern p-4 h-100">
-            <h5 class="fw-bold text-dark mb-3"><i class="bi bi-shield-lock-fill text-primary me-2"></i>Ganti PIN Panitia</h5>
+            <h5 class="fw-bold text-dark mb-3"><i class="bi bi-shield-lock-fill text-primary me-2"></i>Ganti Password Panitia</h5>
             <form onsubmit="handleChangePin(event)">
               <div class="mb-3">
-                <label class="form-label small fw-bold">PIN Baru (4-8 Digit)</label>
-                <input type="password" class="form-control" id="inputNewPin" placeholder="Masukkan PIN Baru" required>
+                <label class="form-label small fw-bold">Password Baru</label>
+                <input type="password" class="form-control" id="inputNewPin" placeholder="Masukkan Password Baru" required>
               </div>
               <div class="mb-3">
-                <label class="form-label small fw-bold">Konfirmasi PIN Baru</label>
-                <input type="password" class="form-control" id="inputConfirmPin" placeholder="Ketik Ulang PIN Baru" required>
+                <label class="form-label small fw-bold">Konfirmasi Password Baru</label>
+                <input type="password" class="form-control" id="inputConfirmPin" placeholder="Ketik Ulang Password Baru" required>
               </div>
               <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">
-                <i class="bi bi-check-circle-fill me-1"></i> Simpan PIN Baru
+                <i class="bi bi-check-circle-fill me-1"></i> Simpan Password Baru
               </button>
             </form>
           </div>
@@ -1053,7 +1182,7 @@
     });
 
     /**
-     * Auth Login PIN (dengan Proteksi Anti Brute-Force & Lockout)
+     * Auth Login Password (dengan Proteksi Anti Brute-Force & Lockout)
      */
     async function handlePinLogin(e) {
       e.preventDefault();
@@ -1075,14 +1204,14 @@
         } else if (res && res.locked) {
           Swal.fire({
             title: "Akses Terkunci!",
-            text: res.message || "Akses portal panitia terkunci sementara selama 15 menit karena salah memasukkan PIN 5 kali.",
+            text: res.message || "Akses portal panitia terkunci sementara selama 15 menit karena salah memasukkan Password 5 kali.",
             icon: "error",
             confirmButtonColor: "#dc2626"
           });
         } else {
           Swal.fire({
-            title: "PIN Salah!",
-            text: res.message || "PIN Panitia tidak sesuai. Silakan hubungi koordinator Bidang SMP.",
+            title: "Password Salah!",
+            text: res.message || "Password Panitia tidak sesuai. Silakan hubungi koordinator Bidang SMP.",
             icon: "warning",
             confirmButtonColor: "#1e3a8a"
           });
@@ -1091,7 +1220,7 @@
         console.error(err);
         Swal.fire({
           title: "Gangguan Server",
-          text: "Gagal memverifikasi PIN ke Google Apps Script.",
+          text: "Gagal memverifikasi Password ke Google Apps Script.",
           icon: "error"
         });
       } finally {
@@ -1263,7 +1392,7 @@
       executeLogout();
       Swal.fire({
         title: "Sesi Berakhir Otomatis",
-        text: "Sesi Anda telah berakhir secara otomatis demi keamanan karena tidak ada aktivitas selama 30 menit. Silakan masukkan PIN kembali untuk melanjutkan.",
+        text: "Sesi Anda telah berakhir secara otomatis demi keamanan karena tidak ada aktivitas selama 30 menit. Silakan masukkan Password kembali untuk melanjutkan.",
         icon: "info",
         confirmButtonColor: "#1e3a8a"
       });
@@ -1611,12 +1740,20 @@
             <span class="badge ${ev.statusForm === 'BUKA' ? 'bg-success' : 'bg-danger'}">${ev.statusForm}</span>
           </td>
           <td class="text-center">
-            <button class="btn btn-outline-primary btn-sm rounded-pill px-2.5" onclick="openModalEditKegiatan('${escapeHtml(ev.idKegiatan)}')">
-              <i class="bi bi-pencil-fill"></i>
-            </button>
-            <button class="btn btn-outline-${ev.statusForm === 'BUKA' ? 'warning' : 'success'} btn-sm rounded-pill px-2.5" onclick="toggleEventStatus('${escapeHtml(ev.idKegiatan)}', '${ev.statusForm}')">
-              <i class="bi bi-power"></i>
-            </button>
+            <div class="d-flex justify-content-center gap-1.5">
+              <button class="btn btn-outline-info btn-sm rounded-pill px-2 py-1" onclick="handleEventSwitch('${escapeHtml(ev.idKegiatan)}')" title="Jadikan Kegiatan Aktif">
+                <i class="bi bi-eye-fill"></i>
+              </button>
+              <button class="btn btn-outline-primary btn-sm rounded-pill px-2 py-1" onclick="openModalEditKegiatan('${escapeHtml(ev.idKegiatan)}')" title="Edit Kegiatan">
+                <i class="bi bi-pencil-fill"></i>
+              </button>
+              <button class="btn btn-outline-${ev.statusForm === 'BUKA' ? 'warning' : 'success'} btn-sm rounded-pill px-2 py-1" onclick="toggleEventStatus('${escapeHtml(ev.idKegiatan)}', '${ev.statusForm}')" title="${ev.statusForm === 'BUKA' ? 'Tutup Pendaftaran' : 'Buka Pendaftaran'}">
+                <i class="bi bi-power"></i>
+              </button>
+              <button class="btn btn-outline-danger btn-sm rounded-pill px-2 py-1" onclick="confirmDeleteEvent('${escapeHtml(ev.idKegiatan)}', '${escapeHtml(ev.namaKegiatan)}')" title="Hapus Kegiatan">
+                <i class="bi bi-trash-fill"></i>
+              </button>
+            </div>
           </td>
         </tr>
       `).join("");
@@ -1697,55 +1834,392 @@
       }
     }
 
-    /**
-     * TAB 4: REKAP KAOS & LOGISTIK
-     */
-    function renderMatriksKaos(participants) {
-      const sizes = ["S", "M", "L", "XL", "XXL", "XXXL"];
-      const matrix = {};
-      sizes.forEach(sz => {
-        matrix[sz] = { pendek: 0, panjang: 0, total: 0 };
+    async function confirmDeleteEvent(eventId, eventName) {
+      const resSwal = await Swal.fire({
+        title: "Hapus Kegiatan?",
+        html: `Apakah Anda yakin ingin menghapus kegiatan:<br><strong>${escapeHtml(eventName)}</strong><br><small class="text-muted">(ID: <code>${escapeHtml(eventId)}</code>)</small>?<br><br><span class="text-danger small fw-semibold">Perhatian: Seluruh data konfigurasi kegiatan ini akan dihapus dari sistem.</span>`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#dc2626",
+        cancelButtonColor: "#64748b",
+        confirmButtonText: '<i class="bi bi-trash-fill me-1"></i> Ya, Hapus Sekarang',
+        cancelButtonText: "Batal"
       });
 
+      if (!resSwal.isConfirmed) return;
+
+      try {
+        Swal.fire({
+          title: "Menghapus Kegiatan...",
+          text: "Mohon tunggu sebentar",
+          allowOutsideClick: false,
+          didOpen: () => Swal.showLoading()
+        });
+
+        const res = await callGasApi("deleteEvent", { eventId, pin: currentAdminPin });
+        if (res && res.success) {
+          await Swal.fire({
+            title: "Berhasil!",
+            text: res.message || "Kegiatan berhasil dihapus.",
+            icon: "success",
+            confirmButtonColor: "#1e3a8a"
+          });
+          loadDashboardInitial();
+        } else {
+          Swal.fire({
+            title: "Gagal Menghapus",
+            text: res.message || "Kegiatan tidak dapat dihapus.",
+            icon: "error"
+          });
+        }
+      } catch (err) {
+        console.error("Gagal hapus kegiatan:", err);
+        Swal.fire({
+          title: "Error",
+          text: "Terjadi kesalahan saat menghubungi server.",
+          icon: "error"
+        });
+      }
+    }
+
+    // Matriks Golongan PNS & PPPK Resmi
+    const MATRIKS_PNS = {
+      "I/a": "Juru Muda", "I/b": "Juru Muda Tk. I", "I/c": "Juru", "I/d": "Juru Tk. I",
+      "II/a": "Pengatur Muda", "II/b": "Pengatur Muda Tk. I", "II/c": "Pengatur", "II/d": "Pengatur Tk. I",
+      "III/a": "Penata Muda", "III/b": "Penata Muda Tk. I", "III/c": "Penata", "III/d": "Penata Tk. I",
+      "IV/a": "Pembina", "IV/b": "Pembina Tk. I", "IV/c": "Pembina Utama Muda", "IV/d": "Pembina Utama Madya", "IV/e": "Pembina Utama"
+    };
+
+    const MATRIKS_PPPK = {
+      "Golongan VI": "Terampil",
+      "Golongan VII": "Terampil",
+      "Golongan VIII": "Terampil",
+      "Golongan IX": "Ahli Pertama",
+      "Golongan X": "Ahli Pertama",
+      "Golongan XI": "Ahli Muda"
+    };
+
+    /**
+     * TAB 4: REKAP DATA & LOGISTIK LENGKAP
+     */
+    function renderMatriksKaos(participants) {
+      renderComprehensiveStats(participants);
+    }
+
+    function renderComprehensiveStats(participants) {
+      participants = participants || [];
+      const total = participants.length;
+
+      // 1. Gender Komposisi
+      let totalL = 0, totalP = 0;
+
+      // 2. Status Kepegawaian & Gender
+      const kepegawaian = {
+        PNS: { total: 0, L: 0, P: 0 },
+        PPPK: { total: 0, L: 0, P: 0 },
+        "Non ASN": { total: 0, L: 0, P: 0 }
+      };
+
+      // 3. Golongan PNS & PPPK
+      const golPNS = {};
+      const golPPPK = {};
+
+      // 4. Kaos per Gender & per Model Lengan
+      const kaosSizes = ["S", "M", "L", "XL", "XXL", "3XL", "4XL"];
+      const kL = { S: 0, M: 0, L: 0, XL: 0, XXL: 0, "3XL": 0, "4XL": 0, total: 0 };
+      const kP = { S: 0, M: 0, L: 0, XL: 0, XXL: 0, "3XL": 0, "4XL": 0, total: 0 };
+      const kPendek = { S: 0, M: 0, L: 0, XL: 0, XXL: 0, "3XL": 0, "4XL": 0, total: 0 };
+      const kPanjang = { S: 0, M: 0, L: 0, XL: 0, XXL: 0, "3XL": 0, "4XL": 0, total: 0 };
+
       participants.forEach(p => {
-        const sz = (p.ukuranKaos || "L").toUpperCase();
-        const isPanjang = String(p.panjangLengan || "").toLowerCase().includes("panjang");
-        if (matrix[sz]) {
-          if (isPanjang) matrix[sz].panjang++;
-          else matrix[sz].pendek++;
-          matrix[sz].total++;
+        const jk = String(p.jenisKelamin || "").toLowerCase();
+        const isL = jk.includes("laki") || jk === "l";
+        const isP = jk.includes("perempuan") || jk === "p";
+
+        if (isL) totalL++;
+        else if (isP) totalP++;
+
+        // Status Kepegawaian
+        const rawStatus = String(p.statusKepegawaian || "").trim();
+        let normalizedStatus = "Non ASN";
+        if (rawStatus.toUpperCase() === "PNS") normalizedStatus = "PNS";
+        else if (rawStatus.toUpperCase().includes("PPPK")) normalizedStatus = "PPPK";
+
+        kepegawaian[normalizedStatus].total++;
+        if (isL) kepegawaian[normalizedStatus].L++;
+        else if (isP) kepegawaian[normalizedStatus].P++;
+
+        // Golongan
+        const g = String(p.golongan || "").trim();
+        if (g && g !== "-" && g.toLowerCase() !== "null") {
+          if (normalizedStatus === "PNS" || MATRIKS_PNS[g]) {
+            golPNS[g] = (golPNS[g] || 0) + 1;
+          } else if (normalizedStatus === "PPPK" || MATRIKS_PPPK[g] || g.toLowerCase().startsWith("golongan")) {
+            golPPPK[g] = (golPPPK[g] || 0) + 1;
+          }
+        }
+
+        // Kaos
+        let sz = String(p.ukuranKaos || "").trim().toUpperCase();
+        if (sz === "XXXL") sz = "3XL";
+        if (sz === "XXXXL") sz = "4XL";
+
+        const modelLengan = String(p.panjangLengan || "").toLowerCase();
+        const isPanjang = modelLengan.includes("panjang");
+
+        if (kaosSizes.includes(sz)) {
+          if (isL) { kL[sz]++; kL.total++; }
+          else if (isP) { kP[sz]++; kP.total++; }
+
+          if (isPanjang) { kPanjang[sz]++; kPanjang.total++; }
+          else { kPendek[sz]++; kPendek.total++; }
         }
       });
 
-      let grandPendek = 0, grandPanjang = 0, grandTotal = 0;
+      // Update Gender DOM
+      if (document.getElementById("rekapGenderL")) document.getElementById("rekapGenderL").textContent = totalL;
+      if (document.getElementById("rekapGenderP")) document.getElementById("rekapGenderP").textContent = totalP;
+      if (document.getElementById("rekapGenderTotal")) document.getElementById("rekapGenderTotal").textContent = total;
 
-      const tbody = document.getElementById("tbodyMatriksKaos");
-      tbody.innerHTML = sizes.map(sz => {
-        const d = matrix[sz];
-        grandPendek += d.pendek;
-        grandPanjang += d.panjang;
-        grandTotal += d.total;
+      // Update Kepegawaian DOM
+      if (document.getElementById("rekapPnsTotal")) document.getElementById("rekapPnsTotal").textContent = kepegawaian["PNS"].total;
+      if (document.getElementById("rekapPnsL")) document.getElementById("rekapPnsL").textContent = kepegawaian["PNS"].L;
+      if (document.getElementById("rekapPnsP")) document.getElementById("rekapPnsP").textContent = kepegawaian["PNS"].P;
 
-        return `
-          <tr>
-            <td class="fw-bold">${sz}</td>
-            <td>${d.pendek}</td>
-            <td>${d.panjang}</td>
-            <td class="fw-bold text-primary">${d.total}</td>
-          </tr>
-        `;
-      }).join("");
+      if (document.getElementById("rekapPppkTotal")) document.getElementById("rekapPppkTotal").textContent = kepegawaian["PPPK"].total;
+      if (document.getElementById("rekapPppkL")) document.getElementById("rekapPppkL").textContent = kepegawaian["PPPK"].L;
+      if (document.getElementById("rekapPppkP")) document.getElementById("rekapPppkP").textContent = kepegawaian["PPPK"].P;
 
-      document.getElementById("totKaosPendek").textContent = grandPendek;
-      document.getElementById("totKaosPanjang").textContent = grandPanjang;
-      document.getElementById("totKaosGrand").textContent = grandTotal;
+      if (document.getElementById("rekapNonAsnTotal")) document.getElementById("rekapNonAsnTotal").textContent = kepegawaian["Non ASN"].total;
+      if (document.getElementById("rekapNonAsnL")) document.getElementById("rekapNonAsnL").textContent = kepegawaian["Non ASN"].L;
+      if (document.getElementById("rekapNonAsnP")) document.getElementById("rekapNonAsnP").textContent = kepegawaian["Non ASN"].P;
+
+      // Update Golongan Badges PNS
+      const pnsBox = document.getElementById("badgeGolonganPnsList");
+      if (pnsBox) {
+        const orderPNS = Object.keys(MATRIKS_PNS);
+        const sortedPNS = Object.keys(golPNS).sort((a, b) => {
+          const idxA = orderPNS.indexOf(a);
+          const idxB = orderPNS.indexOf(b);
+          if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+          return a.localeCompare(b);
+        });
+
+        if (sortedPNS.length === 0) {
+          pnsBox.innerHTML = '<span class="text-muted small fst-italic" style="font-size: 0.75rem;">Belum ada data PNS</span>';
+        } else {
+          pnsBox.innerHTML = sortedPNS.map(g => `
+            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1" style="font-size: 0.75rem;">
+              <strong>${escapeHtml(g)}</strong>: ${golPNS[g]}
+            </span>
+          `).join("");
+        }
+      }
+
+      // Update Golongan Badges PPPK
+      const pppkBox = document.getElementById("badgeGolonganPppkList");
+      if (pppkBox) {
+        const orderPPPK = Object.keys(MATRIKS_PPPK);
+        const sortedPPPK = Object.keys(golPPPK).sort((a, b) => {
+          const idxA = orderPPPK.indexOf(a);
+          const idxB = orderPPPK.indexOf(b);
+          if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+          return a.localeCompare(b);
+        });
+
+        if (sortedPPPK.length === 0) {
+          pppkBox.innerHTML = '<span class="text-muted small fst-italic" style="font-size: 0.75rem;">Belum ada data PPPK</span>';
+        } else {
+          pppkBox.innerHTML = sortedPPPK.map(g => `
+            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1" style="font-size: 0.75rem;">
+              <strong>${escapeHtml(g)}</strong>: ${golPPPK[g]}
+            </span>
+          `).join("");
+        }
+      }
+
+      // Update Tabel 1: Kaos Berdasarkan Gender (L/P)
+      kaosSizes.forEach(s => {
+        const elL = document.getElementById("kL_" + s);
+        const elP = document.getElementById("kP_" + s);
+        const elT = document.getElementById("kT_" + s);
+        if (elL) elL.textContent = kL[s];
+        if (elP) elP.textContent = kP[s];
+        if (elT) elT.textContent = kL[s] + kP[s];
+      });
+      if (document.getElementById("kL_Total")) document.getElementById("kL_Total").textContent = kL.total;
+      if (document.getElementById("kP_Total")) document.getElementById("kP_Total").textContent = kP.total;
+      if (document.getElementById("kT_Total")) document.getElementById("kT_Total").textContent = kL.total + kP.total;
+
+      // Update Tabel 2: Kaos Berdasarkan Model Lengan
+      kaosSizes.forEach(s => {
+        const elPendek = document.getElementById("kLen_Pendek_" + s);
+        const elPanjang = document.getElementById("kLen_Panjang_" + s);
+        const elTotal = document.getElementById("kLen_Total_" + s);
+        if (elPendek) elPendek.textContent = kPendek[s];
+        if (elPanjang) elPanjang.textContent = kPanjang[s];
+        if (elTotal) elTotal.textContent = kPendek[s] + kPanjang[s];
+      });
+      if (document.getElementById("kLen_Pendek_Total")) document.getElementById("kLen_Pendek_Total").textContent = kPendek.total;
+      if (document.getElementById("kLen_Panjang_Total")) document.getElementById("kLen_Panjang_Total").textContent = kPanjang.total;
+      if (document.getElementById("kLen_Total_Grand")) document.getElementById("kLen_Total_Grand").textContent = kPendek.total + kPanjang.total;
+    }
+
+    function buildComprehensiveRecapRows() {
+      const participants = currentDashboardData?.participants || [];
+      const settings = currentDashboardData?.settings || {};
+      const eventName = settings.NAMA_KEGIATAN || activeEventId || "Kegiatan Dinas";
+      const total = participants.length;
+
+      let totalL = 0, totalP = 0;
+      const kepegawaian = {
+        PNS: { total: 0, L: 0, P: 0 },
+        PPPK: { total: 0, L: 0, P: 0 },
+        "Non ASN": { total: 0, L: 0, P: 0 }
+      };
+
+      const golPNS = {};
+      const golPPPK = {};
+
+      const kaosSizes = ["S", "M", "L", "XL", "XXL", "3XL", "4XL"];
+      const kL = { S: 0, M: 0, L: 0, XL: 0, XXL: 0, "3XL": 0, "4XL": 0, total: 0 };
+      const kP = { S: 0, M: 0, L: 0, XL: 0, XXL: 0, "3XL": 0, "4XL": 0, total: 0 };
+      const kPendek = { S: 0, M: 0, L: 0, XL: 0, XXL: 0, "3XL": 0, "4XL": 0, total: 0 };
+      const kPanjang = { S: 0, M: 0, L: 0, XL: 0, XXL: 0, "3XL": 0, "4XL": 0, total: 0 };
+
+      participants.forEach(p => {
+        const jk = String(p.jenisKelamin || "").toLowerCase();
+        const isL = jk.includes("laki") || jk === "l";
+        const isP = jk.includes("perempuan") || jk === "p";
+        if (isL) totalL++;
+        else if (isP) totalP++;
+
+        const rawStatus = String(p.statusKepegawaian || "").trim();
+        let st = "Non ASN";
+        if (rawStatus.toUpperCase() === "PNS") st = "PNS";
+        else if (rawStatus.toUpperCase().includes("PPPK")) st = "PPPK";
+
+        kepegawaian[st].total++;
+        if (isL) kepegawaian[st].L++;
+        else if (isP) kepegawaian[st].P++;
+
+        const g = String(p.golongan || "").trim();
+        if (g && g !== "-" && g.toLowerCase() !== "null") {
+          if (st === "PNS" || MATRIKS_PNS[g]) golPNS[g] = (golPNS[g] || 0) + 1;
+          else if (st === "PPPK" || MATRIKS_PPPK[g] || g.toLowerCase().startsWith("golongan")) golPPPK[g] = (golPPPK[g] || 0) + 1;
+        }
+
+        let sz = String(p.ukuranKaos || "").trim().toUpperCase();
+        if (sz === "XXXL") sz = "3XL";
+        if (sz === "XXXXL") sz = "4XL";
+
+        const model = String(p.panjangLengan || "").toLowerCase();
+        const isPanjang = model.includes("panjang");
+
+        if (kaosSizes.includes(sz)) {
+          if (isL) { kL[sz]++; kL.total++; }
+          else if (isP) { kP[sz]++; kP.total++; }
+
+          if (isPanjang) { kPanjang[sz]++; kPanjang.total++; }
+          else { kPendek[sz]++; kPendek.total++; }
+        }
+      });
+
+      const rows = [
+        ["LAPORAN REKAPITULASI DATA KEGIATAN KEDINASAN"],
+        ["Dinas Pendidikan dan Kebudayaan Kabupaten Karanganyar - Bidang SMP"],
+        [""],
+        ["1. INFORMASI KEGIATAN", ""],
+        ["ID Kegiatan", activeEventId || "-"],
+        ["Nama Kegiatan", eventName],
+        ["Sub Kegiatan", settings.SUB_KEGIATAN || "-"],
+        ["Tanggal Pelaksanaan", settings.TANGGAL_PELAKSANAAN || "-"],
+        ["Lokasi Kegiatan", settings.LOKASI_KEGIATAN || "-"],
+        ["Tanggal Unduh Rekap", new Date().toLocaleString("id-ID")],
+        ["Total Peserta Terdaftar", total + " Orang"],
+        [""],
+        ["2. KOMPOSISI GENDER PESERTA", ""],
+        ["Laki-laki (Putra)", totalL + " Orang"],
+        ["Perempuan (Putri)", totalP + " Orang"],
+        ["Total Peserta", total + " Orang"],
+        [""],
+        ["3A. REKAP UKURAN KAOS BERDASARKAN GENDER (L/P)", ""],
+        ["Kategori Kaos", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "TOTAL KAOS"],
+        ["Kaos Laki-laki", kL.S, kL.M, kL.L, kL.XL, kL.XXL, kL["3XL"], kL["4XL"], kL.total],
+        ["Kaos Perempuan", kP.S, kP.M, kP.L, kP.XL, kP.XXL, kP["3XL"], kP["4XL"], kP.total],
+        ["Total Kaos", kL.S + kP.S, kL.M + kP.M, kL.L + kP.L, kL.XL + kP.XL, kL.XXL + kP.XXL, kL["3XL"] + kP["3XL"], kL["4XL"] + kP["4XL"], kL.total + kP.total],
+        [""],
+        ["3B. REKAP UKURAN KAOS BERDASARKAN MODEL LENGAN", ""],
+        ["Model Lengan", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "TOTAL KAOS"],
+        ["Lengan Pendek", kPendek.S, kPendek.M, kPendek.L, kPendek.XL, kPendek.XXL, kPendek["3XL"], kPendek["4XL"], kPendek.total],
+        ["Lengan Panjang", kPanjang.S, kPanjang.M, kPanjang.L, kPanjang.XL, kPanjang.XXL, kPanjang["3XL"], kPanjang["4XL"], kPanjang.total],
+        ["Total per Ukuran", kPendek.S + kPanjang.S, kPendek.M + kPanjang.M, kPendek.L + kPanjang.L, kPendek.XL + kPanjang.XL, kPendek.XXL + kPanjang.XXL, kPendek["3XL"] + kPanjang["3XL"], kPendek["4XL"] + kPanjang["4XL"], kPendek.total + kPanjang.total],
+        [""],
+        ["4. KOMPOSISI STATUS KEPEGAWAIAN", ""],
+        ["Status Kepegawaian", "Laki-laki", "Perempuan", "TOTAL PESERTA"],
+        ["PNS", kepegawaian["PNS"].L, kepegawaian["PNS"].P, kepegawaian["PNS"].total],
+        ["PPPK", kepegawaian["PPPK"].L, kepegawaian["PPPK"].P, kepegawaian["PPPK"].total],
+        ["Non ASN", kepegawaian["Non ASN"].L, kepegawaian["Non ASN"].P, kepegawaian["Non ASN"].total],
+        ["Total", totalL, totalP, total],
+        [""],
+        ["5. KOMPOSISI GOLONGAN PNS", ""],
+        ["Golongan", "Pangkat", "Jumlah Peserta"]
+      ];
+
+      const orderPNS = Object.keys(MATRIKS_PNS);
+      const sortedPNS = Object.keys(golPNS).sort((a, b) => orderPNS.indexOf(a) - orderPNS.indexOf(b));
+      if (sortedPNS.length === 0) {
+        rows.push(["-", "Belum ada peserta PNS", 0]);
+      } else {
+        sortedPNS.forEach(g => {
+          rows.push([g, MATRIKS_PNS[g] || "-", golPNS[g]]);
+        });
+      }
+
+      rows.push([""]);
+      rows.push(["6. KOMPOSISI GOLONGAN PPPK", ""]);
+      rows.push(["Golongan", "Jenjang / Jabatan", "Jumlah Peserta"]);
+      const orderPPPK = Object.keys(MATRIKS_PPPK);
+      const sortedPPPK = Object.keys(golPPPK).sort((a, b) => orderPPPK.indexOf(a) - orderPPPK.indexOf(b));
+      if (sortedPPPK.length === 0) {
+        rows.push(["-", "Belum ada peserta PPPK", 0]);
+      } else {
+        sortedPPPK.forEach(g => {
+          rows.push([g, MATRIKS_PPPK[g] || "-", golPPPK[g]]);
+        });
+      }
+
+      return rows;
+    }
+
+    function exportComprehensiveRecapXLSX() {
+      const rows = buildComprehensiveRecapRows();
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Rekapitulasi Lengkap");
+      const cleanEventName = (activeEventId || "Kegiatan").replace(/[/\\?%*:|"<>]/g, "");
+      XLSX.writeFile(wb, `Rekapitulasi-Lengkap-${cleanEventName}-${new Date().toISOString().slice(0, 10)}.xlsx`);
     }
 
     function exportKaosToExcel() {
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.table_to_sheet(document.getElementById("tbodyMatriksKaos").parentElement);
-      XLSX.utils.book_append_sheet(wb, ws, "Rekap Kaos");
-      XLSX.writeFile(wb, "Rekap-Kaos-Kegiatan.xlsx");
+      exportComprehensiveRecapXLSX();
+    }
+
+    function exportComprehensiveRecapCSV() {
+      const rows = buildComprehensiveRecapRows();
+      const escapeCsvCell = val => {
+        if (val === null || val === undefined) return '""';
+        return `"${String(val).replace(/"/g, '""')}"`;
+      };
+      const csv = rows.map(r => r.map(escapeCsvCell).join(",")).join("\r\n");
+      const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Rekapitulasi-Lengkap-${activeEventId || "Kegiatan"}-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     }
 
     /**
@@ -1964,7 +2438,7 @@
       const confirmPin = document.getElementById("inputConfirmPin").value.trim();
 
       if (newPin !== confirmPin) {
-        Swal.fire({ title: "PIN Tidak Cocok", text: "Konfirmasi PIN baru tidak sesuai.", icon: "error" });
+        Swal.fire({ title: "Password Tidak Cocok", text: "Konfirmasi Password baru tidak sesuai.", icon: "error" });
         return;
       }
 
@@ -1977,7 +2451,7 @@
         if (res && res.success) {
           currentAdminPin = newPin;
           sessionStorage.setItem("marshal_pin", newPin);
-          Swal.fire({ title: "Berhasil", text: "PIN Panitia berhasil diperbarui!", icon: "success" });
+          Swal.fire({ title: "Berhasil", text: "Password Panitia berhasil diperbarui!", icon: "success" });
           document.getElementById("inputNewPin").value = "";
           document.getElementById("inputConfirmPin").value = "";
         }

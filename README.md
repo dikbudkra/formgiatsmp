@@ -17,12 +17,12 @@ Aplikasi berbasis web modern dan serverless untuk manajemen kegiatan kedinasan, 
 2. **Portal Marshal & Panitia (`/marshal/` atau `marshal.html`)**:
    - **Sidebar Menu Interaktif:** Menu navigasi rapi yang dapat dibuka dan ditutup (toggle).
    - **Keamanan Berlapis & Auto-Logout 30 Menit:**
-     - Terlindungi PIN Panitia dengan proteksi anti brute-force (kunci 15 menit jika 5x salah input PIN).
+     - Terlindungi Password Panitia dengan proteksi anti brute-force (kunci 15 menit jika 5x salah input Password).
      - Tombol keluar (Logout) terpasang di Topbar dan Sidebar.
      - Auto-logout otomatis jika tidak ada aktivitas selama 30 menit (dengan peringatan hitung mundur di menit ke-28).
    - **Presensi Scanner QR Code:** Pemindai native untuk kamera laptop (webcam) maupun kamera smartphone, pemilih kamera device ID, dan scan dari file foto/screenshot.
-   - **Manajemen Multi-Kegiatan:** Tambah, edit kuota, saklar modul dinamis, dan buka/tutup form.
-   - **Rekap Logistik Kaos:** Matriks ukuran (S/M/L/XL/XXL/XXXL) dan panjang lengan (pendek/hijab).
+   - **Manajemen Multi-Kegiatan:** Tambah, edit kuota, saklar modul dinamis, buka/tutup form, dan hapus kegiatan.
+   - **Rekap Komprehensif & Logistik Kaos:** Matriks ukuran (S s.d. 4XL), panjang lengan (Pendek & Panjang), distribusi gender (Putra/Putri), komposisi kepegawaian (PNS, PPPK, Non ASN), serta rincian golongan PNS & PPPK.
    - **Monitoring Satuan Pendidikan:** Pantau sekolah yang belum mendaftar dengan tombol pengingat WhatsApp blast.
    - **Generator Dokumen SPJ:** Format Daftar Hadir Resmi SPJ, Tanda Terima Kaos, tanda tangan KPA, PPTK, dan Bendahara.
    - **Asisten AI Gemini:** Analisis cerdas data pendaftaran dan kehadiran.
