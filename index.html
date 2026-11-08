@@ -7,7 +7,7 @@
   
   <!-- Meta SEO & Favicon -->
   <meta name="description" content="Portal Resmi Pendaftaran Kegiatan Kedinasan Bidang SMP Dinas Pendidikan dan Kebudayaan Kabupaten Karanganyar">
-  <link rel="icon" type="image/png" href="https://i.ibb.co.com/KpqwmHd6/Logo-Jemprot-2-1-removebg-preview.png">
+  <link rel="icon" type="image/png" href="https://lh3.googleusercontent.com/d/1e1LH5ZgYyLjclSNXwMAU5Zy_PKiju5z-">
 
   <!-- Google Fonts: Plus Jakarta Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -243,28 +243,93 @@
       gap: 0.5rem;
     }
 
-    /* Spinner Overlay */
-    #loadingOverlay {
+    /* --- Animated Splash Screen (Logo Karanganyar) --- */
+    #splash-screen {
       position: fixed;
       inset: 0;
-      background: rgba(15, 23, 42, 0.7);
-      backdrop-filter: blur(4px);
-      z-index: 9999;
+      background: radial-gradient(circle at center, #FFFFFF 0%, #F1F5F9 100%);
+      z-index: 99999;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      color: #ffffff;
+      transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.6s;
+    }
+
+    #splash-screen.fade-out {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .splash-logo-container {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .splash-logo-glow {
+      position: absolute;
+      width: 140px;
+      height: 140px;
+      background: radial-gradient(circle, rgba(234, 88, 12, 0.35) 0%, rgba(234, 88, 12, 0) 70%);
+      border-radius: 50%;
+      animation: pulseGlow 2s infinite ease-in-out;
+    }
+
+    .splash-logo {
+      width: 96px;
+      height: auto;
+      position: relative;
+      z-index: 2;
+      filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.12));
+      animation: floatSoft 3s ease-in-out infinite;
+    }
+
+    .spinner-dot-pulse {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #ea580c;
+      display: inline-block;
+      animation: pingDot 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { transform: scale(0.9); opacity: 0.6; }
+      50% { transform: scale(1.3); opacity: 0.9; }
+    }
+
+    @keyframes floatSoft {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+
+    @keyframes pingDot {
+      75%, 100% {
+        transform: scale(2);
+        opacity: 0;
+      }
     }
   </style>
 </head>
 <body>
 
-  <!-- ==================== LOADING OVERLAY ==================== -->
-  <div id="loadingOverlay">
-    <div class="spinner-border text-warning mb-3" style="width: 3.5rem; height: 3.5rem;" role="status"></div>
-    <h5 class="fw-bold tracking-wide">Memuat Sistem JeMPROT...</h5>
-    <p class="text-white-50 small mb-0">Sinkronisasi data dengan Bidang SMP DISDIKBUD Karanganyar</p>
+  <!-- ==================== SPLASH SCREEN (ANIMASI LOGO KARANGANYAR) ==================== -->
+  <div id="splash-screen">
+    <div class="splash-logo-container mb-3">
+      <div class="splash-logo-glow"></div>
+      <img src="https://lh3.googleusercontent.com/d/1e1LH5ZgYyLjclSNXwMAU5Zy_PKiju5z-" alt="Logo Kabupaten Karanganyar" class="splash-logo">
+    </div>
+    <div class="text-center">
+      <h3 class="fw-extrabold text-dark mb-0 tracking-tight" style="font-size: 1.35rem; letter-spacing: 0.05em;">BIDANG SMP</h3>
+      <p class="text-secondary fw-semibold small text-uppercase tracking-wider mb-3">Dinas Pendidikan dan Kebudayaan Karanganyar</p>
+      <div class="d-flex align-items-center justify-content-center gap-2 small text-muted">
+        <span class="spinner-dot-pulse"></span>
+        <span>Memuat data sesi kegiatan...</span>
+      </div>
+    </div>
   </div>
 
   <!-- ==================== HEADER HERO ==================== -->
@@ -272,7 +337,9 @@
     <div class="container">
       <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
         <div class="d-flex align-items-center gap-3">
-          <img src="https://i.ibb.co.com/KpqwmHd6/Logo-Jemprot-2-1-removebg-preview.png" alt="Logo JeMPROT" style="height: 48px; object-fit: contain;" class="brand-logo-glow">
+          <div class="bg-white rounded-3 p-1.5 shadow-sm d-flex align-items-center justify-content-center" style="width: 52px; height: 52px;">
+            <img src="https://lh3.googleusercontent.com/d/1e1LH5ZgYyLjclSNXwMAU5Zy_PKiju5z-" alt="Logo Kabupaten Karanganyar" style="max-height: 100%; max-width: 100%; object-fit: contain;">
+          </div>
           <div>
             <div class="d-flex align-items-center gap-2">
               <span class="badge bg-warning text-dark fw-bold px-2 py-0.5 rounded-pill" style="font-size: 0.72rem;">RESMI</span>
@@ -749,7 +816,7 @@
      * Memuat Data Awal dari Backend GAS
      */
     async function loadInitialData() {
-      const overlay = document.getElementById("loadingOverlay");
+      const splash = document.getElementById("splash-screen");
       try {
         const response = await callGasApi("init");
         if (response && response.success) {
@@ -778,7 +845,11 @@
         console.error("Error loadInitialData:", err);
         showErrorAlert("Gagal terhubung ke server Google Apps Script. Pastikan koneksi internet Anda stabil.");
       } finally {
-        if (overlay) overlay.classList.add("d-none");
+        if (splash) {
+          setTimeout(() => {
+            splash.classList.add("fade-out");
+          }, 350);
+        }
       }
     }
 
