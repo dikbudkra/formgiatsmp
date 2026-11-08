@@ -1,0 +1,2022 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Portal Marshal &amp; Panitia - Disdikbud Karanganyar</title>
+  
+  <meta name="description" content="Dashboard Manajemen Kegiatan &amp; Presensi QR Code Bidang SMP DISDIKBUD Karanganyar">
+  <link rel="icon" type="image/png" href="https://i.ibb.co.com/KpqwmHd6/Logo-Jemprot-2-1-removebg-preview.png">
+
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Bootstrap 5.3.2 CSS & Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+
+  <!-- QR Scanner, QR Code Generator & Export Libraries -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    :root {
+      --primary: #1e3a8a;
+      --primary-dark: #0f172a;
+      --primary-light: #3b82f6;
+      --sidebar-width: 280px;
+      --topbar-height: 64px;
+      --bg-body: #f8fafc;
+      --card-border: #e2e8f0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-body);
+      color: #1e293b;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    /* Top Navbar */
+    .topbar {
+      height: var(--topbar-height);
+      background: #ffffff;
+      border-bottom: 1px solid var(--card-border);
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1030;
+      display: flex;
+      align-items: center;
+      padding: 0 1.25rem;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+    }
+
+    /* Collapsible Sidebar */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: #0f172a;
+      color: #94a3b8;
+      position: fixed;
+      top: var(--topbar-height);
+      bottom: 0;
+      left: 0;
+      z-index: 1025;
+      overflow-y: auto;
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid #1e293b;
+    }
+
+    .sidebar.collapsed {
+      transform: translateX(-100%);
+    }
+
+    /* Main Content Area */
+    .main-wrapper {
+      margin-top: var(--topbar-height);
+      margin-left: var(--sidebar-width);
+      padding: 1.5rem;
+      min-height: calc(100vh - var(--topbar-height));
+      transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .main-wrapper.expanded {
+      margin-left: 0;
+    }
+
+    @media (max-width: 991.98px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+      .sidebar.open-mobile {
+        transform: translateX(0);
+      }
+      .main-wrapper {
+        margin-left: 0 !important;
+        padding: 1rem;
+      }
+    }
+
+    /* Sidebar Navigation Links */
+    .nav-group-title {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+      color: #64748b;
+      padding: 1rem 1.25rem 0.4rem;
+    }
+
+    .nav-sidebar-link {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.65rem 1.25rem;
+      color: #cbd5e1;
+      text-decoration: none;
+      font-size: 0.88rem;
+      font-weight: 500;
+      border-left: 3px solid transparent;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .nav-sidebar-link:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .nav-sidebar-link.active {
+      color: #ffffff;
+      background: linear-gradient(90deg, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0.02) 100%);
+      border-left-color: #3b82f6;
+      font-weight: 600;
+    }
+
+    .nav-sidebar-link i {
+      font-size: 1.15rem;
+      width: 24px;
+      text-align: center;
+    }
+
+    /* Cards & KPIs */
+    .card-modern {
+      background: #ffffff;
+      border: 1px solid var(--card-border);
+      border-radius: 1rem;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+      transition: all 0.2s ease;
+    }
+
+    .stat-card {
+      padding: 1.25rem;
+      border-radius: 1rem;
+      background: #ffffff;
+      border: 1px solid var(--card-border);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .stat-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+    }
+
+    /* Scanner Viewfinder Box */
+    #qrReaderBox {
+      width: 100%;
+      max-width: 480px;
+      margin: 0 auto;
+      border-radius: 1rem;
+      overflow: hidden;
+      border: 3px solid #3b82f6;
+      background: #000000;
+      position: relative;
+    }
+
+    /* PIN Lockscreen */
+    #lockscreenOverlay {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .pin-input {
+      letter-spacing: 0.5rem;
+      font-size: 1.5rem;
+      text-align: center;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== PIN LOCKSCREEN MODAL ==================== -->
+  <div id="lockscreenOverlay">
+    <div class="card card-modern p-4 p-md-5 text-center shadow-2xl" style="max-width: 420px; width: 100%;">
+      <img src="https://i.ibb.co.com/KpqwmHd6/Logo-Jemprot-2-1-removebg-preview.png" alt="Logo JeMPROT" style="height: 52px; object-fit: contain;" class="mx-auto mb-3">
+      <h4 class="fw-bold text-dark mb-1">PORTAL MARSHAL</h4>
+      <p class="text-muted small mb-4">Bidang SMP DISDIKBUD Kabupaten Karanganyar</p>
+
+      <form onsubmit="handlePinLogin(event)">
+        <div class="mb-3">
+          <label class="form-label fw-bold small text-secondary" for="inputPinPanitia">MASUKKAN PIN PANITIA</label>
+          <div class="input-group">
+            <span class="input-group-text bg-light"><i class="bi bi-shield-lock-fill text-primary"></i></span>
+            <input type="password" class="form-control pin-input" id="inputPinPanitia" maxlength="8" placeholder="••••••" required autofocus>
+            <button class="btn btn-outline-secondary" type="button" onclick="togglePinVisibility()">
+              <i class="bi bi-eye" id="iconEye"></i>
+            </button>
+          </div>
+          <div class="form-text text-start small">Default PIN: <code>123456</code> (dapat diubah di Pengaturan).</div>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100 rounded-pill py-2.5 fw-bold shadow-sm" id="btnLoginSubmit">
+          <i class="bi bi-box-arrow-in-right me-1"></i> Buka Portal Panitia
+        </button>
+      </form>
+
+      <div class="mt-4 pt-3 border-top text-center">
+        <a href="../" class="text-decoration-none small text-muted">
+          <i class="bi bi-arrow-left me-1"></i> Kembali ke Form Publik
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== TOP NAVIGATION BAR ==================== -->
+  <header class="topbar">
+    <div class="d-flex align-items-center gap-3">
+      <!-- Toggle Sidebar Button (Bisa dibuka & ditutup) -->
+      <button class="btn btn-light btn-sm border rounded-3 p-1.5" id="btnToggleSidebar" onclick="toggleSidebarMenu()" title="Buka/Tutup Menu">
+        <i class="bi bi-list fs-5"></i>
+      </button>
+
+      <div class="d-flex align-items-center gap-2">
+        <img src="https://i.ibb.co.com/KpqwmHd6/Logo-Jemprot-2-1-removebg-preview.png" alt="Logo JeMPROT" style="height: 32px; object-fit: contain;">
+        <span class="fw-extrabold text-dark tracking-tight d-none d-sm-inline" style="font-size: 1.05rem;">
+          MARSHAL <span class="badge bg-primary text-white rounded-pill px-2 py-0.5" style="font-size: 0.68rem;">BID SMP</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- Active Event Switcher in Topbar -->
+    <div class="ms-auto d-flex align-items-center gap-2">
+      <div class="d-flex align-items-center gap-1.5 bg-light px-2.5 py-1 rounded-pill border">
+        <i class="bi bi-calendar2-check-fill text-primary small"></i>
+        <select class="form-select form-select-sm border-0 bg-transparent fw-bold text-dark py-0 pe-4" id="selectTopbarEvent" onchange="handleEventSwitch(this.value)" style="box-shadow: none; font-size: 0.85rem; max-width: 260px;">
+          <option value="">Memuat Kegiatan...</option>
+        </select>
+      </div>
+
+      <a href="../" target="_blank" class="btn btn-outline-secondary btn-sm rounded-pill px-2.5 py-1 d-none d-md-inline-flex align-items-center gap-1" title="Buka Form Publik">
+        <i class="bi bi-box-arrow-up-right"></i>
+        <span class="small">Form Publik</span>
+      </a>
+
+      <button class="btn btn-danger btn-sm rounded-pill px-3 py-1 fw-bold shadow-sm d-flex align-items-center gap-1.5" onclick="confirmLogout()" title="Keluar dari Portal Panitia">
+        <i class="bi bi-box-arrow-right"></i>
+        <span>Keluar</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ==================== COLLAPSIBLE SIDEBAR MENU ==================== -->
+  <aside class="sidebar" id="sidebarMenu">
+    
+    <!-- 1. MENU UTAMA -->
+    <div class="nav-group-title">Menu Utama</div>
+    <div class="nav-sidebar-link active" onclick="switchTab('tabDashboard', this)">
+      <i class="bi bi-pie-chart-fill text-primary"></i>
+      <span>Dashboard Statistik</span>
+    </div>
+    <div class="nav-sidebar-link" onclick="switchTab('tabPresensiScanner', this)">
+      <i class="bi bi-qr-code-scan text-success"></i>
+      <span>Presensi QR Scanner</span>
+    </div>
+
+    <!-- 2. MANAJEMEN KEGIATAN -->
+    <div class="nav-group-title">Manajemen Kegiatan</div>
+    <div class="nav-sidebar-link" onclick="switchTab('tabManajemenKegiatan', this)">
+      <i class="bi bi-folder2-open text-warning"></i>
+      <span>Kelola Multi-Kegiatan</span>
+    </div>
+
+    <!-- 3. LOGISTIK & DISTRIBUSI -->
+    <div class="nav-group-title">Logistik &amp; Distribusi</div>
+    <div class="nav-sidebar-link" onclick="switchTab('tabRekapKaos', this)">
+      <i class="bi bi-tag-fill text-info"></i>
+      <span>Rekap Kaos &amp; Lengan</span>
+    </div>
+    <div class="nav-sidebar-link" onclick="switchTab('tabMonitoringSekolah', this)">
+      <i class="bi bi-buildings text-danger"></i>
+      <span>Monitoring Sekolah</span>
+    </div>
+
+    <!-- 4. DATA & LAPORAN -->
+    <div class="nav-group-title">Data &amp; Laporan</div>
+    <div class="nav-sidebar-link" onclick="switchTab('tabDataPeserta', this)">
+      <i class="bi bi-people-fill text-primary"></i>
+      <span>Data Seluruh Peserta</span>
+    </div>
+    <div class="nav-sidebar-link" onclick="switchTab('tabDokumenSpj', this)">
+      <i class="bi bi-file-earmark-spreadsheet-fill text-success"></i>
+      <span>Generator Dokumen SPJ</span>
+    </div>
+
+    <!-- 5. KECERDASAN BUATAN -->
+    <div class="nav-group-title">Kecerdasan Buatan</div>
+    <div class="nav-sidebar-link" onclick="switchTab('tabGeminiAi', this)">
+      <i class="bi bi-stars text-warning"></i>
+      <span>Tanya AI Gemini</span>
+    </div>
+
+    <!-- 6. SISTEM & PENGATURAN -->
+    <div class="nav-group-title">Sistem &amp; Database</div>
+    <div class="nav-sidebar-link" onclick="switchTab('tabPengaturan', this)">
+      <i class="bi bi-gear-fill text-secondary"></i>
+      <span>Pengaturan &amp; Database</span>
+    </div>
+
+    <!-- Sidebar Footer & Tombol Logout -->
+    <div class="mt-auto p-3 border-top border-secondary-subtle">
+      <button class="btn btn-outline-danger w-100 rounded-pill py-2 fw-bold d-flex align-items-center justify-content-center gap-2 mb-2.5 shadow-sm" onclick="confirmLogout()">
+        <i class="bi bi-box-arrow-left"></i>
+        <span>Logout Marshal</span>
+      </button>
+      <div class="text-center">
+        <small class="text-muted d-block" style="font-size: 0.72rem;">JeMPROT Marshal v2.0</small>
+        <small class="text-white-50" style="font-size: 0.68rem;">Bidang SMP Karanganyar</small>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ==================== MAIN CONTENT WRAPPER ==================== -->
+  <main class="main-wrapper" id="mainWrapper">
+    
+    <!-- ==================== TAB 1: DASHBOARD STATISTIK ==================== -->
+    <section id="tabDashboard" class="tab-pane active">
+      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+          <h3 class="h4 fw-bold text-dark mb-0" id="dashEventTitle">Dashboard Kegiatan</h3>
+          <p class="text-muted small mb-0" id="dashEventSubtitle">Ringkasan pendaftaran dan presensi kehadiran</p>
+        </div>
+        <button class="btn btn-outline-primary btn-sm rounded-pill px-3 shadow-sm" onclick="refreshCurrentDashboard()">
+          <i class="bi bi-arrow-clockwise me-1"></i> Segarkan Data
+        </button>
+      </div>
+
+      <!-- KPI Stat Cards -->
+      <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-xl-3">
+          <div class="stat-card">
+            <div class="stat-icon bg-primary-subtle text-primary">
+              <i class="bi bi-people-fill"></i>
+            </div>
+            <div>
+              <div class="text-muted small fw-semibold">Total Pendaftar</div>
+              <h3 class="fw-bold text-dark mb-0" id="kpiTotalPeserta">0</h3>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+          <div class="stat-card">
+            <div class="stat-icon bg-success-subtle text-success">
+              <i class="bi bi-check-circle-fill"></i>
+            </div>
+            <div>
+              <div class="text-muted small fw-semibold">Sudah Hadir</div>
+              <h3 class="fw-bold text-dark mb-0" id="kpiTotalHadir">0</h3>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+          <div class="stat-card">
+            <div class="stat-icon bg-warning-subtle text-warning-emphasis">
+              <i class="bi bi-clock-history"></i>
+            </div>
+            <div>
+              <div class="text-muted small fw-semibold">Belum Hadir</div>
+              <h3 class="fw-bold text-dark mb-0" id="kpiBelumHadir">0</h3>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+          <div class="stat-card">
+            <div class="stat-icon bg-info-subtle text-info">
+              <i class="bi bi-buildings-fill"></i>
+            </div>
+            <div>
+              <div class="text-muted small fw-semibold">Sekolah Terdaftar</div>
+              <h3 class="fw-bold text-dark mb-0" id="kpiTotalSekolah">0</h3>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Action Cards -->
+      <div class="row g-4">
+        <div class="col-lg-8">
+          <div class="card card-modern p-4 h-100">
+            <h5 class="fw-bold text-dark mb-3"><i class="bi bi-bar-chart-fill text-primary me-2"></i>Persentase Kehadiran Presensi</h5>
+            <div class="progress mb-3" style="height: 24px; border-radius: 12px;">
+              <div class="progress-bar bg-success progress-bar-striped progress-bar-animated fw-bold" id="progressBarHadir" role="progressbar" style="width: 0%;">0%</div>
+            </div>
+            <div class="d-flex justify-content-between small text-muted">
+              <span>Hadir: <strong id="lblHadirCount">0</strong> orang</span>
+              <span>Total Terdaftar: <strong id="lblTotalCount">0</strong> orang</span>
+            </div>
+
+            <hr class="my-4">
+
+            <h6 class="fw-bold text-dark mb-2">Detail Informasi Kegiatan:</h6>
+            <div class="row g-2 small text-secondary">
+              <div class="col-md-6"><i class="bi bi-calendar3 me-1 text-primary"></i> Tanggal: <strong id="lblDetailTanggal">-</strong></div>
+              <div class="col-md-6"><i class="bi bi-geo-alt me-1 text-danger"></i> Lokasi: <strong id="lblDetailLokasi">-</strong></div>
+              <div class="col-md-6"><i class="bi bi-person-check me-1 text-success"></i> Kuota Sekolah: <strong id="lblDetailKuota">-</strong></div>
+              <div class="col-md-6"><i class="bi bi-toggle-on me-1 text-info"></i> Status Form: <strong id="lblDetailStatus">-</strong></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-4">
+          <div class="card card-modern p-4 h-100 text-center d-flex flex-column justify-content-between">
+            <div>
+              <div class="stat-icon bg-primary text-white mx-auto mb-3" style="width: 60px; height: 60px; border-radius: 1rem;">
+                <i class="bi bi-qr-code-scan fs-3"></i>
+              </div>
+              <h5 class="fw-bold text-dark mb-1">Presensi QR Cepat</h5>
+              <p class="text-muted small">Buka pemindai kamera laptop atau smartphone untuk memvalidasi kedatangan peserta.</p>
+            </div>
+            <button class="btn btn-primary w-100 rounded-pill py-2.5 fw-bold shadow-sm" onclick="switchTab('tabPresensiScanner', document.querySelectorAll('.nav-sidebar-link')[1])">
+              <i class="bi bi-camera-fill me-1"></i> Buka Scanner Kamera
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 2: PRESENSI QR SCANNER ==================== -->
+    <section id="tabPresensiScanner" class="tab-pane d-none">
+      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+          <h3 class="h4 fw-bold text-dark mb-0">Presensi Scanner QR Code</h3>
+          <p class="text-muted small mb-0">Scan tiket peserta via webcam laptop, kamera smartphone, atau unggah foto</p>
+        </div>
+      </div>
+
+      <div class="row g-4 justify-content-center">
+        <!-- Kamera Scanner Box -->
+        <div class="col-lg-7">
+          <div class="card card-modern p-4 text-center">
+            
+            <!-- Controls Bar: Device Selector -->
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+              <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-camera-video text-primary"></i>
+                <select class="form-select form-select-sm" id="selectCameraDevice" onchange="handleCameraDeviceChange(this.value)" style="max-width: 240px;">
+                  <option value="">Deteksi Kamera...</option>
+                </select>
+              </div>
+
+              <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary btn-sm rounded-pill" onclick="detectAvailableCameras(true)" title="Cari Ulang Kamera">
+                  <i class="bi bi-arrow-repeat"></i>
+                </button>
+                <button class="btn btn-outline-primary btn-sm rounded-pill" onclick="switchCameraFacingMode()" title="Ganti Depan/Belakang">
+                  <i class="bi bi-arrow-left-right"></i> Flip
+                </button>
+              </div>
+            </div>
+
+            <!-- Viewfinder Reader Box -->
+            <div id="qrReaderBox" class="mb-3">
+              <div id="qrReader" style="width: 100%;"></div>
+            </div>
+
+            <div class="d-flex justify-content-center gap-2 mb-3">
+              <button class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm" id="btnStartCamera" onclick="startScannerCameraAuto()">
+                <i class="bi bi-play-circle-fill me-1"></i> Mulai Kamera
+              </button>
+              <button class="btn btn-outline-danger rounded-pill px-4 fw-bold d-none" id="btnStopCamera" onclick="stopScannerCamera()">
+                <i class="bi bi-stop-circle-fill me-1"></i> Hentikan
+              </button>
+            </div>
+
+            <!-- Fallback: Unggah File / Screenshot QR -->
+            <div class="pt-3 border-top">
+              <label class="form-label small fw-semibold text-muted mb-2">Atau Scan dari File Foto / Screenshot QR:</label>
+              <input type="file" class="form-control form-control-sm mx-auto" id="fileScanQr" accept="image/*" onchange="handleScanQrFromFile(this)" style="max-width: 320px;">
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Panel Hasil Presensi & Checkin Manual -->
+        <div class="col-lg-5">
+          <div class="card card-modern p-4 mb-4">
+            <h5 class="fw-bold text-dark mb-3"><i class="bi bi-keyboard text-primary me-2"></i>Check-In Manual</h5>
+            <div class="input-group mb-2">
+              <input type="text" class="form-control" id="inputManualCheckIn" placeholder="ID Registrasi / NPSN / Nama..." onkeypress="if(event.key==='Enter') executeManualCheckIn()">
+              <button class="btn btn-primary fw-bold" onclick="executeManualCheckIn()">
+                <i class="bi bi-check-lg"></i> Hadir
+              </button>
+            </div>
+            <div class="form-text small">Masukkan ID (misal: REG-SPAB-001) jika kamera bermasalah.</div>
+          </div>
+
+          <div class="card card-modern p-4">
+            <h5 class="fw-bold text-dark mb-3"><i class="bi bi-clock-history text-success me-2"></i>Riwayat Presensi Terbaru</h5>
+            <div id="recentCheckInList" class="space-y-2 overflow-auto" style="max-height: 350px;">
+              <div class="text-center text-muted py-4 small">Belum ada peserta yang check-in pada sesi ini.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 3: MANAJEMEN MULTI-KEGIATAN ==================== -->
+    <section id="tabManajemenKegiatan" class="tab-pane d-none">
+      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+          <h3 class="h4 fw-bold text-dark mb-0">Manajemen Multi-Kegiatan</h3>
+          <p class="text-muted small mb-0">Buat kegiatan baru, kelola kuota, dan atur saklar modul dinamis</p>
+        </div>
+        <button class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm fw-bold" onclick="openModalTambahKegiatan()">
+          <i class="bi bi-plus-circle-fill me-1"></i> Tambah Kegiatan Baru
+        </button>
+      </div>
+
+      <div class="card card-modern overflow-hidden">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light text-secondary small text-uppercase">
+              <tr>
+                <th>ID</th>
+                <th>Nama Kegiatan</th>
+                <th>Jadwal &amp; Lokasi</th>
+                <th>Kuota/Sekolah</th>
+                <th>Modul Aktif</th>
+                <th>Status Form</th>
+                <th class="text-center">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyManajemenKegiatan" class="small">
+              <tr><td colspan="7" class="text-center py-4 text-muted">Memuat daftar kegiatan...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 4: REKAP KAOS & LOGISTIK ==================== -->
+    <section id="tabRekapKaos" class="tab-pane d-none">
+      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+          <h3 class="h4 fw-bold text-dark mb-0">Rekap Ukuran Kaos &amp; Lengan</h3>
+          <p class="text-muted small mb-0">Distribusi perlengkapan kaos peserta siap cetak &amp; konveksi</p>
+        </div>
+        <button class="btn btn-outline-success btn-sm rounded-pill px-3 fw-bold" onclick="exportKaosToExcel()">
+          <i class="bi bi-file-earmark-excel-fill me-1"></i> Ekspor Excel
+        </button>
+      </div>
+
+      <div class="row g-4">
+        <div class="col-lg-8">
+          <div class="card card-modern p-4">
+            <h5 class="fw-bold text-dark mb-3"><i class="bi bi-grid-3x3 text-primary me-2"></i>Matriks Ukuran &amp; Panjang Lengan</h5>
+            <div class="table-responsive">
+              <table class="table table-bordered text-center align-middle mb-0">
+                <thead class="table-light small fw-bold">
+                  <tr>
+                    <th>Ukuran Kaos</th>
+                    <th>Lengan Pendek</th>
+                    <th>Lengan Panjang (Hijab)</th>
+                    <th>Total Kaos</th>
+                  </tr>
+                </thead>
+                <tbody id="tbodyMatriksKaos" class="fw-semibold">
+                  <!-- Generated via JS -->
+                </tbody>
+                <tfoot class="table-light fw-bold">
+                  <tr id="tfootMatriksKaos">
+                    <td>TOTAL KESELURUHAN</td>
+                    <td id="totKaosPendek">0</td>
+                    <td id="totKaosPanjang">0</td>
+                    <td id="totKaosGrand" class="text-primary fs-6">0</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-4">
+          <div class="card card-modern p-4">
+            <h5 class="fw-bold text-dark mb-3"><i class="bi bi-pie-chart text-warning me-2"></i>Ringkasan Logistik</h5>
+            <div id="boxSummaryKaos" class="space-y-3 small">
+              <!-- Summary items -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 5: MONITORING SEKOLAH ==================== -->
+    <section id="tabMonitoringSekolah" class="tab-pane d-none">
+      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+          <h3 class="h4 fw-bold text-dark mb-0">Monitoring Satuan Pendidikan</h3>
+          <p class="text-muted small mb-0">Pantau sekolah yang sudah mendaftar dan yang belum mengirim delegasi</p>
+        </div>
+        <button class="btn btn-success btn-sm rounded-pill px-3 fw-bold" onclick="openModalWaBlastSekolah()">
+          <i class="bi bi-whatsapp me-1"></i> WhatsApp Blast Pengingat
+        </button>
+      </div>
+
+      <div class="row g-4">
+        <div class="col-md-6">
+          <div class="card card-modern p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 class="fw-bold text-danger mb-0"><i class="bi bi-x-circle me-1"></i> Belum Mendaftar (<span id="countBelumDaftar">0</span>)</h5>
+            </div>
+            <div class="table-responsive overflow-auto" style="max-height: 480px;">
+              <table class="table table-sm table-hover align-middle mb-0">
+                <thead class="table-light small">
+                  <tr><th>No</th><th>Nama Sekolah</th><th>Kecamatan</th></tr>
+                </thead>
+                <tbody id="tbodySekolahBelumDaftar" class="small"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="card card-modern p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 class="fw-bold text-success mb-0"><i class="bi bi-check-circle me-1"></i> Sudah Mendaftar (<span id="countSudahDaftar">0</span>)</h5>
+            </div>
+            <div class="table-responsive overflow-auto" style="max-height: 480px;">
+              <table class="table table-sm table-hover align-middle mb-0">
+                <thead class="table-light small">
+                  <tr><th>No</th><th>Nama Sekolah</th><th>Peserta</th></tr>
+                </thead>
+                <tbody id="tbodySekolahSudahDaftar" class="small"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 6: DATA SELURUH PESERTA ==================== -->
+    <section id="tabDataPeserta" class="tab-pane d-none">
+      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+          <h3 class="h4 fw-bold text-dark mb-0">Data Seluruh Peserta</h3>
+          <p class="text-muted small mb-0">Daftar lengkap peserta, status presensi, dan opsi ekspor</p>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-success btn-sm rounded-pill px-3 fw-bold" onclick="exportParticipantsToXLSX()">
+            <i class="bi bi-file-earmark-excel-fill me-1"></i> Ekspor Excel (XLSX)
+          </button>
+          <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 fw-semibold" onclick="exportParticipantsToCSV()">
+            Ekspor CSV
+          </button>
+        </div>
+      </div>
+
+      <div class="card card-modern p-3 mb-3">
+        <div class="row g-2">
+          <div class="col-md-5">
+            <div class="input-group input-group-sm">
+              <span class="input-group-text bg-light"><i class="bi bi-search"></i></span>
+              <input type="text" class="form-control" id="searchTablePeserta" placeholder="Cari nama, NIP, sekolah, regId..." oninput="filterTablePeserta(this.value)">
+            </div>
+          </div>
+          <div class="col-md-4">
+            <select class="form-select form-select-sm" id="filterStatusHadirTable" onchange="filterTablePeserta()">
+              <option value="">Semua Status Kehadiran</option>
+              <option value="Hadir">Sudah Hadir</option>
+              <option value="Belum">Belum Hadir</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="card card-modern overflow-hidden">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light text-secondary small text-uppercase">
+              <tr>
+                <th>No</th>
+                <th>ID Registrasi</th>
+                <th>Nama Lengkap &amp; Gelar</th>
+                <th>Sekolah / Instansi</th>
+                <th>Jabatan / ASN</th>
+                <th>Kaos</th>
+                <th>Presensi</th>
+                <th class="text-center">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyPesertaLengkap" class="small">
+              <tr><td colspan="8" class="text-center py-4 text-muted">Memuat data peserta...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 7: GENERATOR DOKUMEN SPJ ==================== -->
+    <section id="tabDokumenSpj" class="tab-pane d-none">
+      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+          <h3 class="h4 fw-bold text-dark mb-0">Generator Dokumen SPJ</h3>
+          <p class="text-muted small mb-0">Format Daftar Hadir Resmi, Tanda Terima Kaos, dan Administrasi SPPD</p>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-primary btn-sm rounded-pill px-3 fw-bold" onclick="printSpjDocument()">
+            <i class="bi bi-printer-fill me-1"></i> Cetak / Print SPJ
+          </button>
+          <button class="btn btn-success btn-sm rounded-pill px-3 fw-bold" onclick="downloadSpjExcel()">
+            <i class="bi bi-file-earmark-excel-fill me-1"></i> Unduh Excel SPJ
+          </button>
+        </div>
+      </div>
+
+      <!-- Konfigurasi Pejabat Penandatangan -->
+      <div class="card card-modern p-4 mb-4">
+        <h6 class="fw-bold text-dark mb-3"><i class="bi bi-pen-fill text-primary me-2"></i>Pejabat Penandatangan Dokumen:</h6>
+        <div class="row g-3 small">
+          <div class="col-md-4">
+            <label class="form-label fw-bold">Kuasa Pengguna Anggaran (KPA):</label>
+            <input type="text" class="form-control form-control-sm mb-1" id="inputKpaNama" value="Rehatta Rakasiwi, S.Psi.,M.Si">
+            <input type="text" class="form-control form-control-sm" id="inputKpaNip" value="198401162011011009">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-bold">PPTK Bidang SMP:</label>
+            <input type="text" class="form-control form-control-sm mb-1" id="inputPptkNama" value="Agus Pruwitanto, S.Sos">
+            <input type="text" class="form-control form-control-sm" id="inputPptkNip" value="197408191999031005">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-bold">Bendahara Pengeluaran Pembantu:</label>
+            <input type="text" class="form-control form-control-sm mb-1" id="inputBendaharaNama" value="Dwi Suprasetiarini, S.M">
+            <input type="text" class="form-control form-control-sm" id="inputBendaharaNip" value="197610022010012002">
+          </div>
+        </div>
+      </div>
+
+      <!-- Preview SPJ Document -->
+      <div class="card card-modern p-4 p-md-5 bg-white shadow-sm" id="printableSpjArea">
+        <div class="text-center mb-4">
+          <h5 class="fw-bold text-dark mb-0 text-uppercase">DAFTAR HADIR PESERTA &amp; TANDA TERIMA</h5>
+          <h6 class="fw-bold text-primary mb-1 text-uppercase" id="spjPreviewEventName">NAMA KEGIATAN</h6>
+          <small class="text-muted" id="spjPreviewEventSchedule">Kabupaten Karanganyar - Tahun Anggaran 2026</small>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-bordered table-sm align-middle mb-4" style="font-size: 0.82rem;">
+            <thead class="table-light text-center fw-bold">
+              <tr>
+                <th style="width: 40px;">NO</th>
+                <th>NAMA LENGKAP &amp; GELAR</th>
+                <th>NIP / GOLONGAN</th>
+                <th>ASAL SEKOLAH</th>
+                <th style="width: 80px;">UKURAN</th>
+                <th style="width: 140px;">TANDA TANGAN</th>
+              </tr>
+            </thead>
+            <tbody id="tbodySpjPreview">
+              <!-- Populated via JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Lembar Tanda Tangan Pejabat -->
+        <div class="row text-center mt-5 pt-3" style="font-size: 0.82rem;">
+          <div class="col-4">
+            <div>Mengetahui,<br><strong>Kuasa Pengguna Anggaran</strong></div>
+            <div style="height: 60px;"></div>
+            <strong id="signKpaNama" class="text-decoration-underline">Rehatta Rakasiwi, S.Psi.,M.Si</strong>
+            <div id="signKpaNip">NIP. 198401162011011009</div>
+          </div>
+          <div class="col-4">
+            <div>Karanganyar,<br><strong>PPTK Bidang SMP</strong></div>
+            <div style="height: 60px;"></div>
+            <strong id="signPptkNama" class="text-decoration-underline">Agus Pruwitanto, S.Sos</strong>
+            <div id="signPptkNip">NIP. 197408191999031005</div>
+          </div>
+          <div class="col-4">
+            <div>Lunas Dibayar,<br><strong>Bendahara Pengeluaran</strong></div>
+            <div style="height: 60px;"></div>
+            <strong id="signBdhNama" class="text-decoration-underline">Dwi Suprasetiarini, S.M</strong>
+            <div id="signBdhNip">NIP. 197610022010012002</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 8: ASISTEN AI GEMINI ==================== -->
+    <section id="tabGeminiAi" class="tab-pane d-none">
+      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+          <h3 class="h4 fw-bold text-dark mb-0">Asisten AI Gemini Kedinasan</h3>
+          <p class="text-muted small mb-0">Analisis cerdas kehadiran, rekap logistik, dan asisten panitia</p>
+        </div>
+      </div>
+
+      <div class="card card-modern p-4" style="min-height: 480px; display: flex; flex-direction: column;">
+        <div id="chatAiContainer" class="flex-grow-1 overflow-auto p-3 bg-light rounded-4 mb-3 space-y-3" style="max-height: 400px;">
+          <div class="p-3 bg-white rounded-3 shadow-sm border small" style="max-width: 80%;">
+            <strong>🤖 Asisten AI:</strong> Halo Panitia! Saya siap membantu menganalisis data peserta, kehadiran presensi, dan kebutuhan logistik kegiatan aktif ini. Ada yang bisa saya bantu?
+          </div>
+        </div>
+
+        <div class="d-flex gap-2">
+          <input type="text" class="form-control" id="inputAiQuestion" placeholder="Contoh: Berapa persen kehadiran hari ini? Sekolah mana yang belum hadir?" onkeypress="if(event.key==='Enter') submitAiQuestion()">
+          <button class="btn btn-primary fw-bold px-4 rounded-pill" onclick="submitAiQuestion()">
+            <i class="bi bi-send-fill"></i>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 9: PENGATURAN & DATABASE ==================== -->
+    <section id="tabPengaturan" class="tab-pane d-none">
+      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+          <h3 class="h4 fw-bold text-dark mb-0">Pengaturan Sistem &amp; Database</h3>
+          <p class="text-muted small mb-0">Ubah PIN Panitia, cek status koneksi Spreadsheet, dan sinkronisasi struktur tabel</p>
+        </div>
+      </div>
+
+      <div class="row g-4">
+        <!-- Ganti PIN Panitia -->
+        <div class="col-md-6">
+          <div class="card card-modern p-4 h-100">
+            <h5 class="fw-bold text-dark mb-3"><i class="bi bi-shield-lock-fill text-primary me-2"></i>Ganti PIN Panitia</h5>
+            <form onsubmit="handleChangePin(event)">
+              <div class="mb-3">
+                <label class="form-label small fw-bold">PIN Baru (4-8 Digit)</label>
+                <input type="password" class="form-control" id="inputNewPin" placeholder="Masukkan PIN Baru" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label small fw-bold">Konfirmasi PIN Baru</label>
+                <input type="password" class="form-control" id="inputConfirmPin" placeholder="Ketik Ulang PIN Baru" required>
+              </div>
+              <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">
+                <i class="bi bi-check-circle-fill me-1"></i> Simpan PIN Baru
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Setup & Migrasi Spreadsheet Multi-Kegiatan -->
+        <div class="col-md-6">
+          <div class="card card-modern p-4 h-100">
+            <h5 class="fw-bold text-dark mb-2"><i class="bi bi-database-fill-gear text-success me-2"></i>Setup Database Multi-Kegiatan</h5>
+            <p class="text-muted small mb-3">
+              Jalankan setup database otomatis pada Google Spreadsheet untuk memastikan sheet <code>Master_Kegiatan</code> dan 22 kolom <code>Data_Peserta</code> sudah lengkap.
+            </p>
+            <div class="alert alert-info py-2 px-3 small mb-4">
+              <i class="bi bi-info-circle-fill text-info me-1"></i> Aman dijalankan kapan saja, data peserta yang ada tidak akan terhapus.
+            </div>
+            <button type="button" class="btn btn-success rounded-pill px-4 fw-bold" onclick="runDatabaseSetup()">
+              <i class="bi bi-play-circle-fill me-1"></i> Jalankan Setup Database Sekarang
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== BRANDING FOOTER JEMPROT ==================== -->
+    <footer class="py-3 mt-5 border-top bg-white text-center">
+      <div class="container">
+        <div class="d-flex align-items-center justify-content-center flex-wrap gap-1 text-muted small">
+          <span class="fw-semibold text-secondary" style="font-size: 0.72rem; letter-spacing: 0.05em;">DIGITALLY SHAPED BY</span>
+          <img src="https://i.ibb.co.com/KpqwmHd6/Logo-Jemprot-2-1-removebg-preview.png" alt="Logo JeMPROT" style="height: 20px; object-fit: contain;" class="mx-1">
+          <span class="fw-bold text-dark" style="font-size: 0.78rem;">[BID SMP 2026]</span>
+        </div>
+      </div>
+    </footer>
+
+  </main>
+
+  <!-- ==================== MODAL TAMBAH / EDIT KEGIATAN ==================== -->
+  <div class="modal fade" id="modalKegiatan" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+        <div class="modal-header bg-primary text-white py-3">
+          <h5 class="modal-title fw-bold" id="modalKegiatanTitle">Tambah Kegiatan Baru</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4 bg-light">
+          <form id="formEventModal" onsubmit="submitEventModal(event)">
+            <input type="hidden" id="eventModalId" name="idKegiatan">
+            
+            <div class="row g-3 mb-3">
+              <div class="col-md-8">
+                <label class="form-label small fw-bold">Nama Kegiatan <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="eventModalNama" required placeholder="Contoh: WORKSHOP SATUAN PENDIDIKAN AMAN BENCANA">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small fw-bold">Status Formulir</label>
+                <select class="form-select" id="eventModalStatus">
+                  <option value="BUKA">BUKA</option>
+                  <option value="TUTUP">TUTUP</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-bold">Sub Kegiatan / Keterangan</label>
+              <input type="text" class="form-control" id="eventModalSub" placeholder="Bidang SMP DISDIKBUD Karanganyar">
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-md-4">
+                <label class="form-label small fw-bold">Kuota Per Sekolah</label>
+                <select class="form-select" id="eventModalKuota">
+                  <option value="1">1 Peserta</option>
+                  <option value="2">2 Peserta</option>
+                  <option value="3">3 Peserta</option>
+                  <option value="bebas">Bebas</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small fw-bold">Tanggal Pelaksanaan</label>
+                <input type="text" class="form-control" id="eventModalTanggal" placeholder="18-19 November 2026">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label small fw-bold">Lokasi Kegiatan</label>
+                <input type="text" class="form-control" id="eventModalLokasi" placeholder="Aula Disdikbud Karanganyar">
+              </div>
+            </div>
+
+            <div class="card p-3 bg-white mb-3">
+              <label class="form-label small fw-bold mb-2">Saklar Modul Formulir:</label>
+              <div class="row g-2 small">
+                <div class="col-6 col-md-4">
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="switchModulKaos" checked>
+                    <label class="form-check-label" for="switchModulKaos">Modul Kaos</label>
+                  </div>
+                </div>
+                <div class="col-6 col-md-4">
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="switchModulLengan" checked>
+                    <label class="form-check-label" for="switchModulLengan">Modul Lengan</label>
+                  </div>
+                </div>
+                <div class="col-6 col-md-4">
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="switchModulGender" checked>
+                    <label class="form-check-label" for="switchModulGender">Modul Gender</label>
+                  </div>
+                </div>
+                <div class="col-6 col-md-4">
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="switchModulDarurat" checked>
+                    <label class="form-check-label" for="switchModulDarurat">Kontak Darurat</label>
+                  </div>
+                </div>
+                <div class="col-6 col-md-4">
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="switchModulKesehatan" checked>
+                    <label class="form-check-label" for="switchModulKesehatan">Modul Kesehatan</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2">
+              <button type="button" class="btn btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">Batal</button>
+              <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold">Simpan Kegiatan</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Audio Beep untuk Presensi -->
+  <audio id="beepSuccess" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
+
+  <!-- ==================== JAVASCRIPT LIBS & MARSHAL ENGINE ==================== -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <script>
+    /**
+     * =========================================================================
+     * MARSHAL & PANITIA DASHBOARD ENGINE
+     * DINAS PENDIDIKAN DAN KEBUDAYAAN KABUPATEN KARANGANYAR
+     * =========================================================================
+     */
+
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycby71imxdrBBcfNNvRjfk5TF0K8Q85SrLd9ByJ-BPGTBCatIokatfwiAl7x82Di-H3WcCw/exec";
+
+    // State Panitia
+    let currentAdminPin = "";
+    let activeEventId = "";
+    let currentDashboardData = null;
+    let allEventsList = [];
+    let html5QrScanner = null;
+    let availableCameras = [];
+    let currentCameraIndex = 0;
+
+    /**
+     * Helper API Asinkron
+     */
+    async function callGasApi(action, data = {}) {
+      const payload = { action, ...data };
+      const res = await fetch(GAS_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) throw new Error("HTTP Status: " + res.status);
+      return await res.json();
+    }
+
+    // Inisialisasi
+    document.addEventListener("DOMContentLoaded", function() {
+      const savedPin = sessionStorage.getItem("marshal_pin");
+      if (savedPin) {
+        verifyAndOpenDashboard(savedPin);
+      }
+    });
+
+    /**
+     * Auth Login PIN (dengan Proteksi Anti Brute-Force & Lockout)
+     */
+    async function handlePinLogin(e) {
+      e.preventDefault();
+      const pin = document.getElementById("inputPinPanitia").value.trim();
+      if (!pin) return;
+
+      const btn = document.getElementById("btnLoginSubmit");
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Memverifikasi...';
+
+      try {
+        const res = await callGasApi("verifyAdminPin", { pin });
+        if (res && res.valid) {
+          sessionStorage.setItem("marshal_pin", pin);
+          currentAdminPin = pin;
+          document.getElementById("lockscreenOverlay").style.display = "none";
+          initInactivityWatcher();
+          loadDashboardInitial();
+        } else if (res && res.locked) {
+          Swal.fire({
+            title: "Akses Terkunci!",
+            text: res.message || "Akses portal panitia terkunci sementara selama 15 menit karena salah memasukkan PIN 5 kali.",
+            icon: "error",
+            confirmButtonColor: "#dc2626"
+          });
+        } else {
+          Swal.fire({
+            title: "PIN Salah!",
+            text: res.message || "PIN Panitia tidak sesuai. Silakan hubungi koordinator Bidang SMP.",
+            icon: "warning",
+            confirmButtonColor: "#1e3a8a"
+          });
+        }
+      } catch (err) {
+        console.error(err);
+        Swal.fire({
+          title: "Gangguan Server",
+          text: "Gagal memverifikasi PIN ke Google Apps Script.",
+          icon: "error"
+        });
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-box-arrow-in-right me-1"></i> Buka Portal Panitia';
+      }
+    }
+
+    async function verifyAndOpenDashboard(pin) {
+      try {
+        const res = await callGasApi("verifyAdminPin", { pin });
+        if (res && res.valid) {
+          currentAdminPin = pin;
+          document.getElementById("lockscreenOverlay").style.display = "none";
+          initInactivityWatcher();
+          loadDashboardInitial();
+        } else {
+          sessionStorage.removeItem("marshal_pin");
+        }
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+
+    function togglePinVisibility() {
+      const input = document.getElementById("inputPinPanitia");
+      const icon = document.getElementById("iconEye");
+      if (input.type === "password") {
+        input.type = "text";
+        icon.className = "bi bi-eye-slash";
+      } else {
+        input.type = "password";
+        icon.className = "bi bi-eye";
+      }
+    }
+
+    /**
+     * Konfirmasi Keluar Manual (Logout)
+     */
+    async function confirmLogout() {
+      const { value: confirm } = await Swal.fire({
+        title: "Keluar dari Portal?",
+        text: "Anda akan keluar dan mengunci akses portal panitia. Seluruh proses kamera dan data sesi akan dihentikan.",
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonColor: "#dc2626",
+        cancelButtonColor: "#64748b",
+        confirmButtonText: '<i class="bi bi-box-arrow-right me-1"></i> Ya, Keluar!',
+        cancelButtonText: 'Batal'
+      });
+
+      if (confirm) {
+        executeLogout();
+      }
+    }
+
+    /**
+     * Eksekusi Logout & Pembersihan Total Memori
+     */
+    function executeLogout() {
+      // 1. Hentikan kamera pemindai jika sedang menyala
+      try {
+        stopScannerCamera();
+      } catch (e) {}
+
+      // 2. Bersihkan interval auto logout
+      if (inactivityInterval) {
+        clearInterval(inactivityInterval);
+        inactivityInterval = null;
+      }
+      warningDialogActive = false;
+
+      // 3. Bersihkan memori dan session storage
+      sessionStorage.removeItem("marshal_pin");
+      currentAdminPin = "";
+      currentDashboardData = null;
+      allEventsList = [];
+
+      // 4. Reset form & tampilkan lockscreen
+      document.getElementById("inputPinPanitia").value = "";
+      document.getElementById("lockscreenOverlay").style.display = "flex";
+    }
+
+    /**
+     * =========================================================================
+     * ENGINE AUTO-LOGOUT 30 MENIT TIDAK ADA AKTIVITAS (INACTIVITY WATCHER)
+     * =========================================================================
+     */
+    const INACTIVITY_LIMIT_MS = 30 * 60 * 1000; // Batas 30 Menit
+    const WARNING_LIMIT_MS = 28 * 60 * 1000;    // Peringatan di Menit ke-28 (2 menit sebelum)
+    let lastActivityTime = Date.now();
+    let warningDialogActive = false;
+    let inactivityInterval = null;
+
+    function resetActivityTimer() {
+      lastActivityTime = Date.now();
+      if (warningDialogActive) {
+        warningDialogActive = false;
+        Swal.close();
+      }
+    }
+
+    function initInactivityWatcher() {
+      lastActivityTime = Date.now();
+      warningDialogActive = false;
+
+      // Pantau seluruh aktivitas pengguna (mouse, keyboard, scroll, touch)
+      const activityEvents = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart', 'click'];
+      activityEvents.forEach(evt => {
+        window.removeEventListener(evt, resetActivityTimer);
+        window.addEventListener(evt, resetActivityTimer, { passive: true });
+      });
+
+      if (inactivityInterval) clearInterval(inactivityInterval);
+      inactivityInterval = setInterval(checkInactivityLoop, 5000);
+    }
+
+    function checkInactivityLoop() {
+      if (!currentAdminPin) return; // Hanya berjalan jika panitia sedang login
+
+      const idleTime = Date.now() - lastActivityTime;
+
+      if (idleTime >= INACTIVITY_LIMIT_MS) {
+        forceAutoLogout();
+      } else if (idleTime >= WARNING_LIMIT_MS && !warningDialogActive) {
+        showInactivityWarning(INACTIVITY_LIMIT_MS - idleTime);
+      }
+    }
+
+    function showInactivityWarning(remainingMs) {
+      warningDialogActive = true;
+      let remainingSec = Math.max(1, Math.round(remainingMs / 1000));
+      let countdownTimerInterval;
+
+      Swal.fire({
+        title: "Peringatan Inaktivitas Sesi",
+        html: `Tidak ada aktivitas terdeteksi pada layar.<br>Demi keamanan data, sesi panitia akan ditutup otomatis dalam <strong id="countdownSec" class="text-danger fs-5">${remainingSec}</strong> detik.`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#1e3a8a",
+        cancelButtonColor: "#dc2626",
+        confirmButtonText: '<i class="bi bi-arrow-repeat me-1"></i> Tetap Masuk (Perpanjang Sesi)',
+        cancelButtonText: '<i class="bi bi-box-arrow-right me-1"></i> Keluar Sekarang',
+        allowOutsideClick: false,
+        didOpen: () => {
+          const b = Swal.getHtmlContainer().querySelector('#countdownSec');
+          countdownTimerInterval = setInterval(() => {
+            remainingSec--;
+            if (b) b.textContent = remainingSec;
+            if (remainingSec <= 0) {
+              clearInterval(countdownTimerInterval);
+            }
+          }, 1000);
+        },
+        willClose: () => {
+          clearInterval(countdownTimerInterval);
+        }
+      }).then(result => {
+        clearInterval(countdownTimerInterval);
+        if (result.isConfirmed) {
+          resetActivityTimer();
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+          executeLogout();
+        }
+      });
+    }
+
+    function forceAutoLogout() {
+      executeLogout();
+      Swal.fire({
+        title: "Sesi Berakhir Otomatis",
+        text: "Sesi Anda telah berakhir secara otomatis demi keamanan karena tidak ada aktivitas selama 30 menit. Silakan masukkan PIN kembali untuk melanjutkan.",
+        icon: "info",
+        confirmButtonColor: "#1e3a8a"
+      });
+    }
+
+    /**
+     * Buka / Tutup Sidebar Menu (Menu bisa ditutup, bisa dibuka)
+     */
+    function toggleSidebarMenu() {
+      const sidebar = document.getElementById("sidebarMenu");
+      const main = document.getElementById("mainWrapper");
+
+      if (window.innerWidth < 992) {
+        sidebar.classList.toggle("open-mobile");
+      } else {
+        sidebar.classList.toggle("collapsed");
+        main.classList.toggle("expanded");
+      }
+    }
+
+    /**
+     * Ganti Tab Konten
+     */
+    function switchTab(tabId, el) {
+      document.querySelectorAll(".tab-pane").forEach(t => t.classList.add("d-none"));
+      const target = document.getElementById(tabId);
+      if (target) target.classList.remove("d-none");
+
+      document.querySelectorAll(".nav-sidebar-link").forEach(l => l.classList.remove("active"));
+      if (el) el.classList.add("active");
+
+      // Auto close sidebar di mobile saat memilih menu
+      if (window.innerWidth < 992) {
+        document.getElementById("sidebarMenu").classList.remove("open-mobile");
+      }
+
+      if (tabId === "tabPresensiScanner") {
+        detectAvailableCameras();
+      }
+    }
+
+    /**
+     * Memuat Data Dashboard Awal
+     */
+    async function loadDashboardInitial() {
+      try {
+        const res = await callGasApi("getAdminDashboard", { pin: currentAdminPin });
+        if (res && res.success) {
+          currentDashboardData = res;
+          allEventsList = res.allEvents || [];
+          
+          populateTopbarEvents(allEventsList, res.settings?.ID_KEGIATAN);
+          renderDashboardStats(res);
+          renderManajemenKegiatan(allEventsList);
+          renderParticipantsTable(res.participants || []);
+          renderMatriksKaos(res.participants || []);
+          renderMonitoringSekolah(res);
+          renderSpjPreview(res);
+        }
+      } catch (err) {
+        console.error("Gagal loadDashboardInitial:", err);
+      }
+    }
+
+    function refreshCurrentDashboard() {
+      loadDashboardInitial();
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: 'Data berhasil disegarkan!',
+        showConfirmButton: false,
+        timer: 1500
+      });
+    }
+
+    /**
+     * Switch Active Event
+     */
+    function populateTopbarEvents(events, activeId) {
+      const select = document.getElementById("selectTopbarEvent");
+      if (!select) return;
+
+      select.innerHTML = events.map(e => `
+        <option value="${escapeHtml(e.idKegiatan)}" ${e.idKegiatan === activeId ? 'selected' : ''}>
+          ${escapeHtml(e.namaKegiatan)} (${e.statusForm})
+        </option>
+      `).join("");
+    }
+
+    async function handleEventSwitch(eventId) {
+      if (!eventId) return;
+      activeEventId = eventId;
+      try {
+        const res = await callGasApi("getAdminDashboard", { pin: currentAdminPin, targetEventIdOrName: eventId });
+        if (res && res.success) {
+          currentDashboardData = res;
+          renderDashboardStats(res);
+          renderParticipantsTable(res.participants || []);
+          renderMatriksKaos(res.participants || []);
+          renderMonitoringSekolah(res);
+          renderSpjPreview(res);
+        }
+      } catch (e) {
+        console.error("Gagal switch event:", e);
+      }
+    }
+
+    /**
+     * Render Dashboard Stats
+     */
+    function renderDashboardStats(data) {
+      const s = data.settings || {};
+      const participants = data.participants || [];
+
+      document.getElementById("dashEventTitle").textContent = s.NAMA_KEGIATAN || "Kegiatan Aktif";
+      document.getElementById("dashEventSubtitle").textContent = s.SUB_KEGIATAN || "Bidang SMP DISDIKBUD Karanganyar";
+
+      const total = participants.length;
+      const hadir = participants.filter(p => String(p.statusKehadiran || "").toLowerCase() === "hadir").length;
+      const belum = total - hadir;
+      const pct = total > 0 ? Math.round((hadir / total) * 100) : 0;
+
+      const uniqueSekolah = new Set(participants.map(p => p.namaSekolah)).size;
+
+      document.getElementById("kpiTotalPeserta").textContent = total;
+      document.getElementById("kpiTotalHadir").textContent = hadir;
+      document.getElementById("kpiBelumHadir").textContent = belum;
+      document.getElementById("kpiTotalSekolah").textContent = uniqueSekolah;
+
+      const pBar = document.getElementById("progressBarHadir");
+      pBar.style.width = pct + "%";
+      pBar.textContent = pct + "%";
+
+      document.getElementById("lblHadirCount").textContent = hadir;
+      document.getElementById("lblTotalCount").textContent = total;
+
+      document.getElementById("lblDetailTanggal").textContent = s.TANGGAL_PELAKSANAAN || "-";
+      document.getElementById("lblDetailLokasi").textContent = s.LOKASI_KEGIATAN || "-";
+      document.getElementById("lblDetailKuota").textContent = s.KUOTA_PER_SEKOLAH || "-";
+      document.getElementById("lblDetailStatus").textContent = s.STATUS_FORM || "BUKA";
+    }
+
+    /**
+     * TAB 2: PRESENSI SCANNER QR CODE (KAMERA LAPTOP & HP)
+     */
+    async function detectAvailableCameras(showToast = false) {
+      try {
+        const devices = await Html5Qrcode.getCameras();
+        availableCameras = devices || [];
+
+        const select = document.getElementById("selectCameraDevice");
+        select.innerHTML = "";
+
+        if (availableCameras.length === 0) {
+          select.innerHTML = '<option value="">Kamera Tidak Terdeteksi</option>';
+        } else {
+          availableCameras.forEach((cam, idx) => {
+            const opt = document.createElement("option");
+            opt.value = cam.id;
+            opt.textContent = cam.label || `Kamera ${idx + 1}`;
+            select.appendChild(opt);
+          });
+        }
+
+        if (showToast) {
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'info',
+            title: `Terdeteksi ${availableCameras.length} kamera`,
+            showConfirmButton: false,
+            timer: 1500
+          });
+        }
+      } catch (err) {
+        console.warn("Gagal deteksi kamera:", err);
+      }
+    }
+
+    async function startScannerCameraAuto() {
+      const select = document.getElementById("selectCameraDevice");
+      let cameraId = select ? select.value : "";
+
+      if (!html5QrScanner) {
+        html5QrScanner = new Html5Qrcode("qrReader");
+      }
+
+      const config = { fps: 15, qrbox: { width: 250, height: 250 } };
+
+      try {
+        if (cameraId) {
+          await html5QrScanner.start(cameraId, config, onQrScanSuccess, () => {});
+        } else {
+          await html5QrScanner.start({ facingMode: "user" }, config, onQrScanSuccess, () => {});
+        }
+
+        document.getElementById("btnStartCamera").classList.add("d-none");
+        document.getElementById("btnStopCamera").classList.remove("d-none");
+      } catch (err) {
+        console.error("Gagal startScannerCameraAuto:", err);
+        // Fallback coba environment
+        try {
+          await html5QrScanner.start({ facingMode: "environment" }, config, onQrScanSuccess, () => {});
+          document.getElementById("btnStartCamera").classList.add("d-none");
+          document.getElementById("btnStopCamera").classList.remove("d-none");
+        } catch (e2) {
+          Swal.fire({
+            title: "Kamera Tidak Dapat Dibuka",
+            text: "Pastikan izin akses kamera sudah diberikan pada browser Anda.",
+            icon: "warning"
+          });
+        }
+      }
+    }
+
+    async function stopScannerCamera() {
+      if (html5QrScanner) {
+        try {
+          await html5QrScanner.stop();
+        } catch (e) {}
+      }
+      document.getElementById("btnStartCamera").classList.remove("d-none");
+      document.getElementById("btnStopCamera").classList.add("d-none");
+    }
+
+    function switchCameraFacingMode() {
+      if (availableCameras.length > 1) {
+        currentCameraIndex = (currentCameraIndex + 1) % availableCameras.length;
+        const select = document.getElementById("selectCameraDevice");
+        select.value = availableCameras[currentCameraIndex].id;
+        handleCameraDeviceChange(select.value);
+      }
+    }
+
+    async function handleCameraDeviceChange(camId) {
+      if (html5QrScanner && html5QrScanner.isScanning) {
+        await stopScannerCamera();
+        await startScannerCameraAuto();
+      }
+    }
+
+    function handleScanQrFromFile(input) {
+      if (!input.files || input.files.length === 0) return;
+      const file = input.files[0];
+
+      if (!html5QrScanner) {
+        html5QrScanner = new Html5Qrcode("qrReader");
+      }
+
+      html5QrScanner.scanFile(file, true)
+        .then(decodedText => onQrScanSuccess(decodedText))
+        .catch(err => {
+          Swal.fire({ title: "Gagal Membaca QR", text: "QR Code tidak ditemukan pada gambar tersebut.", icon: "error" });
+        });
+    }
+
+    async function onQrScanSuccess(decodedText) {
+      try {
+        const beep = document.getElementById("beepSuccess");
+        if (beep) beep.play();
+      } catch (e) {}
+
+      // Eksekusi Check-In ke Server
+      try {
+        const res = await callGasApi("checkInParticipant", {
+          regId: decodedText,
+          pin: currentAdminPin,
+          eventId: activeEventId
+        });
+
+        if (res && res.success) {
+          addRecentScanHistory(res.data, res.alreadyCheckedIn);
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: res.alreadyCheckedIn ? 'warning' : 'success',
+            title: res.alreadyCheckedIn ? 'Sudah Presensi Sebelumnya' : 'Presensi Berhasil: ' + (res.data?.nama || decodedText),
+            showConfirmButton: false,
+            timer: 2000
+          });
+          refreshCurrentDashboard();
+        } else {
+          Swal.fire({ title: "Gagal Presensi", text: res.message || "Peserta tidak ditemukan.", icon: "error" });
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function executeManualCheckIn() {
+      const input = document.getElementById("inputManualCheckIn");
+      const val = input.value.trim();
+      if (!val) return;
+
+      await onQrScanSuccess(val);
+      input.value = "";
+    }
+
+    function addRecentScanHistory(data, already) {
+      const box = document.getElementById("recentCheckInList");
+      if (!box) return;
+
+      const card = `
+        <div class="p-2.5 rounded-3 border mb-2 ${already ? 'bg-warning-subtle border-warning' : 'bg-success-subtle border-success'}">
+          <div class="d-flex justify-content-between align-items-center">
+            <strong class="text-dark">${escapeHtml(data?.nama || 'Peserta')}</strong>
+            <span class="badge ${already ? 'bg-warning text-dark' : 'bg-success text-white'}">${already ? 'Sudah Hadir' : 'Baru Hadir'}</span>
+          </div>
+          <div class="small text-muted">${escapeHtml(data?.sekolah || '-')} | ID: ${escapeHtml(data?.regId || '-')}</div>
+        </div>
+      `;
+      box.insertAdjacentHTML("afterbegin", card);
+    }
+
+    /**
+     * TAB 3: MANAJEMEN MULTI-KEGIATAN
+     */
+    function renderManajemenKegiatan(events) {
+      const tbody = document.getElementById("tbodyManajemenKegiatan");
+      if (!tbody) return;
+
+      if (!events || events.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">Belum ada kegiatan.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = events.map(ev => `
+        <tr>
+          <td class="font-monospace fw-bold text-primary">${escapeHtml(ev.idKegiatan)}</td>
+          <td>
+            <div class="fw-bold text-dark">${escapeHtml(ev.namaKegiatan)}</div>
+            <div class="text-muted small">${escapeHtml(ev.subKegiatan || '-')}</div>
+          </td>
+          <td>
+            <div>${escapeHtml(ev.tanggalPelaksanaan || '-')}</div>
+            <div class="text-muted small">${escapeHtml(ev.lokasiKegiatan || '-')}</div>
+          </td>
+          <td><span class="badge bg-light text-dark border">${escapeHtml(ev.kuotaPerSekolah)} / Sekolah</span></td>
+          <td>
+            <span class="badge bg-secondary-subtle text-secondary small">Kaos: ${ev.modulKaos}</span>
+            <span class="badge bg-secondary-subtle text-secondary small">Lengan: ${ev.modulLengan}</span>
+          </td>
+          <td>
+            <span class="badge ${ev.statusForm === 'BUKA' ? 'bg-success' : 'bg-danger'}">${ev.statusForm}</span>
+          </td>
+          <td class="text-center">
+            <button class="btn btn-outline-primary btn-sm rounded-pill px-2.5" onclick="openModalEditKegiatan('${escapeHtml(ev.idKegiatan)}')">
+              <i class="bi bi-pencil-fill"></i>
+            </button>
+            <button class="btn btn-outline-${ev.statusForm === 'BUKA' ? 'warning' : 'success'} btn-sm rounded-pill px-2.5" onclick="toggleEventStatus('${escapeHtml(ev.idKegiatan)}', '${ev.statusForm}')">
+              <i class="bi bi-power"></i>
+            </button>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    function openModalTambahKegiatan() {
+      document.getElementById("modalKegiatanTitle").textContent = "Tambah Kegiatan Baru";
+      document.getElementById("eventModalId").value = "";
+      document.getElementById("formEventModal").reset();
+      const modal = new bootstrap.Modal(document.getElementById("modalKegiatan"));
+      modal.show();
+    }
+
+    function openModalEditKegiatan(eventId) {
+      const ev = allEventsList.find(e => e.idKegiatan === eventId);
+      if (!ev) return;
+
+      document.getElementById("modalKegiatanTitle").textContent = "Edit Kegiatan: " + ev.idKegiatan;
+      document.getElementById("eventModalId").value = ev.idKegiatan;
+      document.getElementById("eventModalNama").value = ev.namaKegiatan;
+      document.getElementById("eventModalSub").value = ev.subKegiatan || "";
+      document.getElementById("eventModalStatus").value = ev.statusForm;
+      document.getElementById("eventModalKuota").value = ev.kuotaPerSekolah;
+      document.getElementById("eventModalTanggal").value = ev.tanggalPelaksanaan || "";
+      document.getElementById("eventModalLokasi").value = ev.lokasiKegiatan || "";
+
+      document.getElementById("switchModulKaos").checked = (ev.modulKaos === "ON");
+      document.getElementById("switchModulLengan").checked = (ev.modulLengan === "ON");
+      document.getElementById("switchModulGender").checked = (ev.modulGender === "ON");
+      document.getElementById("switchModulDarurat").checked = (ev.modulKontakDarurat === "ON");
+      document.getElementById("switchModulKesehatan").checked = (ev.modulKesehatan === "ON");
+
+      const modal = new bootstrap.Modal(document.getElementById("modalKegiatan"));
+      modal.show();
+    }
+
+    async function submitEventModal(e) {
+      e.preventDefault();
+      const eventData = {
+        idKegiatan: document.getElementById("eventModalId").value,
+        namaKegiatan: document.getElementById("eventModalNama").value.trim(),
+        subKegiatan: document.getElementById("eventModalSub").value.trim(),
+        statusForm: document.getElementById("eventModalStatus").value,
+        kuotaPerSekolah: document.getElementById("eventModalKuota").value,
+        tanggalPelaksanaan: document.getElementById("eventModalTanggal").value.trim(),
+        lokasiKegiatan: document.getElementById("eventModalLokasi").value.trim(),
+        modulKaos: document.getElementById("switchModulKaos").checked ? "ON" : "OFF",
+        modulLengan: document.getElementById("switchModulLengan").checked ? "ON" : "OFF",
+        modulGender: document.getElementById("switchModulGender").checked ? "ON" : "OFF",
+        modulKontakDarurat: document.getElementById("switchModulDarurat").checked ? "ON" : "OFF",
+        modulKesehatan: document.getElementById("switchModulKesehatan").checked ? "ON" : "OFF",
+        modulEticketPresensi: "ON"
+      };
+
+      try {
+        const res = await callGasApi("saveEvent", { eventData, pin: currentAdminPin });
+        if (res && res.success) {
+          bootstrap.Modal.getInstance(document.getElementById("modalKegiatan")).hide();
+          Swal.fire({ title: "Berhasil", text: "Kegiatan berhasil disimpan!", icon: "success" });
+          loadDashboardInitial();
+        } else {
+          Swal.fire({ title: "Gagal", text: res.message || "Gagal menyimpan kegiatan.", icon: "error" });
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function toggleEventStatus(eventId, curStatus) {
+      const newStatus = curStatus === "BUKA" ? "TUTUP" : "BUKA";
+      try {
+        const res = await callGasApi("toggleEventStatus", { eventId, newStatus, pin: currentAdminPin });
+        if (res && res.success) {
+          loadDashboardInitial();
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    /**
+     * TAB 4: REKAP KAOS & LOGISTIK
+     */
+    function renderMatriksKaos(participants) {
+      const sizes = ["S", "M", "L", "XL", "XXL", "XXXL"];
+      const matrix = {};
+      sizes.forEach(sz => {
+        matrix[sz] = { pendek: 0, panjang: 0, total: 0 };
+      });
+
+      participants.forEach(p => {
+        const sz = (p.ukuranKaos || "L").toUpperCase();
+        const isPanjang = String(p.panjangLengan || "").toLowerCase().includes("panjang");
+        if (matrix[sz]) {
+          if (isPanjang) matrix[sz].panjang++;
+          else matrix[sz].pendek++;
+          matrix[sz].total++;
+        }
+      });
+
+      let grandPendek = 0, grandPanjang = 0, grandTotal = 0;
+
+      const tbody = document.getElementById("tbodyMatriksKaos");
+      tbody.innerHTML = sizes.map(sz => {
+        const d = matrix[sz];
+        grandPendek += d.pendek;
+        grandPanjang += d.panjang;
+        grandTotal += d.total;
+
+        return `
+          <tr>
+            <td class="fw-bold">${sz}</td>
+            <td>${d.pendek}</td>
+            <td>${d.panjang}</td>
+            <td class="fw-bold text-primary">${d.total}</td>
+          </tr>
+        `;
+      }).join("");
+
+      document.getElementById("totKaosPendek").textContent = grandPendek;
+      document.getElementById("totKaosPanjang").textContent = grandPanjang;
+      document.getElementById("totKaosGrand").textContent = grandTotal;
+    }
+
+    function exportKaosToExcel() {
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.table_to_sheet(document.getElementById("tbodyMatriksKaos").parentElement);
+      XLSX.utils.book_append_sheet(wb, ws, "Rekap Kaos");
+      XLSX.writeFile(wb, "Rekap-Kaos-Kegiatan.xlsx");
+    }
+
+    /**
+     * TAB 5: MONITORING SEKOLAH
+     */
+    function renderMonitoringSekolah(data) {
+      const participants = data.participants || [];
+      const master = data.masterSekolah || [];
+
+      const registeredNpsn = new Set(participants.map(p => p.npsn));
+      const registeredCount = {};
+      participants.forEach(p => {
+        registeredCount[p.namaSekolah] = (registeredCount[p.namaSekolah] || 0) + 1;
+      });
+
+      const belum = master.filter(m => !registeredNpsn.has(m.npsn));
+      const sudah = Object.keys(registeredCount).map(sch => ({ nama: sch, count: registeredCount[sch] }));
+
+      document.getElementById("countBelumDaftar").textContent = belum.length;
+      document.getElementById("countSudahDaftar").textContent = sudah.length;
+
+      document.getElementById("tbodySekolahBelumDaftar").innerHTML = belum.map((b, i) => `
+        <tr><td>${i+1}</td><td class="fw-bold">${escapeHtml(b.nama)}</td><td>${escapeHtml(b.kecamatan)}</td></tr>
+      `).join("");
+
+      document.getElementById("tbodySekolahSudahDaftar").innerHTML = sudah.map((s, i) => `
+        <tr><td>${i+1}</td><td class="fw-bold">${escapeHtml(s.nama)}</td><td><span class="badge bg-success-subtle text-success">${s.count} Peserta</span></td></tr>
+      `).join("");
+    }
+
+    function openModalWaBlastSekolah() {
+      const belumRows = Array.from(document.querySelectorAll("#tbodySekolahBelumDaftar tr td.fw-bold")).map(el => el.textContent);
+      const text = `*PENGINGAT RESMI PENDAFTARAN KEGIATAN KEDINASAN*\n` +
+        `Bidang SMP DISDIKBUD Kabupaten Karanganyar\n\n` +
+        `Yth. Bapak/Ibu Kepala SMP se-Kabupaten Karanganyar,\n` +
+        `Diberitahukan bahwa pendaftaran kegiatan sedang dibuka. Satuan pendidikan yang belum mendaftar (${belumRows.length} sekolah) dimohon segera mengirim perwakilan melalui tautan berikut:\n` +
+        `https://dikbudkra.github.io/formgiatsmp/\n\n` +
+        `Terima kasih.`;
+
+      const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+      window.open(url, "_blank");
+    }
+
+    /**
+     * TAB 6: DATA SELURUH PESERTA
+     */
+    function renderParticipantsTable(participants) {
+      const tbody = document.getElementById("tbodyPesertaLengkap");
+      if (!tbody) return;
+
+      if (!participants || participants.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-muted">Belum ada data peserta terdaftar.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = participants.map((p, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td class="font-monospace fw-bold text-primary">${escapeHtml(p.regId || '-')}</td>
+          <td>
+            <div class="fw-bold text-dark">${escapeHtml(p.namaLengkap || p.nama || '-')}</div>
+            <div class="text-muted small">${escapeHtml(p.nip || '-')}</div>
+          </td>
+          <td>${escapeHtml(p.namaSekolah || p.sekolah || '-')}</td>
+          <td>${escapeHtml(p.jabatan || '-')} (${escapeHtml(p.statusKepegawaian || '-')})</td>
+          <td><span class="badge bg-light text-dark border">${escapeHtml(p.ukuranKaos || '-')} (${escapeHtml(p.panjangLengan || '-')})</span></td>
+          <td>
+            <span class="badge ${String(p.statusKehadiran).toLowerCase() === 'hadir' ? 'bg-success' : 'bg-warning text-dark'}">
+              ${escapeHtml(p.statusKehadiran || 'Belum')}
+            </span>
+          </td>
+          <td class="text-center">
+            <button class="btn btn-outline-danger btn-sm rounded-pill p-1 px-2" onclick="confirmDeleteParticipant('${escapeHtml(p.regId)}')">
+              <i class="bi bi-trash"></i>
+            </button>
+          </td>
+        </tr>
+      `).join("");
+    }
+
+    function filterTablePeserta(val) {
+      const q = (val || document.getElementById("searchTablePeserta").value).toLowerCase();
+      const statusFilter = document.getElementById("filterStatusHadirTable").value.toLowerCase();
+
+      const participants = currentDashboardData?.participants || [];
+      const filtered = participants.filter(p => {
+        const matchQ = !q || [p.regId, p.namaLengkap, p.namaSekolah, p.nip].some(x => String(x || "").toLowerCase().includes(q));
+        const matchStatus = !statusFilter || (statusFilter === "hadir" ? String(p.statusKehadiran).toLowerCase() === "hadir" : String(p.statusKehadiran).toLowerCase() !== "hadir");
+        return matchQ && matchStatus;
+      });
+
+      renderParticipantsTable(filtered);
+    }
+
+    async function confirmDeleteParticipant(regId) {
+      const { value: confirm } = await Swal.fire({
+        title: "Hapus Peserta?",
+        text: `Apakah Anda yakin ingin menghapus peserta dengan ID ${regId}?`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#ef4444",
+        confirmButtonText: "Ya, Hapus!"
+      });
+
+      if (confirm) {
+        try {
+          const res = await callGasApi("deleteParticipant", { regId, pin: currentAdminPin });
+          if (res && res.success) {
+            Swal.fire({ title: "Terhapus", text: "Data peserta berhasil dihapus.", icon: "success" });
+            loadDashboardInitial();
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+
+    function exportParticipantsToXLSX() {
+      const participants = currentDashboardData?.participants || [];
+      const ws = XLSX.utils.json_to_sheet(participants);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Peserta");
+      XLSX.writeFile(wb, `Data-Peserta-${activeEventId || "Export"}.xlsx`);
+    }
+
+    function exportParticipantsToCSV() {
+      const participants = currentDashboardData?.participants || [];
+      const ws = XLSX.utils.json_to_sheet(participants);
+      const csv = XLSX.utils.sheet_to_csv(ws);
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `Data-Peserta-${activeEventId || "Export"}.csv`;
+      link.click();
+    }
+
+    /**
+     * TAB 7: DOKUMEN SPJ GENERATOR
+     */
+    function renderSpjPreview(data) {
+      const s = data.settings || {};
+      const participants = data.participants || [];
+
+      document.getElementById("spjPreviewEventName").textContent = s.NAMA_KEGIATAN || "KEGIATAN BIDANG SMP";
+      document.getElementById("spjPreviewEventSchedule").textContent = `${s.LOKASI_KEGIATAN || 'Karanganyar'} | ${s.TANGGAL_PELAKSANAAN || '2026'}`;
+
+      const tbody = document.getElementById("tbodySpjPreview");
+      if (!tbody) return;
+
+      tbody.innerHTML = participants.map((p, i) => `
+        <tr>
+          <td class="text-center">${i + 1}</td>
+          <td class="fw-bold">${escapeHtml(p.namaLengkap || p.nama)}</td>
+          <td>${escapeHtml(p.nip || '-')}<br><small class="text-muted">${escapeHtml(p.golongan || '-')}</small></td>
+          <td>${escapeHtml(p.namaSekolah || p.sekolah)}</td>
+          <td class="text-center fw-bold">${escapeHtml(p.ukuranKaos || '-')}</td>
+          <td style="height: 38px;">${i + 1}. ....................</td>
+        </tr>
+      `).join("");
+    }
+
+    function printSpjDocument() {
+      window.print();
+    }
+
+    function downloadSpjExcel() {
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.table_to_sheet(document.getElementById("printableSpjArea").querySelector("table"));
+      XLSX.utils.book_append_sheet(wb, ws, "Daftar Hadir SPJ");
+      XLSX.writeFile(wb, `Daftar-Hadir-SPJ-${activeEventId || "Kegiatan"}.xlsx`);
+    }
+
+    /**
+     * TAB 8: ASISTEN AI GEMINI
+     */
+    async function submitAiQuestion() {
+      const input = document.getElementById("inputAiQuestion");
+      const q = input.value.trim();
+      if (!q) return;
+
+      const container = document.getElementById("chatAiContainer");
+      container.insertAdjacentHTML("beforeend", `
+        <div class="p-3 bg-primary text-white rounded-3 shadow-sm ms-auto text-end small" style="max-width: 80%;">
+          ${escapeHtml(q)}
+        </div>
+      `);
+      input.value = "";
+
+      const loadingId = "aiLoading" + Date.now();
+      container.insertAdjacentHTML("beforeend", `
+        <div id="${loadingId}" class="p-3 bg-white rounded-3 shadow-sm border small" style="max-width: 80%;">
+          <span class="spinner-border spinner-border-sm me-2"></span> Menganalisis data kegiatan...
+        </div>
+      `);
+      container.scrollTop = container.scrollHeight;
+
+      try {
+        const res = await callGasApi("askGemini", { question: q, pin: currentAdminPin });
+        const loadEl = document.getElementById(loadingId);
+        if (loadEl) {
+          loadEl.innerHTML = `<strong>🤖 Asisten AI:</strong><br>${(res.answer || res.message || "Tidak ada jawaban.").replace(/\n/g, "<br>")}`;
+        }
+      } catch (e) {
+        const loadEl = document.getElementById(loadingId);
+        if (loadEl) loadEl.innerHTML = '<span class="text-danger">Gagal menghubungi Gemini AI.</span>';
+      }
+      container.scrollTop = container.scrollHeight;
+    }
+
+    /**
+     * TAB 9: PENGATURAN & DATABASE
+     */
+    async function handleChangePin(e) {
+      e.preventDefault();
+      const newPin = document.getElementById("inputNewPin").value.trim();
+      const confirmPin = document.getElementById("inputConfirmPin").value.trim();
+
+      if (newPin !== confirmPin) {
+        Swal.fire({ title: "PIN Tidak Cocok", text: "Konfirmasi PIN baru tidak sesuai.", icon: "error" });
+        return;
+      }
+
+      try {
+        const res = await callGasApi("saveSettings", {
+          settings: { ADMIN_PIN: newPin },
+          pin: currentAdminPin
+        });
+
+        if (res && res.success) {
+          currentAdminPin = newPin;
+          sessionStorage.setItem("marshal_pin", newPin);
+          Swal.fire({ title: "Berhasil", text: "PIN Panitia berhasil diperbarui!", icon: "success" });
+          document.getElementById("inputNewPin").value = "";
+          document.getElementById("inputConfirmPin").value = "";
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    async function runDatabaseSetup() {
+      Swal.fire({
+        title: "Menyiapkan Database...",
+        text: "Sedang menjalankan migrasi sheet Master_Kegiatan dan kolom Data_Peserta...",
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+      });
+
+      try {
+        const res = await callGasApi("setupDatabase", { pin: currentAdminPin });
+        Swal.fire({
+          title: "Setup Selesai!",
+          text: res.message || "Database Google Spreadsheet telah 100% siap untuk multi-kegiatan.",
+          icon: "success"
+        });
+        loadDashboardInitial();
+      } catch (err) {
+        Swal.fire({ title: "Gagal Setup", text: err.toString(), icon: "error" });
+      }
+    }
+
+    // Helper
+    function escapeHtml(str) {
+      if (!str) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+  </script>
+</body>
+</html>

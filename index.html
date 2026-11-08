@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Portal Pendaftaran Kegiatan - Disdikbud Karanganyar</title>
+  
+  <!-- Meta SEO & Favicon -->
+  <meta name="description" content="Portal Resmi Pendaftaran Kegiatan Kedinasan Bidang SMP Dinas Pendidikan dan Kebudayaan Kabupaten Karanganyar">
+  <link rel="icon" type="image/png" href="https://i.ibb.co.com/KpqwmHd6/Logo-Jemprot-2-1-removebg-preview.png">
+
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Bootstrap 5.3.2 CSS & Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+
+  <!-- QR Code & Canvas Libraries for E-Ticket -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <style>
+    :root {
+      --primary-color: #1e3a8a;
+      --primary-dark: #0f172a;
+      --primary-accent: #3b82f6;
+      --secondary-color: #f59e0b;
+      --bg-light: #f8fafc;
+      --card-border: #e2e8f0;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-light);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Header Hero */
+    .header-hero {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 60%, #1e40af 100%);
+      color: #ffffff;
+      padding: 1.5rem 0 2rem;
+      box-shadow: 0 4px 20px rgba(15, 23, 42, 0.15);
+      position: relative;
+    }
+
+    .header-hero::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 6px;
+      background: linear-gradient(90deg, #f59e0b, #3b82f6, #10b981);
+    }
+
+    .brand-logo-glow {
+      filter: drop-shadow(0 2px 8px rgba(255, 255, 255, 0.25));
+    }
+
+    /* Cards Styling */
+    .card-modern {
+      background: #ffffff;
+      border: 1px solid var(--card-border);
+      border-radius: 1rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+      transition: all 0.25s ease-in-out;
+    }
+
+    .card-modern:hover {
+      box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+    }
+
+    .event-card {
+      border: 2px solid #e2e8f0;
+      border-radius: 1.25rem;
+      background: #ffffff;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .event-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--primary-accent);
+      box-shadow: 0 12px 24px -4px rgba(59, 130, 246, 0.15);
+    }
+
+    .event-card-header {
+      padding: 1.5rem 1.5rem 1rem;
+      background: #f8fafc;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .event-card-body {
+      padding: 1.5rem;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    /* Form Controls */
+    .form-label {
+      font-weight: 600;
+      font-size: 0.88rem;
+      color: #334155;
+      margin-bottom: 0.4rem;
+    }
+
+    .form-control, .form-select {
+      border-radius: 0.65rem;
+      border: 1.5px solid #cbd5e1;
+      padding: 0.65rem 0.9rem;
+      font-size: 0.92rem;
+      transition: all 0.2s ease;
+    }
+
+    .form-control:focus, .form-select:focus {
+      border-color: var(--primary-accent);
+      box-shadow: 0 0 0 3.5px rgba(59, 130, 246, 0.15);
+    }
+
+    /* Radio / Selection Pills */
+    .pill-selector {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .pill-radio {
+      display: none;
+    }
+
+    .pill-label {
+      padding: 0.55rem 1.1rem;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 2rem;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #475569;
+      background-color: #ffffff;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      user-select: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .pill-label:hover {
+      border-color: #94a3b8;
+      background-color: #f1f5f9;
+    }
+
+    .pill-radio:checked + .pill-label {
+      background-color: var(--primary-color);
+      border-color: var(--primary-color);
+      color: #ffffff;
+      box-shadow: 0 4px 10px rgba(30, 58, 138, 0.25);
+    }
+
+    /* School Dropdown Suggestion */
+    .dropdown-search-box {
+      position: relative;
+    }
+
+    .school-list-container {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      max-height: 280px;
+      overflow-y: auto;
+      background: #ffffff;
+      border: 1.5px solid #cbd5e1;
+      border-top: none;
+      border-radius: 0 0 0.75rem 0.75rem;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+      z-index: 1050;
+      display: none;
+    }
+
+    .school-item {
+      padding: 0.7rem 1rem;
+      border-bottom: 1px solid #f1f5f9;
+      cursor: pointer;
+      font-size: 0.88rem;
+      transition: background-color 0.15s ease;
+    }
+
+    .school-item:hover, .school-item.active {
+      background-color: #f8fafc;
+      color: var(--primary-accent);
+      font-weight: 600;
+    }
+
+    /* E-Ticket Styling */
+    .ticket-container {
+      background: #ffffff;
+      border: 2px dashed #94a3b8;
+      border-radius: 1.25rem;
+      overflow: hidden;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    }
+
+    .ticket-header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+      color: #ffffff;
+      padding: 1.25rem;
+      text-align: center;
+    }
+
+    .ticket-stub {
+      background: #f8fafc;
+      border-top: 2px dashed #cbd5e1;
+      padding: 1.25rem;
+    }
+
+    /* Section Step Banner */
+    .step-banner {
+      background: #f1f5f9;
+      border-left: 4px solid var(--primary-accent);
+      padding: 0.6rem 1rem;
+      border-radius: 0 0.5rem 0.5rem 0;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #1e293b;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Spinner Overlay */
+    #loadingOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== LOADING OVERLAY ==================== -->
+  <div id="loadingOverlay">
+    <div class="spinner-border text-warning mb-3" style="width: 3.5rem; height: 3.5rem;" role="status"></div>
+    <h5 class="fw-bold tracking-wide">Memuat Sistem JeMPROT...</h5>
+    <p class="text-white-50 small mb-0">Sinkronisasi data dengan Bidang SMP DISDIKBUD Karanganyar</p>
+  </div>
+
+  <!-- ==================== HEADER HERO ==================== -->
+  <header class="header-hero">
+    <div class="container">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div class="d-flex align-items-center gap-3">
+          <img src="https://i.ibb.co.com/KpqwmHd6/Logo-Jemprot-2-1-removebg-preview.png" alt="Logo JeMPROT" style="height: 48px; object-fit: contain;" class="brand-logo-glow">
+          <div>
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge bg-warning text-dark fw-bold px-2 py-0.5 rounded-pill" style="font-size: 0.72rem;">RESMI</span>
+              <span class="text-white-50 small text-uppercase tracking-wider">Bidang SMP</span>
+            </div>
+            <h1 class="h5 fw-extrabold mb-0 text-white tracking-tight">DISDIKBUD KABUPATEN KARANGANYAR</h1>
+          </div>
+        </div>
+
+        <div>
+          <a href="./marshal/" class="btn btn-outline-light btn-sm rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-sm">
+            <i class="bi bi-shield-lock-fill text-warning"></i>
+            <span>Portal Panitia</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== MAIN CONTENT ==================== -->
+  <main class="container my-4 my-md-5 flex-grow-1">
+
+    <!-- 1. MULTI-EVENT CARDS (TAMPIL DIAWAL WALAU HANYA 1 KEGIATAN) -->
+    <div id="sectionMultiEventSelector">
+      <div class="card card-modern p-4 p-md-5">
+        <div class="text-center mb-4">
+          <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-3 py-1.5 rounded-pill fw-bold text-uppercase mb-2" style="font-size: 0.75rem;">
+            <i class="bi bi-grid-fill me-1"></i> Formulir Kegiatan Kedinasan
+          </span>
+          <h2 class="h3 fw-bold text-dark mb-1">Pilih Kegiatan yang Ingin Anda Ikuti</h2>
+          <p class="text-muted small mx-auto" style="max-width: 650px;">
+            Silakan pilih salah satu kartu kegiatan aktif di bawah ini untuk mengisi formulir pendaftaran resmi perwakilan satuan pendidikan:
+          </p>
+        </div>
+
+        <div class="row g-4 justify-content-center" id="multiEventCardsRow">
+          <!-- Kartu kegiatan dirender secara dinamis oleh JavaScript -->
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. FORMULIR PENDAFTARAN PESERTA (TERSEMBUNYI SAAT LOAD AWAL) -->
+    <div id="boxFormAktif" class="d-none">
+      
+      <!-- Tombol Kembali ke Pilihan Kegiatan (Bagian Atas) -->
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3 py-1.5 fw-semibold shadow-sm" onclick="showDashboardCards()">
+          <i class="bi bi-arrow-left me-1"></i> Kembali ke Pilihan Kegiatan
+        </button>
+        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 rounded-pill fw-semibold small" id="badgeFormStatus">
+          Status Form: BUKA
+        </span>
+      </div>
+
+      <!-- Banner Header Info Kegiatan -->
+      <div class="card card-modern p-4 mb-4 border-primary" style="background: linear-gradient(135deg, #ffffff 0%, #f0f7ff 100%);">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+          <div>
+            <span class="badge bg-primary text-white px-2.5 py-1 rounded-pill fw-semibold text-uppercase mb-2" style="font-size: 0.72rem;" id="formEventIdBadge">
+              KEGIATAN
+            </span>
+            <h3 class="h4 fw-bold text-dark mb-1" id="formEventTitle">Nama Kegiatan</h3>
+            <p class="text-muted small mb-2" id="formEventSubtitle">Sub Kegiatan / Keterangan</p>
+            
+            <div class="d-flex flex-wrap gap-3 text-secondary small mt-2">
+              <div class="d-flex align-items-center gap-1.5">
+                <i class="bi bi-calendar-event text-primary"></i>
+                <span id="formEventDate">Jadwal Resmi</span>
+              </div>
+              <div class="d-flex align-items-center gap-1.5">
+                <i class="bi bi-geo-alt-fill text-danger"></i>
+                <span id="formEventLocation">Karanganyar</span>
+              </div>
+              <div class="d-flex align-items-center gap-1.5">
+                <i class="bi bi-people-fill text-success"></i>
+                <span>Kuota: <strong id="formEventQuota">1 Peserta</strong> per Sekolah</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form Card -->
+      <div class="card card-modern p-4 p-md-5">
+        <form id="registrationForm" onsubmit="handleFormSubmit(event)">
+          <input type="hidden" id="formEventId" name="idKegiatan" value="">
+          <input type="hidden" id="formEventName" name="namaKegiatan" value="">
+
+          <!-- SEKSI 1: ASAL SATUAN PENDIDIKAN -->
+          <div class="step-banner">
+            <i class="bi bi-building"></i>
+            <span>1. Asal Satuan Pendidikan (SMP)</span>
+          </div>
+
+          <div class="mb-4 dropdown-search-box">
+            <label class="form-label" for="schoolSearchInput">
+              Nama Satuan Pendidikan <span class="text-danger">*</span>
+            </label>
+            <div class="input-group">
+              <span class="input-group-text bg-light text-muted"><i class="bi bi-search"></i></span>
+              <input type="text" class="form-control" id="schoolSearchInput" placeholder="Ketik nama sekolah atau NPSN (Contoh: SMPN 1 Karanganyar)..." autocomplete="off" onfocus="openSchoolDropdown()" oninput="filterSchoolList(this.value)">
+              <button class="btn btn-outline-secondary" type="button" onclick="toggleSchoolDropdown()">
+                <i class="bi bi-chevron-down"></i>
+              </button>
+            </div>
+            <div id="schoolListContainer" class="school-list-container"></div>
+            
+            <input type="hidden" id="selectedSchoolName" name="namaSekolah" required>
+            <input type="hidden" id="selectedSchoolNpsn" name="npsn" required>
+            <input type="hidden" id="selectedSchoolStatus" name="statusSekolah">
+            <input type="hidden" id="selectedSchoolKecamatan" name="kecamatan">
+
+            <div id="selectedSchoolBadge" class="mt-2 d-none">
+              <div class="alert alert-info py-2 px-3 d-flex align-items-center justify-content-between mb-0">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="bi bi-check-circle-fill text-primary fs-5"></i>
+                  <div>
+                    <strong id="badgeSchoolName" class="text-dark"></strong>
+                    <div class="small text-muted">
+                      NPSN: <span id="badgeSchoolNpsn"></span> | <span id="badgeSchoolStatus"></span> | Kec. <span id="badgeSchoolKecamatan"></span>
+                    </div>
+                  </div>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="resetSchoolSelection()">
+                  <i class="bi bi-x-lg"></i> Ganti
+                </button>
+              </div>
+            </div>
+            <div id="quotaWarningAlert" class="mt-2 d-none"></div>
+          </div>
+
+          <!-- SEKSI 2: STATUS KEPEGAWAIAN -->
+          <div class="step-banner">
+            <i class="bi bi-person-badge"></i>
+            <span>2. Status Kepegawaian &amp; Jabatan</span>
+          </div>
+
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label class="form-label">Status Kepegawaian <span class="text-danger">*</span></label>
+              <div class="pill-selector">
+                <input type="radio" class="pill-radio" id="statusPns" name="statusKepegawaian" value="PNS" onchange="handleStatusPegawaiChange('PNS')" required>
+                <label class="pill-label" for="statusPns"><i class="bi bi-award"></i> PNS</label>
+
+                <input type="radio" class="pill-radio" id="statusPppk" name="statusKepegawaian" value="PPPK" onchange="handleStatusPegawaiChange('PPPK')">
+                <label class="pill-label" for="statusPppk"><i class="bi bi-award-fill"></i> PPPK</label>
+
+                <input type="radio" class="pill-radio" id="statusNonAsn" name="statusKepegawaian" value="Non-ASN" onchange="handleStatusPegawaiChange('Non-ASN')">
+                <label class="pill-label" for="statusNonAsn"><i class="bi bi-person"></i> Non-ASN / Honorer</label>
+              </div>
+            </div>
+
+            <div class="col-md-6" id="boxJabatan">
+              <label class="form-label" for="inputJabatan">Jabatan / Peran di Satuan Pendidikan <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="inputJabatan" name="jabatan" placeholder="Contoh: Kepala Sekolah / Guru Pembina / Staf" required>
+            </div>
+
+            <!-- Dynamic NIP & Golongan for ASN -->
+            <div class="col-md-6 d-none" id="boxNip">
+              <label class="form-label" for="inputNip">NIP (Nomor Induk Pegawai) <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="inputNip" name="nip" placeholder="Contoh: 198501012010011001" maxlength="25">
+            </div>
+
+            <div class="col-md-6 d-none" id="boxGolongan">
+              <label class="form-label" for="selectGolongan">Pangkat / Golongan Ruang <span class="text-danger">*</span></label>
+              <select class="form-select" id="selectGolongan" name="golongan" onchange="handleGolonganChange(this.value)">
+                <option value="">-- Pilih Golongan Ruang --</option>
+                <optgroup label="Golongan IV (Pembina)">
+                  <option value="IV/e|Pembina Utama">IV/e - Pembina Utama</option>
+                  <option value="IV/d|Pembina Utama Madya">IV/d - Pembina Utama Madya</option>
+                  <option value="IV/c|Pembina Utama Muda">IV/c - Pembina Utama Muda</option>
+                  <option value="IV/b|Pembina Tingkat I">IV/b - Pembina Tingkat I</option>
+                  <option value="IV/a|Pembina">IV/a - Pembina</option>
+                </optgroup>
+                <optgroup label="Golongan III (Penata)">
+                  <option value="III/d|Penata Tingkat I">III/d - Penata Tingkat I</option>
+                  <option value="III/c|Penata">III/c - Penata</option>
+                  <option value="III/b|Penata Muda Tingkat I">III/b - Penata Muda Tingkat I</option>
+                  <option value="III/a|Penata Muda">III/a - Penata Muda</option>
+                </optgroup>
+                <optgroup label="Golongan II (Pengatur)">
+                  <option value="II/d|Pengatur Tingkat I">II/d - Pengatur Tingkat I</option>
+                  <option value="II/c|Pengatur">II/c - Pengatur</option>
+                  <option value="II/b|Pengatur Muda Tingkat I">II/b - Pengatur Muda Tingkat I</option>
+                  <option value="II/a|Pengatur Muda">II/a - Pengatur Muda</option>
+                </optgroup>
+                <optgroup label="Golongan IX - XVII (PPPK)">
+                  <option value="PPPK Gol IX|Ahli Pertama">PPPK Golongan IX - Ahli Pertama</option>
+                  <option value="PPPK Gol X|Ahli Muda">PPPK Golongan X - Ahli Muda</option>
+                  <option value="PPPK Gol XI|Ahli Madya">PPPK Golongan XI - Ahli Madya</option>
+                </optgroup>
+              </select>
+              <input type="hidden" id="inputPangkat" name="pangkat" value="">
+            </div>
+          </div>
+
+          <!-- SEKSI 3: DATA PRIBADI PESERTA -->
+          <div class="step-banner">
+            <i class="bi bi-person-circle"></i>
+            <span>3. Identitas Lengkap Peserta</span>
+          </div>
+
+          <div class="row g-3 mb-4">
+            <div class="col-md-7">
+              <label class="form-label" for="inputNamaLengkap">
+                Nama Lengkap &amp; Gelar <span class="text-danger">*</span>
+              </label>
+              <input type="text" class="form-control" id="inputNamaLengkap" name="namaLengkap" placeholder="Contoh: Drs. Budi Santoso, M.Pd." required>
+              <div class="form-text">Tuliskan nama lengkap beserta gelar resmi untuk keperluan sertifikat &amp; administrasi SPJ.</div>
+            </div>
+
+            <!-- Modul Gender (Dinamis ON/OFF) -->
+            <div class="col-md-5" id="modulGenderContainer">
+              <label class="form-label">Jenis Kelamin <span class="text-danger">*</span></label>
+              <div class="pill-selector">
+                <input type="radio" class="pill-radio" id="genderL" name="jenisKelamin" value="Laki-laki" checked>
+                <label class="pill-label" for="genderL"><i class="bi bi-gender-male"></i> Laki-laki</label>
+
+                <input type="radio" class="pill-radio" id="genderP" name="jenisKelamin" value="Perempuan">
+                <label class="pill-label" for="genderP"><i class="bi bi-gender-female"></i> Perempuan</label>
+              </div>
+            </div>
+          </div>
+
+          <!-- SEKSI 4: MODUL KAOS & LOGISTIK (DINAMIS ON/OFF) -->
+          <div id="modulKaosContainer" class="mb-4">
+            <div class="step-banner">
+              <i class="bi bi-tag"></i>
+              <span>4. Modul Perlengkapan Kaos</span>
+            </div>
+
+            <div class="row g-3">
+              <div class="col-md-7">
+                <label class="form-label">Ukuran Kaos <span class="text-danger">*</span></label>
+                <div class="pill-selector">
+                  <input type="radio" class="pill-radio" id="kaosS" name="ukuranKaos" value="S">
+                  <label class="pill-label" for="kaosS">S</label>
+
+                  <input type="radio" class="pill-radio" id="kaosM" name="ukuranKaos" value="M">
+                  <label class="pill-label" for="kaosM">M</label>
+
+                  <input type="radio" class="pill-radio" id="kaosL" name="ukuranKaos" value="L" checked>
+                  <label class="pill-label" for="kaosL">L</label>
+
+                  <input type="radio" class="pill-radio" id="kaosXL" name="ukuranKaos" value="XL">
+                  <label class="pill-label" for="kaosXL">XL</label>
+
+                  <input type="radio" class="pill-radio" id="kaosXXL" name="ukuranKaos" value="XXL">
+                  <label class="pill-label" for="kaosXXL">XXL</label>
+
+                  <input type="radio" class="pill-radio" id="kaosXXXL" name="ukuranKaos" value="XXXL">
+                  <label class="pill-label" for="kaosXXXL">XXXL</label>
+                </div>
+              </div>
+
+              <!-- Modul Panjang Lengan (Hanya jika Kaos ON) -->
+              <div class="col-md-5" id="modulLenganContainer">
+                <label class="form-label">Pilihan Panjang Lengan <span class="text-danger">*</span></label>
+                <div class="pill-selector">
+                  <input type="radio" class="pill-radio" id="lenganPendek" name="panjangLengan" value="Lengan Pendek" checked>
+                  <label class="pill-label" for="lenganPendek">Pendek</label>
+
+                  <input type="radio" class="pill-radio" id="lenganPanjang" name="panjangLengan" value="Lengan Panjang">
+                  <label class="pill-label" for="lenganPanjang">Panjang / Hijab</label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SEKSI 5: KONTAK & DARURAT -->
+          <div class="step-banner">
+            <i class="bi bi-telephone"></i>
+            <span>5. Kontak WhatsApp &amp; Darurat</span>
+          </div>
+
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label class="form-label" for="inputNoWa">
+                Nomor WhatsApp Peserta <span class="text-danger">*</span>
+              </label>
+              <div class="input-group">
+                <span class="input-group-text bg-light"><i class="bi bi-whatsapp text-success"></i></span>
+                <input type="tel" class="form-control" id="inputNoWa" name="noWa" placeholder="Contoh: 081234567890" required oninput="formatWhatsAppNumber(this)">
+              </div>
+              <div class="form-text">Pastikan aktif untuk menerima E-Ticket dan info penting panitia.</div>
+            </div>
+
+            <!-- Modul Kontak Darurat (Dinamis ON/OFF) -->
+            <div class="col-md-6" id="modulKontakDaruratContainer">
+              <div class="row g-2">
+                <div class="col-6">
+                  <label class="form-label" for="inputDaruratNama">Kontak Darurat (Nama)</label>
+                  <input type="text" class="form-control" id="inputDaruratNama" name="kontakDaruratNama" placeholder="Nama kerabat/keluarga">
+                </div>
+                <div class="col-6">
+                  <label class="form-label" for="inputDaruratHp">No. HP Darurat</label>
+                  <input type="tel" class="form-control" id="inputDaruratHp" name="kontakDaruratHp" placeholder="08xxxxxxxxxx">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SEKSI 6: RIWAYAT KESEHATAN (DINAMIS ON/OFF) -->
+          <div id="modulKesehatanContainer" class="mb-4">
+            <div class="step-banner">
+              <i class="bi bi-heart-pulse"></i>
+              <span>6. Riwayat Kesehatan &amp; Alergi (Opsional)</span>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="inputRiwayatKesehatan">
+                Catatan Penyakit Khusus / Alergi Makanan / Kondisi Medis
+              </label>
+              <textarea class="form-control" id="inputRiwayatKesehatan" name="riwayatPenyakit" rows="2" placeholder="Tuliskan jika memiliki riwayat asma, maag kronis, diabetes, hipertensi, atau alergi makanan tertentu..."></textarea>
+            </div>
+          </div>
+
+          <!-- TOMBOL SUBMIT & KEMBALI (BAGIAN BAWAH) -->
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 pt-3 border-top mt-4">
+            <button type="button" class="btn btn-light rounded-pill px-4 py-2.5 fw-semibold border shadow-sm" onclick="showDashboardCards()">
+              <i class="bi bi-arrow-left me-1"></i> Kembali ke Pilihan Kegiatan
+            </button>
+
+            <button type="submit" class="btn btn-primary rounded-pill px-5 py-2.5 fw-bold shadow-lg" id="btnSubmitForm">
+              <i class="bi bi-send-check-fill me-1.5"></i> Kirim Pendaftaran Sekarang
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ==================== MODAL SUCCESS & E-TICKET ==================== -->
+  <div class="modal fade" id="modalETicket" tabindex="-1" aria-labelledby="modalETicketLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+        
+        <div class="modal-header bg-primary text-white py-3">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-qr-code-scan fs-4 text-warning"></i>
+            <div>
+              <h5 class="modal-title fw-bold mb-0" id="modalETicketLabel">Pendaftaran Berhasil! E-Ticket Terbit</h5>
+              <small class="text-white-50">Simpan atau screenshot tiket ini untuk presensi di lokasi</small>
+            </div>
+          </div>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body p-4 bg-light">
+          <!-- Canvas Container E-Ticket Ganda -->
+          <div id="eTicketDoubleContainer" class="ticket-container bg-white p-4">
+            <div class="row g-4 align-items-center">
+              
+              <!-- Bagian Kiri: Info Peserta -->
+              <div class="col-md-7 border-end-md">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                  <span class="badge bg-primary px-2.5 py-1 rounded-pill fw-bold" id="ticketEventBadge">EVENT</span>
+                  <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill fw-bold">TERDAFTAR</span>
+                </div>
+
+                <h4 class="fw-bold text-dark mb-1" id="ticketNamaPeserta">Nama Peserta</h4>
+                <p class="text-muted small mb-2" id="ticketSekolahPeserta">SMP Negeri 1 Karanganyar</p>
+
+                <div class="bg-light p-3 rounded-3 small mb-3">
+                  <div class="row g-1">
+                    <div class="col-5 text-muted">ID Registrasi:</div>
+                    <div class="col-7 fw-bold font-monospace text-primary" id="ticketRegId">-</div>
+
+                    <div class="col-5 text-muted">Kegiatan:</div>
+                    <div class="col-7 fw-semibold" id="ticketNamaKegiatan">-</div>
+
+                    <div class="col-5 text-muted">Tanggal:</div>
+                    <div class="col-7" id="ticketTanggal">-</div>
+
+                    <div class="col-5 text-muted">Ukuran Kaos:</div>
+                    <div class="col-7 fw-bold text-dark" id="ticketKaos">-</div>
+                  </div>
+                </div>
+
+                <div class="alert alert-warning py-1.5 px-3 mb-0 small border-warning-subtle text-dark">
+                  <i class="bi bi-info-circle-fill text-warning me-1"></i> Tunjukkan QR Code ini kepada panitia saat kedatangan di lokasi kegiatan.
+                </div>
+              </div>
+
+              <!-- Bagian Kanan: QR Code Box -->
+              <div class="col-md-5 text-center">
+                <div class="p-3 bg-light rounded-4 d-inline-block border">
+                  <div id="qrcodeWrapper" class="d-flex justify-content-center p-2 bg-white rounded-3"></div>
+                  <div class="font-monospace fw-bold text-dark small mt-2" id="ticketQrIdText">-</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer bg-white border-top p-3 d-flex flex-wrap justify-content-between">
+          <button type="button" class="btn btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">
+            Tutup
+          </button>
+          
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-success rounded-pill px-3" onclick="shareTicketToWhatsApp()">
+              <i class="bi bi-whatsapp me-1"></i> Kirim ke WhatsApp
+            </button>
+            <button type="button" class="btn btn-primary rounded-pill px-4" onclick="downloadTicketImage()">
+              <i class="bi bi-download me-1"></i> Unduh Tiket (PNG)
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== BRANDING FOOTER JEMPROT ==================== -->
+  <footer class="py-3 mt-4 border-top bg-white">
+    <div class="container text-center">
+      <div class="d-flex align-items-center justify-content-center flex-wrap gap-1 text-muted small">
+        <span class="fw-semibold text-secondary" style="font-size: 0.72rem; letter-spacing: 0.05em;">DIGITALLY SHAPED BY</span>
+        <img src="https://i.ibb.co.com/KpqwmHd6/Logo-Jemprot-2-1-removebg-preview.png" alt="Logo JeMPROT" style="height: 20px; object-fit: contain;" class="mx-1">
+        <span class="fw-bold text-dark" style="font-size: 0.78rem;">[BID SMP 2026]</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ==================== JAVASCRIPT LIBS & APP LOGIC ==================== -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <script>
+    /**
+     * =========================================================================
+     * FRONTEND ENGINE PORTAL PESERTA (MULTI-EVENT CLIENT)
+     * TERKONEKSI KE GOOGLE APPS SCRIPT REST API
+     * =========================================================================
+     */
+
+    // URL Endpoint Google Apps Script REST API
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycby71imxdrBBcfNNvRjfk5TF0K8Q85SrLd9ByJ-BPGTBCatIokatfwiAl7x82Di-H3WcCw/exec";
+
+    // State Aplikasi
+    let currentSettings = {};
+    let availableActiveEvents = [];
+    let masterSchoolList = [];
+    let registeredSchoolList = [];
+    let activeSelectedEvent = null;
+    let lastTicketData = null;
+
+    /**
+     * Helper Komunikasi API Asinkron (POST tanpa Preflight CORS OPTIONS)
+     */
+    async function callGasApi(action, data = {}) {
+      const payload = { action, ...data };
+      const res = await fetch(GAS_API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8"
+        },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        throw new Error("HTTP error status: " + res.status);
+      }
+      return await res.json();
+    }
+
+    // Inisialisasi Saat Dokumen Dimuat
+    document.addEventListener("DOMContentLoaded", function() {
+      loadInitialData();
+    });
+
+    /**
+     * Memuat Data Awal dari Backend GAS
+     */
+    async function loadInitialData() {
+      const overlay = document.getElementById("loadingOverlay");
+      try {
+        const response = await callGasApi("init");
+        if (response && response.success) {
+          currentSettings = response.settings || {};
+          availableActiveEvents = response.activeEvents || [];
+          masterSchoolList = response.schools || [];
+          registeredSchoolList = response.registeredSchools || [];
+
+          // Render Kartu Kegiatan di Beranda Utama
+          renderMultiEventCards(availableActiveEvents);
+
+          // Cek Pengumuman Pop-up
+          if (currentSettings.MODUL_POPUP_INFO === "ON" && currentSettings.POPUP_INFO_PESAN) {
+            Swal.fire({
+              title: currentSettings.POPUP_INFO_JUDUL || "Pengumuman",
+              text: currentSettings.POPUP_INFO_PESAN,
+              icon: "info",
+              confirmButtonText: "Saya Mengerti",
+              confirmButtonColor: "#1e3a8a"
+            });
+          }
+        } else {
+          showErrorAlert("Gagal memuat data dari server: " + (response.message || "Unknown error"));
+        }
+      } catch (err) {
+        console.error("Error loadInitialData:", err);
+        showErrorAlert("Gagal terhubung ke server Google Apps Script. Pastikan koneksi internet Anda stabil.");
+      } finally {
+        if (overlay) overlay.classList.add("d-none");
+      }
+    }
+
+    /**
+     * Render Kartu Kegiatan (Selalu tampil di awal, walau 1 kegiatan)
+     */
+    function renderMultiEventCards(events) {
+      const container = document.getElementById("multiEventCardsRow");
+      if (!container) return;
+
+      if (!events || events.length === 0) {
+        container.innerHTML = `
+          <div class="col-12 text-center py-5">
+            <div class="bg-secondary-subtle text-secondary rounded-circle d-inline-flex p-4 mb-3">
+              <i class="bi bi-calendar-x fs-1"></i>
+            </div>
+            <h4 class="fw-bold text-dark">Belum Ada Kegiatan Aktif</h4>
+            <p class="text-muted small">Saat ini belum ada formulir pendaftaran kegiatan kedinasan yang dibuka oleh panitia.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = events.map(ev => {
+        const isOpen = ev.statusForm === "BUKA";
+        const badgeColor = isOpen ? "bg-success" : "bg-danger";
+        const badgeText = isOpen ? "PENDAFTARAN DIBUKA" : "DITUTUP";
+
+        return `
+          <div class="col-md-6 col-lg-5">
+            <div class="event-card">
+              <div class="event-card-header">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <span class="badge ${badgeColor} text-white px-2.5 py-1 rounded-pill fw-bold" style="font-size: 0.72rem;">
+                    ${badgeText}
+                  </span>
+                  <span class="badge bg-light text-secondary border font-monospace" style="font-size: 0.72rem;">
+                    ${escapeHtml(ev.idKegiatan || 'EVT')}
+                  </span>
+                </div>
+                <h4 class="fw-bold text-dark h5 mb-1 text-truncate-2">${escapeHtml(ev.namaKegiatan)}</h4>
+                <p class="text-muted small mb-0 text-truncate-2">${escapeHtml(ev.subKegiatan || 'Bidang SMP DISDIKBUD Karanganyar')}</p>
+              </div>
+
+              <div class="event-card-body">
+                <div class="space-y-2 mb-4">
+                  <div class="d-flex align-items-center gap-2 small text-secondary mb-1.5">
+                    <i class="bi bi-calendar-week text-primary"></i>
+                    <span>${escapeHtml(ev.tanggalPelaksanaan || 'Jadwal Resmi')}</span>
+                  </div>
+                  <div class="d-flex align-items-center gap-2 small text-secondary mb-1.5">
+                    <i class="bi bi-geo-alt-fill text-danger"></i>
+                    <span>${escapeHtml(ev.lokasiKegiatan || 'Kabupaten Karanganyar')}</span>
+                  </div>
+                  <div class="d-flex align-items-center gap-2 small text-secondary">
+                    <i class="bi bi-people-fill text-success"></i>
+                    <span>Kuota: <strong>${escapeHtml(ev.kuotaPerSekolah || '1')} Peserta</strong> per Sekolah</span>
+                  </div>
+                </div>
+
+                <div>
+                  ${isOpen ? `
+                    <button type="button" class="btn btn-primary w-100 rounded-pill py-2.5 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2" onclick="selectEventToRegister('${escapeHtml(ev.idKegiatan)}')">
+                      <span>Daftar Kegiatan Ini</span>
+                      <i class="bi bi-arrow-right"></i>
+                    </button>
+                  ` : `
+                    <button type="button" class="btn btn-secondary w-100 rounded-pill py-2.5 fw-bold" disabled>
+                      Pendaftaran Ditutup
+                    </button>
+                  `}
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    /**
+     * Kembali ke Beranda Kartu Kegiatan
+     */
+    function showDashboardCards() {
+      document.getElementById("sectionMultiEventSelector").classList.remove("d-none");
+      document.getElementById("boxFormAktif").classList.add("d-none");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    /**
+     * Memilih Kegiatan dan Membuka Formulir Pendaftaran
+     */
+    async function selectEventToRegister(eventId) {
+      const ev = availableActiveEvents.find(e => e.idKegiatan === eventId);
+      if (!ev) {
+        showErrorAlert("Kegiatan tidak ditemukan!");
+        return;
+      }
+
+      activeSelectedEvent = ev;
+
+      // Isi Info Banner Form
+      document.getElementById("formEventId").value = ev.idKegiatan;
+      document.getElementById("formEventName").value = ev.namaKegiatan;
+      document.getElementById("formEventIdBadge").textContent = ev.idKegiatan;
+      document.getElementById("formEventTitle").textContent = ev.namaKegiatan;
+      document.getElementById("formEventSubtitle").textContent = ev.subKegiatan || "Bidang SMP DISDIKBUD Karanganyar";
+      document.getElementById("formEventDate").textContent = ev.tanggalPelaksanaan || "Jadwal Resmi";
+      document.getElementById("formEventLocation").textContent = ev.lokasiKegiatan || "Kabupaten Karanganyar";
+      document.getElementById("formEventQuota").textContent = (ev.kuotaPerSekolah === "bebas" ? "Bebas" : ev.kuotaPerSekolah + " Peserta");
+
+      // Terapkan Saklar Modul Dinamis
+      applyDynamicModules(ev);
+
+      // Buka Tampilan Form
+      document.getElementById("sectionMultiEventSelector").classList.add("d-none");
+      document.getElementById("boxFormAktif").classList.remove("d-none");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+
+      // Ambil data kuota sekolah terdaftar untuk kegiatan ini
+      try {
+        const resRegistered = await callGasApi("getRegisteredSchools", { eventName: ev.namaKegiatan });
+        if (resRegistered && resRegistered.success) {
+          registeredSchoolList = resRegistered.data || [];
+        }
+      } catch (e) {
+        console.warn("Gagal update registeredSchoolList:", e);
+      }
+    }
+
+    /**
+     * Terapkan Tampilan Modul Dinamis (Kaos, Lengan, Gender, Kontak Darurat, Kesehatan)
+     */
+    function applyDynamicModules(ev) {
+      // Modul Kaos
+      const isKaosOn = ev.modulKaos === "ON";
+      const modulKaosEl = document.getElementById("modulKaosContainer");
+      if (modulKaosEl) {
+        modulKaosEl.style.display = isKaosOn ? "block" : "none";
+      }
+
+      // Modul Lengan (Hanya jika Kaos ON)
+      const isLenganOn = isKaosOn && (ev.modulLengan === "ON");
+      const modulLenganEl = document.getElementById("modulLenganContainer");
+      if (modulLenganEl) {
+        modulLenganEl.style.display = isLenganOn ? "block" : "none";
+      }
+
+      // Modul Gender
+      const isGenderOn = ev.modulGender === "ON";
+      const modulGenderEl = document.getElementById("modulGenderContainer");
+      if (modulGenderEl) {
+        modulGenderEl.style.display = isGenderOn ? "block" : "none";
+      }
+
+      // Modul Kontak Darurat
+      const isDaruratOn = ev.modulKontakDarurat === "ON";
+      const modulDaruratEl = document.getElementById("modulKontakDaruratContainer");
+      if (modulDaruratEl) {
+        modulDaruratEl.style.display = isDaruratOn ? "block" : "none";
+      }
+
+      // Modul Kesehatan
+      const isKesehatanOn = ev.modulKesehatan === "ON";
+      const modulKesehatanEl = document.getElementById("modulKesehatanContainer");
+      if (modulKesehatanEl) {
+        modulKesehatanEl.style.display = isKesehatanOn ? "block" : "none";
+      }
+    }
+
+    /**
+     * Autocomplete & Pencarian Sekolah
+     */
+    function openSchoolDropdown() {
+      const container = document.getElementById("schoolListContainer");
+      container.style.display = "block";
+      filterSchoolList(document.getElementById("schoolSearchInput").value);
+    }
+
+    function closeSchoolDropdown() {
+      setTimeout(() => {
+        const container = document.getElementById("schoolListContainer");
+        if (container) container.style.display = "none";
+      }, 250);
+    }
+
+    function toggleSchoolDropdown() {
+      const container = document.getElementById("schoolListContainer");
+      if (container.style.display === "block") {
+        container.style.display = "none";
+      } else {
+        openSchoolDropdown();
+      }
+    }
+
+    function filterSchoolList(keyword) {
+      const container = document.getElementById("schoolListContainer");
+      const cleanKeyword = (keyword || "").toLowerCase().trim();
+
+      const filtered = masterSchoolList.filter(s => {
+        return s.nama.toLowerCase().includes(cleanKeyword) || s.npsn.includes(cleanKeyword);
+      });
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<div class="p-3 text-muted small text-center">Sekolah tidak ditemukan.</div>';
+        return;
+      }
+
+      container.innerHTML = filtered.map(s => `
+        <div class="school-item" onclick="selectSchool('${escapeHtml(s.npsn)}')">
+          <div class="fw-bold text-dark">${escapeHtml(s.nama)}</div>
+          <div class="small text-muted">NPSN: ${escapeHtml(s.npsn)} | ${escapeHtml(s.status)} | Kec. ${escapeHtml(s.kecamatan)}</div>
+        </div>
+      `).join("");
+    }
+
+    function selectSchool(npsn) {
+      const sch = masterSchoolList.find(s => s.npsn === npsn);
+      if (!sch) return;
+
+      // Cek Kuota Pendaftaran Sekolah
+      if (activeSelectedEvent && activeSelectedEvent.kuotaPerSekolah !== "bebas") {
+        const maxQuota = parseInt(activeSelectedEvent.kuotaPerSekolah, 10) || 1;
+        const currentRegistered = registeredSchoolList.filter(r => r.npsn === sch.npsn || r.namaSekolah.toLowerCase() === sch.nama.toLowerCase()).length;
+
+        if (currentRegistered >= maxQuota) {
+          Swal.fire({
+            title: "Kuota Sekolah Penuh!",
+            html: `Satuan pendidikan <strong>${escapeHtml(sch.nama)}</strong> telah mencapai kuota maksimal pendaftaran (<strong>${currentRegistered}/${maxQuota}</strong>) untuk kegiatan ini.`,
+            icon: "warning",
+            confirmButtonColor: "#1e3a8a"
+          });
+          return;
+        }
+      }
+
+      document.getElementById("selectedSchoolName").value = sch.nama;
+      document.getElementById("selectedSchoolNpsn").value = sch.npsn;
+      document.getElementById("selectedSchoolStatus").value = sch.status;
+      document.getElementById("selectedSchoolKecamatan").value = sch.kecamatan;
+
+      document.getElementById("badgeSchoolName").textContent = sch.nama;
+      document.getElementById("badgeSchoolNpsn").textContent = sch.npsn;
+      document.getElementById("badgeSchoolStatus").textContent = sch.status;
+      document.getElementById("badgeSchoolKecamatan").textContent = sch.kecamatan;
+
+      document.getElementById("selectedSchoolBadge").classList.remove("d-none");
+      document.getElementById("schoolSearchInput").parentElement.classList.add("d-none");
+      document.getElementById("schoolListContainer").style.display = "none";
+    }
+
+    function resetSchoolSelection() {
+      document.getElementById("selectedSchoolName").value = "";
+      document.getElementById("selectedSchoolNpsn").value = "";
+      document.getElementById("selectedSchoolStatus").value = "";
+      document.getElementById("selectedSchoolKecamatan").value = "";
+
+      document.getElementById("selectedSchoolBadge").classList.add("d-none");
+      document.getElementById("schoolSearchInput").parentElement.classList.remove("d-none");
+      document.getElementById("schoolSearchInput").value = "";
+      document.getElementById("schoolSearchInput").focus();
+    }
+
+    /**
+     * Handler Pilihan Status Kepegawaian (PNS / PPPK / Non-ASN)
+     */
+    function handleStatusPegawaiChange(status) {
+      const boxNip = document.getElementById("boxNip");
+      const boxGolongan = document.getElementById("boxGolongan");
+      const inputNip = document.getElementById("inputNip");
+      const selectGolongan = document.getElementById("selectGolongan");
+
+      if (status === "PNS" || status === "PPPK") {
+        boxNip.classList.remove("d-none");
+        boxGolongan.classList.remove("d-none");
+        inputNip.required = true;
+        selectGolongan.required = true;
+      } else {
+        boxNip.classList.add("d-none");
+        boxGolongan.classList.add("d-none");
+        inputNip.required = false;
+        selectGolongan.required = false;
+        inputNip.value = "";
+        selectGolongan.value = "";
+        document.getElementById("inputPangkat").value = "";
+      }
+    }
+
+    function handleGolonganChange(val) {
+      if (val && val.includes("|")) {
+        const parts = val.split("|");
+        document.getElementById("inputPangkat").value = parts[1] || "";
+      } else {
+        document.getElementById("inputPangkat").value = "";
+      }
+    }
+
+    function formatWhatsAppNumber(input) {
+      let val = input.value.replace(/[^0-9]/g, "");
+      if (val.startsWith("62")) {
+        val = "0" + val.substring(2);
+      }
+      input.value = val;
+    }
+
+    /**
+     * Kirim Formulir Pendaftaran (Submit Form)
+     */
+    async function handleFormSubmit(event) {
+      event.preventDefault();
+
+      const schoolName = document.getElementById("selectedSchoolName").value;
+      if (!schoolName) {
+        Swal.fire({
+          title: "Sekolah Belum Dipilih",
+          text: "Silakan pilih asal satuan pendidikan (SMP) terlebih dahulu dari daftar pencarian.",
+          icon: "warning",
+          confirmButtonColor: "#1e3a8a"
+        });
+        return;
+      }
+
+      // Kumpulkan Payload Form
+      const formData = {
+        idKegiatan: document.getElementById("formEventId").value,
+        namaKegiatan: document.getElementById("formEventName").value,
+        namaSekolah: schoolName,
+        npsn: document.getElementById("selectedSchoolNpsn").value,
+        statusSekolah: document.getElementById("selectedSchoolStatus").value,
+        kecamatan: document.getElementById("selectedSchoolKecamatan").value,
+        statusKepegawaian: document.querySelector('input[name="statusKepegawaian"]:checked')?.value || "Non-ASN",
+        jabatan: document.getElementById("inputJabatan").value.trim(),
+        nip: document.getElementById("inputNip").value.trim(),
+        golongan: document.getElementById("selectGolongan").value ? document.getElementById("selectGolongan").value.split("|")[0] : "-",
+        pangkat: document.getElementById("inputPangkat").value || "-",
+        namaLengkap: document.getElementById("inputNamaLengkap").value.trim(),
+        jenisKelamin: document.querySelector('input[name="jenisKelamin"]:checked')?.value || "Laki-laki",
+        ukuranKaos: document.querySelector('input[name="ukuranKaos"]:checked')?.value || "L",
+        panjangLengan: document.querySelector('input[name="panjangLengan"]:checked')?.value || "Lengan Pendek",
+        noWa: document.getElementById("inputNoWa").value.trim(),
+        kontakDaruratNama: document.getElementById("inputDaruratNama").value.trim(),
+        kontakDaruratHp: document.getElementById("inputDaruratHp").value.trim(),
+        riwayatPenyakit: document.getElementById("inputRiwayatKesehatan").value.trim()
+      };
+
+      // Tampilkan Loading SweetAlert
+      Swal.fire({
+        title: "Mengirim Data...",
+        text: "Menyimpan data pendaftaran dan menerbitkan E-Ticket resmi...",
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
+      try {
+        const response = await callGasApi("submitRegistration", { formData });
+        
+        if (response && response.success) {
+          Swal.close();
+          lastTicketData = response.data || {};
+
+          // Tampilkan Modal E-Ticket
+          showETicketModal(lastTicketData);
+
+          // Reset Form
+          document.getElementById("registrationForm").reset();
+          resetSchoolSelection();
+        } else {
+          Swal.fire({
+            title: "Pendaftaran Gagal",
+            text: response.message || "Terjadi kesalahan saat memproses pendaftaran.",
+            icon: "error",
+            confirmButtonColor: "#1e3a8a"
+          });
+        }
+      } catch (err) {
+        console.error("Error submitRegistration:", err);
+        Swal.fire({
+          title: "Gangguan Server",
+          text: "Gagal menghubungi server database. Silakan coba beberapa saat lagi.",
+          icon: "error",
+          confirmButtonColor: "#1e3a8a"
+        });
+      }
+    }
+
+    /**
+     * Tampilkan Modal E-Ticket dan Render QR Code
+     */
+    function showETicketModal(data) {
+      document.getElementById("ticketNamaPeserta").textContent = data.namaLengkap || data.nama || "-";
+      document.getElementById("ticketSekolahPeserta").textContent = data.namaSekolah || data.sekolah || "-";
+      document.getElementById("ticketRegId").textContent = data.regId || "-";
+      document.getElementById("ticketNamaKegiatan").textContent = data.namaKegiatan || activeSelectedEvent?.namaKegiatan || "-";
+      document.getElementById("ticketTanggal").textContent = activeSelectedEvent?.tanggalPelaksanaan || "Jadwal Resmi";
+      document.getElementById("ticketKaos").textContent = (data.ukuranKaos || "-") + (data.panjangLengan ? ` (${data.panjangLengan})` : "");
+      document.getElementById("ticketQrIdText").textContent = data.regId || "-";
+
+      // Render QR Code
+      const qrWrapper = document.getElementById("qrcodeWrapper");
+      qrWrapper.innerHTML = "";
+      new QRCode(qrWrapper, {
+        text: String(data.regId || "REG-UNKNOWN"),
+        width: 140,
+        height: 140,
+        colorDark: "#0f172a",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+
+      const modalEl = document.getElementById("modalETicket");
+      const modal = new bootstrap.Modal(modalEl);
+      modal.show();
+    }
+
+    /**
+     * Unduh Gambar Tiket (PNG) via HTML2Canvas
+     */
+    function downloadTicketImage() {
+      const container = document.getElementById("eTicketDoubleContainer");
+      if (!container) return;
+
+      Swal.fire({
+        title: "Membuat Gambar Tiket...",
+        text: "Sedang merender resolusi tinggi...",
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+      });
+
+      html2canvas(container, {
+        scale: 2,
+        backgroundColor: "#ffffff",
+        useCORS: true
+      }).then(canvas => {
+        Swal.close();
+        const link = document.createElement("a");
+        link.download = `E-Ticket-${lastTicketData?.regId || "Kegiatan"}.png`;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+      }).catch(err => {
+        Swal.close();
+        console.error("Gagal html2canvas:", err);
+        showErrorAlert("Gagal menyimpan gambar tiket.");
+      });
+    }
+
+    /**
+     * Bagikan Tiket ke WhatsApp
+     */
+    function shareTicketToWhatsApp() {
+      if (!lastTicketData) return;
+      const text = `*BUKTI PENDAFTARAN KEGIATAN KEDINASAN*\n` +
+        `Bidang SMP DISDIKBUD Karanganyar\n\n` +
+        `*ID Registrasi:* ${lastTicketData.regId || "-"}\n` +
+        `*Nama Peserta:* ${lastTicketData.namaLengkap || "-"}\n` +
+        `*Satuan Pendidikan:* ${lastTicketData.namaSekolah || "-"}\n` +
+        `*Kegiatan:* ${lastTicketData.namaKegiatan || "-"}\n` +
+        `*Ukuran Kaos:* ${lastTicketData.ukuranKaos || "-"}\n\n` +
+        `_Simpan pesan ini dan bawa E-Ticket saat registrasi di lokasi._`;
+
+      const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+      window.open(url, "_blank");
+    }
+
+    // Helper Utilitas
+    function showErrorAlert(msg) {
+      Swal.fire({
+        title: "Perhatian",
+        text: msg,
+        icon: "error",
+        confirmButtonColor: "#1e3a8a"
+      });
+    }
+
+    function escapeHtml(str) {
+      if (!str) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+  </script>
+</body>
+</html>
