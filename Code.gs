@@ -375,28 +375,6 @@ function ensureDatabaseReady_() {
       "Metadata JSON",
       "Status"
     ]);
-    sheetSpj.appendRow([
-      "TPL-SPJ-01",
-      "Daftar Penerimaan Uang Saku & Transport",
-      "XLSX",
-      "DEFAULT",
-      "Daftar_Penerimaan_Uang_Saku_Standar.xlsx",
-      "Bawaan",
-      Utilities.formatDate(new Date(), Session.getScriptTimeZone() || "GMT+7", "dd/MM/yyyy HH:mm"),
-      JSON.stringify({
-        jenis: "Uang Saku",
-        hasNominal: true,
-        defaultNominal: 200000,
-        defaultHari: 1,
-        defaultPajak: "PPh21_Golongan",
-        pejabat: {
-          kpa: { nama: "Rehatta Rakasiwi, S.Psi.,M.Si", nip: "198401162011011009", jabatan: "Kepala Bidang SMP selaku Kuasa Pengguna Anggaran" },
-          pptk: { nama: "Agus Pruwitanto, S.Sos", nip: "197408191999031005", jabatan: "Pejabat Pelaksana Teknis Kegiatan" },
-          bendahara: { nama: "Dwi Suprasetiarini, S.M", nip: "197610022010012002", jabatan: "Bendahara Pengeluaran Pembantu" }
-        }
-      }),
-      "Aktif"
-    ]);
   }
 
   // 5. Sheet Master_Kegiatan (Multi-Event Engine Terintegrasi)
@@ -2564,51 +2542,21 @@ function getSpjTemplateList(pin) {
     const files = folder.getFiles();
     const driveFiles = [];
     while (files.hasNext()) {
-      driveFiles.push(files.next());
+      const f = files.next();
+      if (!f.isTrashed()) {
+        driveFiles.push(f);
+      }
     }
 
     const driveFileIds = new Set(driveFiles.map(f => f.getId()));
 
-    // 2. Baca data sheet yang ada untuk menjaga metadata/ID yang sudah pernah ada
-    const data = sheet.getDataRange().getValues();
-    const sheetMapByFileId = new Map();
-    const rowsToDelete = [];
-
-    for (let i = 1; i < data.length; i++) {
-      const fileId = String(data[i][3] || "").trim();
-      const tplId = String(data[i][0] || "").trim();
-
-      // Jika fileId tidak ada di Google Drive folder sekarang, tandai untuk dihapus dari sheet
-      if (!driveFileIds.has(fileId)) {
-        rowsToDelete.push(i + 1);
-        if (tplId) deleteTemplateBinaryFromSheet_(tplId);
-      } else {
-        let meta = {};
-        try {
-          if (data[i][7]) meta = JSON.parse(data[i][7]);
-        } catch (e) {}
-
-        sheetMapByFileId.set(fileId, {
-          rowIdx: i + 1,
-          id: tplId,
-          namaDokumen: String(data[i][1] || "-"),
-          tipeFile: String(data[i][2] || "XLSX").toUpperCase(),
-          fileId: fileId,
-          namaFileAsli: String(data[i][4] || "-"),
-          ukuranFile: String(data[i][5] || "-"),
-          tanggalUpload: String(data[i][6] || "-"),
-          metadata: meta,
-          status: "Aktif"
-        });
-      }
+    // 2. Bersihkan sheet Master_Template_SPJ dan isi ulang HANYA dengan file yang aktif di Google Drive
+    // Hapus seluruh baris lama dari sheet (kecuali baris header)
+    if (sheet.getLastRow() > 1) {
+      sheet.deleteRows(2, sheet.getLastRow() - 1);
     }
 
-    // Hapus baris usang dari bawah ke atas
-    for (let r = rowsToDelete.length - 1; r >= 0; r--) {
-      sheet.deleteRow(rowsToDelete[r]);
-    }
-
-    // 3. Bentuk daftar template final yang 100% PERSIS dengan isi Google Drive
+    // 3. Bentuk daftar template final yang 100% PERSIS dengan isi Google Drive saat ini
     const templates = [];
 
     driveFiles.forEach(file => {
@@ -2628,42 +2576,33 @@ function getSpjTemplateList(pin) {
       const now = new Date();
       const dateStr = Utilities.formatDate(file.getLastUpdated() || now, Session.getScriptTimeZone() || "GMT+7", "dd/MM/yyyy HH:mm");
 
-      if (sheetMapByFileId.has(fileId)) {
-        const item = sheetMapByFileId.get(fileId);
-        item.namaDokumen = cleanDocName;
-        item.namaFileAsli = fileName;
-        item.tipeFile = ext.toUpperCase();
-        item.ukuranFile = fileSizeKb;
-        templates.push(item);
-      } else {
-        const tplId = "TPL-" + Utilities.formatDate(now, Session.getScriptTimeZone() || "GMT+7", "yyMMdd") + "-" + Math.floor(1000 + Math.random() * 9000);
-        const analysis = analyzeSpjWithGemini_(cleanDocName, ext, fileName);
+      const tplId = "TPL-" + Utilities.formatDate(now, Session.getScriptTimeZone() || "GMT+7", "yyMMdd") + "-" + Math.floor(1000 + Math.random() * 9000);
+      const analysis = analyzeSpjWithGemini_(cleanDocName, ext, fileName);
 
-        const newRow = [
-          tplId,
-          cleanDocName,
-          ext.toUpperCase(),
-          fileId,
-          fileName,
-          fileSizeKb,
-          dateStr,
-          JSON.stringify(analysis),
-          "Aktif"
-        ];
-        sheet.appendRow(newRow);
+      const newRow = [
+        tplId,
+        cleanDocName,
+        ext.toUpperCase(),
+        fileId,
+        fileName,
+        fileSizeKb,
+        dateStr,
+        JSON.stringify(analysis),
+        "Aktif"
+      ];
+      sheet.appendRow(newRow);
 
-        templates.push({
-          id: tplId,
-          namaDokumen: cleanDocName,
-          tipeFile: ext.toUpperCase(),
-          fileId: fileId,
-          namaFileAsli: fileName,
-          ukuranFile: fileSizeKb,
-          tanggalUpload: dateStr,
-          metadata: analysis,
-          status: "Aktif"
-        });
-      }
+      templates.push({
+        id: tplId,
+        namaDokumen: cleanDocName,
+        tipeFile: ext.toUpperCase(),
+        fileId: fileId,
+        namaFileAsli: fileName,
+        ukuranFile: fileSizeKb,
+        tanggalUpload: dateStr,
+        metadata: analysis,
+        status: "Aktif"
+      });
     });
 
     return {
