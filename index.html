@@ -428,13 +428,26 @@
           <input type="hidden" id="formEventId" name="idKegiatan" value="">
           <input type="hidden" id="formEventName" name="namaKegiatan" value="">
 
-          <!-- SEKSI 1: ASAL SATUAN PENDIDIKAN -->
+          <!-- SEKSI 1: ASAL LEMBAGA / INSTANSI / SATUAN PENDIDIKAN -->
           <div class="step-banner">
             <i class="bi bi-building"></i>
-            <span>1. Asal Satuan Pendidikan (SMP)</span>
+            <span>1. Asal Instansi / Satuan Pendidikan</span>
           </div>
 
-          <div class="mb-4 dropdown-search-box">
+          <!-- Pilihan Kategori: Satuan Pendidikan (SMP) vs Tamu / OPD Lain -->
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-secondary">Kategori Asal Instansi <span class="text-danger">*</span></label>
+            <div class="pill-selector">
+              <input type="radio" class="pill-radio" id="katInstansiSmp" name="kategoriInstansi" value="SMP" checked onchange="handleKategoriInstansiChange('SMP')">
+              <label class="pill-label" for="katInstansiSmp"><i class="bi bi-mortarboard-fill"></i> Satuan Pendidikan (SMP)</label>
+
+              <input type="radio" class="pill-radio" id="katInstansiOpd" name="kategoriInstansi" value="OPD" onchange="handleKategoriInstansiChange('OPD')">
+              <label class="pill-label" for="katInstansiOpd"><i class="bi bi-building-fill-gear"></i> Tamu / OPD Lain (Bukan SMP)</label>
+            </div>
+          </div>
+
+          <!-- OPSI A: PENCARIAN SATUAN PENDIDIKAN (SMP) -->
+          <div id="boxPencarianSekolah" class="mb-4 dropdown-search-box">
             <label class="form-label" for="schoolSearchInput">
               Nama Satuan Pendidikan <span class="text-danger">*</span>
             </label>
@@ -447,11 +460,6 @@
             </div>
             <div id="schoolListContainer" class="school-list-container"></div>
             
-            <input type="hidden" id="selectedSchoolName" name="namaSekolah" required>
-            <input type="hidden" id="selectedSchoolNpsn" name="npsn" required>
-            <input type="hidden" id="selectedSchoolStatus" name="statusSekolah">
-            <input type="hidden" id="selectedSchoolKecamatan" name="kecamatan">
-
             <div id="selectedSchoolBadge" class="mt-2 d-none">
               <div class="alert alert-info py-2 px-3 d-flex align-items-center justify-content-between mb-0">
                 <div class="d-flex align-items-center gap-2">
@@ -471,6 +479,51 @@
             <div id="quotaWarningAlert" class="mt-2 d-none"></div>
           </div>
 
+          <!-- OPSI B: FORM KHUSUS TAMU / OPD LAIN (BUKAN SMP) -->
+          <div id="boxInstansiOpd" class="mb-4 d-none">
+            <div class="card p-3 bg-light border-0 rounded-3 mb-2">
+              <div class="row g-3">
+                <div class="col-md-7 col-12">
+                  <label class="form-label fw-bold text-dark" for="inputNamaOpd">
+                    Nama OPD / Dinas / Lembaga / Instansi Tamu <span class="text-danger">*</span>
+                  </label>
+                  <input type="text" class="form-control" id="inputNamaOpd" placeholder="Contoh: Bappeda / Dinas Kesehatan / BPBD / Setda / Kemenag" oninput="handleOpdInputChange()">
+                  <div class="form-text small">Tuliskan nama instansi atau dinas asal tamu secara lengkap.</div>
+                </div>
+                <div class="col-md-5 col-12">
+                  <label class="form-label fw-bold text-dark" for="selectKecamatanOpd">
+                    Wilayah / Kecamatan Kantor <span class="text-danger">*</span>
+                  </label>
+                  <select class="form-select" id="selectKecamatanOpd" onchange="handleOpdInputChange()">
+                    <option value="Karanganyar" selected>Karanganyar (Kompleks Perkantoran / Pusat)</option>
+                    <option value="Tasikmadu">Tasikmadu</option>
+                    <option value="Jaten">Jaten</option>
+                    <option value="Kebakkramat">Kebakkramat</option>
+                    <option value="Gondangrejo">Gondangrejo</option>
+                    <option value="Colomadu">Colomadu</option>
+                    <option value="Mojogedang">Mojogedang</option>
+                    <option value="Kerjo">Kerjo</option>
+                    <option value="Jenawi">Jenawi</option>
+                    <option value="Karangpandan">Karangpandan</option>
+                    <option value="Ngargoyoso">Ngargoyoso</option>
+                    <option value="Tawangmangu">Tawangmangu</option>
+                    <option value="Matesih">Matesih</option>
+                    <option value="Jumapolo">Jumapolo</option>
+                    <option value="Jumantono">Jumantono</option>
+                    <option value="Jatipuro">Jatipuro</option>
+                    <option value="Jatiyoso">Jatiyoso</option>
+                    <option value="Luar Karanganyar">Luar Kabupaten Karanganyar</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <input type="hidden" id="selectedSchoolName" name="namaSekolah" required>
+          <input type="hidden" id="selectedSchoolNpsn" name="npsn" required>
+          <input type="hidden" id="selectedSchoolStatus" name="statusSekolah">
+          <input type="hidden" id="selectedSchoolKecamatan" name="kecamatan">
+
           <!-- SEKSI 2: STATUS KEPEGAWAIAN -->
           <div class="step-banner">
             <i class="bi bi-person-badge"></i>
@@ -488,13 +541,13 @@
                 <label class="pill-label" for="statusPppk"><i class="bi bi-award-fill"></i> PPPK</label>
 
                 <input type="radio" class="pill-radio" id="statusNonAsn" name="statusKepegawaian" value="Non-ASN" onchange="handleStatusPegawaiChange('Non-ASN')">
-                <label class="pill-label" for="statusNonAsn"><i class="bi bi-person"></i> Non-ASN / Honorer</label>
+                <label class="pill-label" for="statusNonAsn"><i class="bi bi-person"></i> Non-ASN / Lainnya</label>
               </div>
             </div>
 
             <div class="col-md-6" id="boxJabatan">
-              <label class="form-label" for="inputJabatan">Jabatan / Peran di Satuan Pendidikan <span class="text-danger">*</span></label>
-              <input type="text" class="form-control" id="inputJabatan" name="jabatan" placeholder="Contoh: Kepala Sekolah / Guru Pembina / Staf" required>
+              <label class="form-label" for="inputJabatan">Jabatan / Peran <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="inputJabatan" name="jabatan" required>
             </div>
 
             <!-- Dynamic NIP & Golongan for ASN -->
@@ -525,11 +578,6 @@
                   <option value="II/c|Pengatur">II/c - Pengatur</option>
                   <option value="II/b|Pengatur Muda Tingkat I">II/b - Pengatur Muda Tingkat I</option>
                   <option value="II/a|Pengatur Muda">II/a - Pengatur Muda</option>
-                </optgroup>
-                <optgroup label="Golongan IX - XVII (PPPK)">
-                  <option value="PPPK Gol IX|Ahli Pertama">PPPK Golongan IX - Ahli Pertama</option>
-                  <option value="PPPK Gol X|Ahli Muda">PPPK Golongan X - Ahli Muda</option>
-                  <option value="PPPK Gol XI|Ahli Madya">PPPK Golongan XI - Ahli Madya</option>
                 </optgroup>
               </select>
               <input type="hidden" id="inputPangkat" name="pangkat" value="">
@@ -1053,7 +1101,14 @@
       });
 
       if (filtered.length === 0) {
-        container.innerHTML = '<div class="p-3 text-muted small text-center">Sekolah tidak ditemukan.</div>';
+        container.innerHTML = `
+          <div class="p-3 text-muted small text-center">
+            Sekolah tidak ditemukan.<br>
+            <button type="button" class="btn btn-outline-primary btn-sm rounded-pill mt-2 fw-bold" onclick="switchToOpdMode()">
+              <i class="bi bi-building-gear me-1"></i> Klik di Sini untuk Tamu / OPD Lain
+            </button>
+          </div>
+        `;
         return;
       }
 
@@ -1062,7 +1117,58 @@
           <div class="fw-bold text-dark">${escapeHtml(s.nama)}</div>
           <div class="small text-muted">NPSN: ${escapeHtml(s.npsn)} | ${escapeHtml(s.status)} | Kec. ${escapeHtml(s.kecamatan)}</div>
         </div>
-      `).join("");
+      `).join("") + `
+        <div class="p-2 border-top text-center bg-light cursor-pointer text-primary fw-bold small" onclick="switchToOpdMode()">
+          <i class="bi bi-building-gear me-1"></i> Bukan dari SMP? Daftar sebagai Tamu / OPD Lain
+        </div>
+      `;
+    }
+
+    function handleKategoriInstansiChange(kat) {
+      const boxSmp = document.getElementById("boxPencarianSekolah");
+      const boxOpd = document.getElementById("boxInstansiOpd");
+      const inputOpd = document.getElementById("inputNamaOpd");
+      const quotaAlert = document.getElementById("quotaWarningAlert");
+
+      if (kat === "OPD") {
+        if (boxSmp) boxSmp.classList.add("d-none");
+        if (boxOpd) boxOpd.classList.remove("d-none");
+        if (inputOpd) {
+          inputOpd.required = true;
+          inputOpd.focus();
+        }
+        if (quotaAlert) quotaAlert.classList.add("d-none");
+        handleOpdInputChange();
+      } else {
+        if (boxSmp) boxSmp.classList.remove("d-none");
+        if (boxOpd) boxOpd.classList.add("d-none");
+        if (inputOpd) {
+          inputOpd.required = false;
+        }
+        resetSchoolSelection();
+      }
+    }
+
+    function handleOpdInputChange() {
+      const inputOpd = document.getElementById("inputNamaOpd");
+      const selectKec = document.getElementById("selectKecamatanOpd");
+      const opdName = inputOpd ? inputOpd.value.trim() : "";
+      const kecName = selectKec ? selectKec.value : "Karanganyar";
+
+      document.getElementById("selectedSchoolName").value = opdName;
+      document.getElementById("selectedSchoolNpsn").value = "-";
+      document.getElementById("selectedSchoolStatus").value = "OPD / Tamu Undangan";
+      document.getElementById("selectedSchoolKecamatan").value = kecName;
+    }
+
+    function switchToOpdMode() {
+      const radioOpd = document.getElementById("katInstansiOpd");
+      if (radioOpd) {
+        radioOpd.checked = true;
+        handleKategoriInstansiChange("OPD");
+      }
+      const drop = document.getElementById("schoolListContainer");
+      if (drop) drop.style.display = "none";
     }
 
     function selectSchool(npsn) {
@@ -1114,6 +1220,7 @@
 
     /**
      * Handler Pilihan Status Kepegawaian (PNS / PPPK / Non-ASN)
+     * Golongan PPPK langsung hilang ketika diklik
      */
     function handleStatusPegawaiChange(status) {
       const boxNip = document.getElementById("boxNip");
@@ -1121,11 +1228,18 @@
       const inputNip = document.getElementById("inputNip");
       const selectGolongan = document.getElementById("selectGolongan");
 
-      if (status === "PNS" || status === "PPPK") {
+      if (status === "PNS") {
         boxNip.classList.remove("d-none");
         boxGolongan.classList.remove("d-none");
         inputNip.required = true;
         selectGolongan.required = true;
+      } else if (status === "PPPK") {
+        boxNip.classList.remove("d-none");
+        boxGolongan.classList.add("d-none"); // Golongan PPPK langsung hilang
+        inputNip.required = true;
+        selectGolongan.required = false;
+        selectGolongan.value = "";
+        document.getElementById("inputPangkat").value = "-";
       } else {
         boxNip.classList.add("d-none");
         boxGolongan.classList.add("d-none");
@@ -1160,14 +1274,27 @@
     async function handleFormSubmit(event) {
       event.preventDefault();
 
-      const schoolName = document.getElementById("selectedSchoolName").value;
+      const isOpd = document.getElementById("katInstansiOpd")?.checked;
+      const schoolName = document.getElementById("selectedSchoolName").value.trim();
+      
       if (!schoolName) {
-        Swal.fire({
-          title: "Sekolah Belum Dipilih",
-          text: "Silakan pilih asal satuan pendidikan (SMP) terlebih dahulu dari daftar pencarian.",
-          icon: "warning",
-          confirmButtonColor: "#1e3a8a"
-        });
+        if (isOpd) {
+          Swal.fire({
+            title: "Instansi Tamu Belum Diisi",
+            text: "Silakan ketik nama instansi, dinas, atau OPD asal tamu terlebih dahulu.",
+            icon: "warning",
+            confirmButtonColor: "#1e3a8a"
+          });
+          document.getElementById("inputNamaOpd")?.focus();
+        } else {
+          Swal.fire({
+            title: "Sekolah Belum Dipilih",
+            text: "Silakan pilih asal satuan pendidikan (SMP) terlebih dahulu dari daftar pencarian.",
+            icon: "warning",
+            confirmButtonColor: "#1e3a8a"
+          });
+          document.getElementById("schoolSearchInput")?.focus();
+        }
         return;
       }
 
@@ -1176,9 +1303,10 @@
         idKegiatan: document.getElementById("formEventId").value,
         namaKegiatan: document.getElementById("formEventName").value,
         namaSekolah: schoolName,
-        npsn: document.getElementById("selectedSchoolNpsn").value,
-        statusSekolah: document.getElementById("selectedSchoolStatus").value,
-        kecamatan: document.getElementById("selectedSchoolKecamatan").value,
+        npsn: document.getElementById("selectedSchoolNpsn").value || "-",
+        statusSekolah: document.getElementById("selectedSchoolStatus").value || (isOpd ? "OPD / Tamu Undangan" : "SMP"),
+        kecamatan: document.getElementById("selectedSchoolKecamatan").value || "Karanganyar",
+        kategoriUnit: isOpd ? "LAIN" : "SMP",
         statusKepegawaian: document.querySelector('input[name="statusKepegawaian"]:checked')?.value || "Non-ASN",
         jabatan: document.getElementById("inputJabatan").value.trim(),
         nip: document.getElementById("inputNip").value.trim(),
