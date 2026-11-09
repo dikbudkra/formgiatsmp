@@ -801,22 +801,29 @@
               <i class="bi bi-award-fill text-primary me-2"></i> Komposisi Status Kepegawaian &amp; Gender
             </h6>
             <div class="row g-2 text-center">
-              <div class="col-4">
-                <div class="p-2.5 border rounded-3 bg-light">
+              <div class="col-md-3 col-6">
+                <div class="p-2 border rounded-3 bg-light">
                   <div class="text-muted small fw-semibold">PNS</div>
                   <h4 class="fw-bold text-primary mb-1" id="rekapPnsTotal">0</h4>
                   <div class="small text-muted" style="font-size: 0.72rem;">L: <strong id="rekapPnsL">0</strong> | P: <strong id="rekapPnsP">0</strong></div>
                 </div>
               </div>
-              <div class="col-4">
-                <div class="p-2.5 border rounded-3 bg-light">
+              <div class="col-md-3 col-6">
+                <div class="p-2 border rounded-3 bg-light">
                   <div class="text-muted small fw-semibold">PPPK</div>
                   <h4 class="fw-bold text-success mb-1" id="rekapPppkTotal">0</h4>
                   <div class="small text-muted" style="font-size: 0.72rem;">L: <strong id="rekapPppkL">0</strong> | P: <strong id="rekapPppkP">0</strong></div>
                 </div>
               </div>
-              <div class="col-4">
-                <div class="p-2.5 border rounded-3 bg-light">
+              <div class="col-md-3 col-6">
+                <div class="p-2 border rounded-3 bg-light">
+                  <div class="text-muted small fw-semibold">PPPK PW</div>
+                  <h4 class="fw-bold text-info mb-1" id="rekapPppkPwTotal">0</h4>
+                  <div class="small text-muted" style="font-size: 0.72rem;">L: <strong id="rekapPppkPwL">0</strong> | P: <strong id="rekapPppkPwP">0</strong></div>
+                </div>
+              </div>
+              <div class="col-md-3 col-6">
+                <div class="p-2 border rounded-3 bg-light">
                   <div class="text-muted small fw-semibold">Non-ASN</div>
                   <h4 class="fw-bold text-secondary mb-1" id="rekapNonAsnTotal">0</h4>
                   <div class="small text-muted" style="font-size: 0.72rem;">L: <strong id="rekapNonAsnL">0</strong> | P: <strong id="rekapNonAsnP">0</strong></div>
@@ -1287,12 +1294,12 @@
               <div class="row g-2 small">
                 <div class="col-6 col-md-4">
                   <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" id="switchModulKaos" checked>
+                    <input class="form-check-input" type="checkbox" id="switchModulKaos" checked onchange="handleSwitchModulKaosChange()">
                     <label class="form-check-label" for="switchModulKaos">Modul Kaos</label>
                   </div>
                 </div>
                 <div class="col-6 col-md-4">
-                  <div class="form-check form-switch">
+                  <div class="form-check form-switch" id="wrapperSwitchModulLengan">
                     <input class="form-check-input" type="checkbox" id="switchModulLengan" checked>
                     <label class="form-check-label" for="switchModulLengan">Modul Lengan</label>
                   </div>
@@ -1551,15 +1558,61 @@
                 <span class="small text-muted">Diisi oleh Panitia</span>
               </div>
 
-              <!-- Sakelar Pemotongan Pajak PPh 21 (Standar APBD) -->
-              <div class="d-flex flex-wrap align-items-center justify-content-between p-2 bg-light border rounded mb-3">
-                <div class="form-check form-switch mb-0">
-                  <input class="form-check-input cursor-pointer" type="checkbox" role="switch" id="switchSpjPajakActive" checked onchange="recalculateAndRenderSpjPreview()">
-                  <label class="form-check-label small fw-bold text-dark cursor-pointer" for="switchSpjPajakActive">
-                    <i class="bi bi-percent text-danger me-1"></i> Terapkan Pemotongan Pajak PPh 21 (Gol IV: 15%, Gol III: 5%, Gol I-II / PPPK / Non-ASN: 0%)
-                  </label>
+              <!-- Sakelar Pemotongan Pajak PPh 21 (Standar APBD & Kustom Panitia) -->
+              <div class="p-3 bg-light border rounded mb-3">
+                <div class="d-flex flex-wrap align-items-center justify-content-between mb-2">
+                  <div class="form-check form-switch mb-0">
+                    <input class="form-check-input cursor-pointer" type="checkbox" role="switch" id="switchSpjPajakActive" checked onchange="handleSwitchSpjPajakChange()">
+                    <label class="form-check-label small fw-bold text-dark cursor-pointer" for="switchSpjPajakActive">
+                      <i class="bi bi-percent text-danger me-1"></i> Terapkan Pemotongan Pajak PPh 21
+                    </label>
+                  </div>
+                  <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-2" style="font-size: 0.75rem;" onclick="resetSpjTaxRatesDefault()">
+                      <i class="bi bi-arrow-counterclockwise me-1"></i>Reset Standar APBD
+                    </button>
+                    <span class="badge bg-white text-secondary border small">Dapat Diedit Panitia</span>
+                  </div>
                 </div>
-                <span class="badge bg-white text-secondary border small">Standar APBD</span>
+
+                <!-- Input Besaran Persentase Pajak Tiap Golongan / Status -->
+                <div id="containerTarifPajakInputs" class="row g-2 pt-2 border-top">
+                  <div class="col-md-2 col-sm-4 col-6">
+                    <label class="form-label small text-muted mb-0" style="font-size:0.75rem;">Golongan IV (%)</label>
+                    <div class="input-group input-group-sm">
+                      <input type="number" id="inputTarifPajakGol4" class="form-control form-control-sm text-center fw-bold" value="15" min="0" max="100" step="0.5" oninput="recalculateAndRenderSpjPreview()">
+                      <span class="input-group-text">%</span>
+                    </div>
+                  </div>
+                  <div class="col-md-2 col-sm-4 col-6">
+                    <label class="form-label small text-muted mb-0" style="font-size:0.75rem;">Golongan III (%)</label>
+                    <div class="input-group input-group-sm">
+                      <input type="number" id="inputTarifPajakGol3" class="form-control form-control-sm text-center fw-bold" value="5" min="0" max="100" step="0.5" oninput="recalculateAndRenderSpjPreview()">
+                      <span class="input-group-text">%</span>
+                    </div>
+                  </div>
+                  <div class="col-md-2 col-sm-4 col-6">
+                    <label class="form-label small text-muted mb-0" style="font-size:0.75rem;">Golongan I &amp; II (%)</label>
+                    <div class="input-group input-group-sm">
+                      <input type="number" id="inputTarifPajakGol12" class="form-control form-control-sm text-center fw-bold" value="0" min="0" max="100" step="0.5" oninput="recalculateAndRenderSpjPreview()">
+                      <span class="input-group-text">%</span>
+                    </div>
+                  </div>
+                  <div class="col-md-3 col-sm-6 col-6">
+                    <label class="form-label small text-muted mb-0" style="font-size:0.75rem;">PPPK &amp; PPPK PW (%)</label>
+                    <div class="input-group input-group-sm">
+                      <input type="number" id="inputTarifPajakPppk" class="form-control form-control-sm text-center fw-bold" value="0" min="0" max="100" step="0.5" oninput="recalculateAndRenderSpjPreview()">
+                      <span class="input-group-text">%</span>
+                    </div>
+                  </div>
+                  <div class="col-md-3 col-sm-6 col-12">
+                    <label class="form-label small text-muted mb-0" style="font-size:0.75rem;">Non-ASN (%)</label>
+                    <div class="input-group input-group-sm">
+                      <input type="number" id="inputTarifPajakNonAsn" class="form-control form-control-sm text-center fw-bold" value="0" min="0" max="100" step="0.5" oninput="recalculateAndRenderSpjPreview()">
+                      <span class="input-group-text">%</span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div class="row g-2 mb-3">
@@ -1584,41 +1637,19 @@
                 </div>
               </div>
 
-              <!-- Filter Peserta SPJ & Seleksi Baris -->
+              <!-- Filter Peserta SPJ & Seleksi Baris (50:50 Lapang & Simetris) -->
               <div class="row g-2 align-items-center p-2 mb-3 bg-light border rounded">
-                <div class="col-md-4 col-sm-6 col-12">
-                  <label class="form-label small fw-semibold mb-1 text-secondary"><i class="bi bi-geo-alt-fill text-danger me-1"></i>Filter Kecamatan</label>
-                  <select id="filterSpjKecamatan" class="form-select form-select-sm" onchange="applySpjParticipantFilter()">
-                    <option value="">-- Semua Kecamatan (17 Kecamatan) --</option>
-                    <option value="Karanganyar">Karanganyar</option>
-                    <option value="Tasikmadu">Tasikmadu</option>
-                    <option value="Jaten">Jaten</option>
-                    <option value="Kebakkramat">Kebakkramat</option>
-                    <option value="Gondangrejo">Gondangrejo</option>
-                    <option value="Colomadu">Colomadu</option>
-                    <option value="Mojogedang">Mojogedang</option>
-                    <option value="Kerjo">Kerjo</option>
-                    <option value="Jenawi">Jenawi</option>
-                    <option value="Karangpandan">Karangpandan</option>
-                    <option value="Ngargoyoso">Ngargoyoso</option>
-                    <option value="Tawangmangu">Tawangmangu</option>
-                    <option value="Matesih">Matesih</option>
-                    <option value="Jumapolo">Jumapolo</option>
-                    <option value="Jumantono">Jumantono</option>
-                    <option value="Jatipuro">Jatipuro</option>
-                    <option value="Jatiyoso">Jatiyoso</option>
-                  </select>
-                </div>
-                <div class="col-md-4 col-sm-6 col-12">
+                <div class="col-md-6 col-12">
                   <label class="form-label small fw-semibold mb-1 text-secondary"><i class="bi bi-person-badge-fill text-primary me-1"></i>Filter Status Kepegawaian</label>
                   <select id="filterSpjStatusPeg" class="form-select form-select-sm" onchange="applySpjParticipantFilter()">
-                    <option value="">-- Semua Status (PNS, PPPK, Non-ASN) --</option>
+                    <option value="">-- Semua Status (PNS, PPPK, PPPK PW, Non-ASN) --</option>
                     <option value="PNS">PNS Saja</option>
-                    <option value="PPPK">PPPK Saja</option>
+                    <option value="PPPK">PPPK Saja (Penuh Waktu)</option>
+                    <option value="PPPK PW">PPPK PW Saja (Paruh Waktu)</option>
                     <option value="NON-ASN">Non-ASN (Honorer / GTT / Swasta)</option>
                   </select>
                 </div>
-                <div class="col-md-4 col-12 d-flex flex-column justify-content-end">
+                <div class="col-md-6 col-12 d-flex flex-column justify-content-end">
                   <label class="form-label small fw-semibold mb-1 text-secondary"><i class="bi bi-check2-square text-success me-1"></i>Seleksi Peserta SPJ</label>
                   <div class="d-flex align-items-center gap-2">
                     <button type="button" class="btn btn-outline-success btn-sm fw-bold flex-grow-1" onclick="toggleSelectAllSpj(true)">
@@ -2106,16 +2137,26 @@
       }
     }
 
-    function refreshCurrentDashboard() {
-      loadDashboardInitial();
-      Swal.fire({
-        toast: true,
-        position: 'top-end',
-        icon: 'success',
-        title: 'Data berhasil disegarkan!',
-        showConfirmButton: false,
-        timer: 1500
-      });
+    async function refreshCurrentDashboard() {
+      const btn = document.querySelector('button[onclick="refreshCurrentDashboard()"]');
+      const icon = btn ? btn.querySelector('i') : null;
+      if (icon) icon.classList.add("fa-spin");
+      if (btn) btn.disabled = true;
+
+      try {
+        await loadDashboardInitial();
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'success',
+          title: 'Data berhasil disegarkan!',
+          showConfirmButton: false,
+          timer: 1500
+        });
+      } finally {
+        if (icon) icon.classList.remove("fa-spin");
+        if (btn) btn.disabled = false;
+      }
     }
 
     /**
@@ -2451,10 +2492,29 @@
       `).join("");
     }
 
+    function handleSwitchModulKaosChange() {
+      const swKaos = document.getElementById("switchModulKaos");
+      const swLengan = document.getElementById("switchModulLengan");
+      const wrapper = document.getElementById("wrapperSwitchModulLengan");
+      if (!swKaos || !swLengan) return;
+
+      if (!swKaos.checked) {
+        swLengan.checked = false;
+        swLengan.disabled = true;
+        if (wrapper) wrapper.classList.add("opacity-50");
+      } else {
+        swLengan.disabled = false;
+        if (wrapper) wrapper.classList.remove("opacity-50");
+      }
+    }
+
     function openModalTambahKegiatan() {
       document.getElementById("modalKegiatanTitle").textContent = "Tambah Kegiatan Baru";
       document.getElementById("eventModalId").value = "";
       document.getElementById("formEventModal").reset();
+      const swKaos = document.getElementById("switchModulKaos");
+      if (swKaos) swKaos.checked = true;
+      handleSwitchModulKaosChange();
       const swEticket = document.getElementById("switchModulEticket");
       if (swEticket) swEticket.checked = true;
       const modal = new bootstrap.Modal(document.getElementById("modalKegiatan"));
@@ -2475,7 +2535,10 @@
       document.getElementById("eventModalLokasi").value = ev.lokasiKegiatan || "";
 
       document.getElementById("switchModulKaos").checked = (ev.modulKaos === "ON");
-      document.getElementById("switchModulLengan").checked = (ev.modulLengan === "ON");
+      handleSwitchModulKaosChange();
+      if (ev.modulKaos === "ON") {
+        document.getElementById("switchModulLengan").checked = (ev.modulLengan === "ON");
+      }
       document.getElementById("switchModulGender").checked = (ev.modulGender === "ON");
       document.getElementById("switchModulDarurat").checked = (ev.modulKontakDarurat === "ON");
       document.getElementById("switchModulKesehatan").checked = (ev.modulKesehatan === "ON");
@@ -2488,6 +2551,9 @@
 
     async function submitEventModal(e) {
       e.preventDefault();
+      const isKaosOn = document.getElementById("switchModulKaos").checked;
+      const isLenganOn = isKaosOn && document.getElementById("switchModulLengan").checked;
+
       const eventData = {
         idKegiatan: document.getElementById("eventModalId").value,
         namaKegiatan: document.getElementById("eventModalNama").value.trim(),
@@ -2496,13 +2562,20 @@
         kuotaPerSekolah: document.getElementById("eventModalKuota").value,
         tanggalPelaksanaan: document.getElementById("eventModalTanggal").value.trim(),
         lokasiKegiatan: document.getElementById("eventModalLokasi").value.trim(),
-        modulKaos: document.getElementById("switchModulKaos").checked ? "ON" : "OFF",
-        modulLengan: document.getElementById("switchModulLengan").checked ? "ON" : "OFF",
+        modulKaos: isKaosOn ? "ON" : "OFF",
+        modulLengan: isLenganOn ? "ON" : "OFF",
         modulGender: document.getElementById("switchModulGender").checked ? "ON" : "OFF",
         modulKontakDarurat: document.getElementById("switchModulDarurat").checked ? "ON" : "OFF",
         modulKesehatan: document.getElementById("switchModulKesehatan").checked ? "ON" : "OFF",
         modulEticketPresensi: document.getElementById("switchModulEticket")?.checked ? "ON" : "OFF"
       };
+
+      Swal.fire({
+        title: "Menyimpan Kegiatan...",
+        text: "Mohon tunggu, sedang memperbarui basis data kegiatan...",
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+      });
 
       try {
         const res = await callGasApi("saveEvent", { eventData, pin: currentAdminPin });
@@ -2511,22 +2584,34 @@
           Swal.fire({ title: "Berhasil", text: "Kegiatan berhasil disimpan!", icon: "success" });
           loadDashboardInitial();
         } else {
-          Swal.fire({ title: "Gagal", text: res.message || "Gagal menyimpan kegiatan.", icon: "error" });
+          Swal.fire({ title: "Gagal", text: res ? res.message : "Gagal menyimpan kegiatan.", icon: "error" });
         }
       } catch (err) {
         console.error(err);
+        Swal.fire({ title: "Error", text: "Terjadi kesalahan saat memproses penyimpanan.", icon: "error" });
       }
     }
 
     async function toggleEventStatus(eventId, curStatus) {
       const newStatus = curStatus === "BUKA" ? "TUTUP" : "BUKA";
+      Swal.fire({
+        title: "Mengubah Status Formulir...",
+        text: `Sedang mengubah status menjadi ${newStatus}...`,
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+      });
+
       try {
         const res = await callGasApi("toggleEventStatus", { eventId, newStatus, pin: currentAdminPin });
         if (res && res.success) {
+          Swal.close();
           loadDashboardInitial();
+        } else {
+          Swal.fire({ title: "Gagal", text: res ? res.message : "Gagal mengubah status kegiatan.", icon: "error" });
         }
       } catch (e) {
         console.error(e);
+        Swal.fire({ title: "Error", text: "Terjadi kesalahan koneksi saat mengubah status.", icon: "error" });
       }
     }
 
@@ -2610,6 +2695,7 @@
       const kepegawaian = {
         PNS: { total: 0, L: 0, P: 0 },
         PPPK: { total: 0, L: 0, P: 0 },
+        "PPPK PW": { total: 0, L: 0, P: 0 },
         "Non ASN": { total: 0, L: 0, P: 0 }
       };
 
@@ -2633,10 +2719,15 @@
         else if (isP) totalP++;
 
         // Status Kepegawaian
-        const rawStatus = String(p.statusKepegawaian || "").trim();
+        const rawStatus = String(p.statusKepegawaian || "").trim().toUpperCase();
         let normalizedStatus = "Non ASN";
-        if (rawStatus.toUpperCase() === "PNS") normalizedStatus = "PNS";
-        else if (rawStatus.toUpperCase().includes("PPPK")) normalizedStatus = "PPPK";
+        if (rawStatus === "PNS") {
+          normalizedStatus = "PNS";
+        } else if (rawStatus.includes("PW") || rawStatus.includes("PARUH WAKTU")) {
+          normalizedStatus = "PPPK PW";
+        } else if (rawStatus.includes("PPPK")) {
+          normalizedStatus = "PPPK";
+        }
 
         kepegawaian[normalizedStatus].total++;
         if (isL) kepegawaian[normalizedStatus].L++;
@@ -2684,6 +2775,10 @@
       if (document.getElementById("rekapPppkTotal")) document.getElementById("rekapPppkTotal").textContent = kepegawaian["PPPK"].total;
       if (document.getElementById("rekapPppkL")) document.getElementById("rekapPppkL").textContent = kepegawaian["PPPK"].L;
       if (document.getElementById("rekapPppkP")) document.getElementById("rekapPppkP").textContent = kepegawaian["PPPK"].P;
+
+      if (document.getElementById("rekapPppkPwTotal")) document.getElementById("rekapPppkPwTotal").textContent = kepegawaian["PPPK PW"].total;
+      if (document.getElementById("rekapPppkPwL")) document.getElementById("rekapPppkPwL").textContent = kepegawaian["PPPK PW"].L;
+      if (document.getElementById("rekapPppkPwP")) document.getElementById("rekapPppkPwP").textContent = kepegawaian["PPPK PW"].P;
 
       if (document.getElementById("rekapNonAsnTotal")) document.getElementById("rekapNonAsnTotal").textContent = kepegawaian["Non ASN"].total;
       if (document.getElementById("rekapNonAsnL")) document.getElementById("rekapNonAsnL").textContent = kepegawaian["Non ASN"].L;
@@ -2807,6 +2902,7 @@
       const kepegawaian = {
         PNS: { total: 0, L: 0, P: 0 },
         PPPK: { total: 0, L: 0, P: 0 },
+        "PPPK PW": { total: 0, L: 0, P: 0 },
         "Non ASN": { total: 0, L: 0, P: 0 }
       };
 
@@ -2826,10 +2922,11 @@
         if (isL) totalL++;
         else if (isP) totalP++;
 
-        const rawStatus = String(p.statusKepegawaian || "").trim();
+        const rawStatus = String(p.statusKepegawaian || "").trim().toUpperCase();
         let st = "Non ASN";
-        if (rawStatus.toUpperCase() === "PNS") st = "PNS";
-        else if (rawStatus.toUpperCase().includes("PPPK")) st = "PPPK";
+        if (rawStatus === "PNS") st = "PNS";
+        else if (rawStatus.includes("PW") || rawStatus.includes("PARUH WAKTU")) st = "PPPK PW";
+        else if (rawStatus.includes("PPPK")) st = "PPPK";
 
         kepegawaian[st].total++;
         if (isL) kepegawaian[st].L++;
@@ -2907,6 +3004,7 @@
         ["Status Kepegawaian", "Laki-laki", "Perempuan", "TOTAL PESERTA"],
         ["PNS", kepegawaian["PNS"].L, kepegawaian["PNS"].P, kepegawaian["PNS"].total],
         ["PPPK", kepegawaian["PPPK"].L, kepegawaian["PPPK"].P, kepegawaian["PPPK"].total],
+        ["PPPK PW", kepegawaian["PPPK PW"].L, kepegawaian["PPPK PW"].P, kepegawaian["PPPK PW"].total],
         ["Non ASN", kepegawaian["Non ASN"].L, kepegawaian["Non ASN"].P, kepegawaian["Non ASN"].total],
         ["Total", totalL, totalP, total],
         [""],
@@ -3085,14 +3183,24 @@
       });
 
       if (confirm) {
+        Swal.fire({
+          title: "Menghapus Peserta...",
+          text: "Sedang menghapus peserta dari basis data...",
+          allowOutsideClick: false,
+          didOpen: () => { Swal.showLoading(); }
+        });
+
         try {
           const res = await callGasApi("deleteParticipant", { regId, pin: currentAdminPin });
           if (res && res.success) {
             Swal.fire({ title: "Terhapus", text: "Data peserta berhasil dihapus.", icon: "success" });
             loadDashboardInitial();
+          } else {
+            Swal.fire({ title: "Gagal", text: res ? res.message : "Gagal menghapus peserta.", icon: "error" });
           }
         } catch (e) {
           console.error(e);
+          Swal.fire({ title: "Error", text: "Terjadi kesalahan saat menghapus peserta.", icon: "error" });
         }
       }
     }
@@ -3518,6 +3626,30 @@
       recalculateAndRenderSpjPreview();
     }
 
+    function handleSwitchSpjPajakChange() {
+      const isPajakActive = document.getElementById("switchSpjPajakActive") ? document.getElementById("switchSpjPajakActive").checked : true;
+      const container = document.getElementById("containerTarifPajakInputs");
+      if (container) {
+        container.querySelectorAll("input").forEach(inp => inp.disabled = !isPajakActive);
+        container.style.opacity = isPajakActive ? "1" : "0.5";
+      }
+      recalculateAndRenderSpjPreview();
+    }
+
+    function resetSpjTaxRatesDefault() {
+      const elGol4 = document.getElementById("inputTarifPajakGol4");
+      const elGol3 = document.getElementById("inputTarifPajakGol3");
+      const elGol12 = document.getElementById("inputTarifPajakGol12");
+      const elPppk = document.getElementById("inputTarifPajakPppk");
+      const elNonAsn = document.getElementById("inputTarifPajakNonAsn");
+      if (elGol4) elGol4.value = "15";
+      if (elGol3) elGol3.value = "5";
+      if (elGol12) elGol12.value = "0";
+      if (elPppk) elPppk.value = "0";
+      if (elNonAsn) elNonAsn.value = "0";
+      recalculateAndRenderSpjPreview();
+    }
+
     async function recalculateAndRenderSpjPreview() {
       if (!currentAdminPin) return;
 
@@ -3526,6 +3658,20 @@
       const satuan = document.getElementById("inputSpjSatuan").value || "hari";
       const tanggal = document.getElementById("inputSpjTanggal").value || "";
       const isPajakActive = document.getElementById("switchSpjPajakActive") ? document.getElementById("switchSpjPajakActive").checked : true;
+
+      const rateGol4 = (parseFloat(document.getElementById("inputTarifPajakGol4")?.value) || 0) / 100;
+      const rateGol3 = (parseFloat(document.getElementById("inputTarifPajakGol3")?.value) || 0) / 100;
+      const rateGol12 = (parseFloat(document.getElementById("inputTarifPajakGol12")?.value) || 0) / 100;
+      const ratePppk = (parseFloat(document.getElementById("inputTarifPajakPppk")?.value) || 0) / 100;
+      const rateNonAsn = (parseFloat(document.getElementById("inputTarifPajakNonAsn")?.value) || 0) / 100;
+
+      const tarifPajakCustom = {
+        gol4: rateGol4,
+        gol3: rateGol3,
+        gol12: rateGol12,
+        pppk: ratePppk,
+        nonAsn: rateNonAsn
+      };
 
       const kpaNama = document.getElementById("inputKpaNama").value || "Rehatta Rakasiwi, S.Psi.,M.Si";
       const kpaNip = document.getElementById("inputKpaNip").value || "198401162011011009";
@@ -3540,6 +3686,7 @@
         satuanWaktu: satuan,
         tanggalSpj: tanggal,
         isPajakActive: isPajakActive,
+        tarifPajakCustom: tarifPajakCustom,
         overridePajak: overridePajakMap,
         kpaNama: kpaNama,
         kpaNip: kpaNip,
@@ -3585,13 +3732,22 @@
               tarif = overridePajakMap[pt.idRegistrasi || pt.regId];
               tarifStr = Math.round(tarif * 100) + "%";
             } else if (statusLower.includes("pns")) {
-              if (golUpper.startsWith("IV")) {
-                tarif = 0.15;
-                tarifStr = "15%";
-              } else if (golUpper.startsWith("III")) {
-                tarif = 0.05;
-                tarifStr = "5%";
+              if (golUpper.startsWith("IV") || golUpper.includes("GOLONGAN IV")) {
+                tarif = rateGol4;
+                tarifStr = (rateGol4 * 100) + "%";
+              } else if (golUpper.startsWith("III") || golUpper.includes("GOLONGAN III")) {
+                tarif = rateGol3;
+                tarifStr = (rateGol3 * 100) + "%";
+              } else {
+                tarif = rateGol12;
+                tarifStr = (rateGol12 * 100) + "%";
               }
+            } else if (statusLower.includes("pppk")) {
+              tarif = ratePppk;
+              tarifStr = (ratePppk * 100) + "%";
+            } else {
+              tarif = rateNonAsn;
+              tarifStr = (rateNonAsn * 100) + "%";
             }
           }
 
@@ -3650,18 +3806,14 @@
     function applySpjParticipantFilter() {
       if (!activeSpjData || !activeSpjData.participants) return;
 
-      const fKecamatan = (document.getElementById("filterSpjKecamatan") ? document.getElementById("filterSpjKecamatan").value : "").toLowerCase().trim();
       const fStatus = (document.getElementById("filterSpjStatusPeg") ? document.getElementById("filterSpjStatusPeg").value : "").toUpperCase().trim();
 
       const filtered = activeSpjData.participants.filter(p => {
-        if (fKecamatan) {
-          const kec = String(p.kecamatan || "").toLowerCase().trim();
-          if (!kec.includes(fKecamatan)) return false;
-        }
         if (fStatus) {
           const st = String(p.statusPeg || "").toUpperCase().trim();
           if (fStatus === "PNS" && !st.includes("PNS")) return false;
-          if (fStatus === "PPPK" && !st.includes("PPPK")) return false;
+          if (fStatus === "PPPK PW" && (!st.includes("PW") && !st.includes("PARUH WAKTU"))) return false;
+          if (fStatus === "PPPK" && (st.includes("PW") || st.includes("PARUH WAKTU") || !st.includes("PPPK"))) return false;
           if (fStatus === "NON-ASN" && (st.includes("PNS") || st.includes("PPPK"))) return false;
         }
         return true;
@@ -3673,16 +3825,15 @@
     function toggleSelectAllSpj(checked) {
       if (!activeSpjData || !activeSpjData.participants) return;
       
-      const fKecamatan = (document.getElementById("filterSpjKecamatan") ? document.getElementById("filterSpjKecamatan").value : "").toLowerCase().trim();
       const fStatus = (document.getElementById("filterSpjStatusPeg") ? document.getElementById("filterSpjStatusPeg").value : "").toUpperCase().trim();
 
       activeSpjData.participants.forEach(p => {
         let isVisible = true;
-        if (fKecamatan && !String(p.kecamatan || "").toLowerCase().includes(fKecamatan)) isVisible = false;
         if (fStatus) {
           const st = String(p.statusPeg || "").toUpperCase().trim();
           if (fStatus === "PNS" && !st.includes("PNS")) isVisible = false;
-          if (fStatus === "PPPK" && !st.includes("PPPK")) isVisible = false;
+          if (fStatus === "PPPK PW" && (!st.includes("PW") && !st.includes("PARUH WAKTU"))) isVisible = false;
+          if (fStatus === "PPPK" && (st.includes("PW") || st.includes("PARUH WAKTU") || !st.includes("PPPK"))) isVisible = false;
           if (fStatus === "NON-ASN" && (st.includes("PNS") || st.includes("PPPK"))) isVisible = false;
         }
 
@@ -4353,6 +4504,13 @@
         return;
       }
 
+      Swal.fire({
+        title: "Menyimpan Password...",
+        text: "Mohon tunggu sebentar...",
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+      });
+
       try {
         const res = await callGasApi("saveSettings", {
           settings: { ADMIN_PIN: newPin },
@@ -4365,9 +4523,12 @@
           Swal.fire({ title: "Berhasil", text: "Password Panitia berhasil diperbarui!", icon: "success" });
           document.getElementById("inputNewPin").value = "";
           document.getElementById("inputConfirmPin").value = "";
+        } else {
+          Swal.fire({ title: "Gagal", text: res ? res.message : "Gagal memperbarui password.", icon: "error" });
         }
       } catch (err) {
         console.error(err);
+        Swal.fire({ title: "Error", text: "Terjadi kesalahan koneksi.", icon: "error" });
       }
     }
 

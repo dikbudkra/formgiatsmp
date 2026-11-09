@@ -1046,14 +1046,17 @@ function saveEvent(eventData, pin) {
     const timestampStr = Utilities.formatDate(now, Session.getScriptTimeZone() || "GMT+7", "dd/MM/yyyy HH:mm:ss");
     const finalId = targetRow !== -1 ? eventId : ("EVT-" + Utilities.formatDate(now, Session.getScriptTimeZone() || "GMT+7", "yyMMdd") + "-" + Math.floor(100 + Math.random() * 900));
 
+    const finalModulKaos = String(eventData.modulKaos || "ON").trim().toUpperCase();
+    const finalModulLengan = (finalModulKaos === "OFF") ? "OFF" : String(eventData.modulLengan || "ON").trim().toUpperCase();
+
     const rowData = [
       finalId,
       nama,
       String(eventData.subKegiatan || "Bidang SMP - Dinas Pendidikan dan Kebudayaan Kabupaten Karanganyar").trim(),
       String(eventData.statusForm || "BUKA").trim().toUpperCase(),
       String(eventData.kuotaPerSekolah || "1").trim(),
-      String(eventData.modulKaos || "ON").trim().toUpperCase(),
-      String(eventData.modulLengan || "ON").trim().toUpperCase(),
+      finalModulKaos,
+      finalModulLengan,
       String(eventData.modulGender || "ON").trim().toUpperCase(),
       String(eventData.modulKontakDarurat || "ON").trim().toUpperCase(),
       String(eventData.modulKesehatan || "ON").trim().toUpperCase(),
@@ -1699,7 +1702,8 @@ function submitRegistration(formData) {
     const noWaClean = String(formData.noWa || "").replace(/[^0-9]/g, "");
     const kontakDaruratHpClean = String(formData.kontakDaruratHp || "").replace(/[^0-9]/g, "");
 
-    if ((cleanStatusPeg === "PNS" || cleanStatusPeg === "PPPK") && nipClean.length !== 18) {
+    const isNipRequired = cleanStatusPeg === "PNS" || cleanStatusPeg === "PPPK" || cleanStatusPeg === "PPPK PW" || cleanStatusPeg.includes("PPPK");
+    if (isNipRequired && nipClean.length !== 18) {
       return {
         success: false,
         message: `NIP untuk ${cleanStatusPeg} harus terdiri dari 18 digit angka murni tanpa spasi!`
@@ -1711,6 +1715,14 @@ function submitRegistration(formData) {
         success: false,
         message: "Nomor WhatsApp harus angka murni tanpa spasi dan minimal 10 digit!"
       };
+    }
+
+    // Penyesuaian Golongan & Pangkat (Khusus PPPK PW tidak memiliki pangkat & golongan)
+    let finalGolongan = formData.golongan || "-";
+    let finalPangkat = formData.pangkat || "-";
+    if (cleanStatusPeg === "PPPK PW" || cleanStatusPeg.includes("PW") || cleanStatusPeg.includes("PARUH WAKTU")) {
+      finalGolongan = "-";
+      finalPangkat = "-";
     }
 
     // Adaptasi modul dinamis
@@ -1789,8 +1801,8 @@ function submitRegistration(formData) {
       sanitizeFormula(formData.namaLengkap),
       cleanStatusPeg,
       nipClean ? "'" + nipClean : "-",
-      formData.golongan || "-",
-      formData.pangkat || "-",
+      finalGolongan,
+      finalPangkat,
       sanitizeFormula(formData.jabatan),
       jenisKelaminFinal,
       ukuranKaosFinal,
@@ -1821,8 +1833,8 @@ function submitRegistration(formData) {
         kecamatan: formData.kecamatan || "-",
         statusKepegawaian: cleanStatusPeg,
         nip: nipClean || "-",
-        golongan: formData.golongan || "-",
-        pangkat: formData.pangkat || "-",
+        golongan: finalGolongan,
+        pangkat: finalPangkat,
         jabatan: formData.jabatan || "-",
         jenisKelamin: jenisKelaminFinal,
         ukuranKaos: ukuranKaosFinal,
@@ -1831,6 +1843,7 @@ function submitRegistration(formData) {
         tanggalPelaksanaan: settings.TANGGAL_PELAKSANAAN || "Menyesuaikan Jadwal Panitia",
         lokasiKegiatan: settings.LOKASI_KEGIATAN || "Kabupaten Karanganyar",
         modulEticket: settings.MODUL_ETICKET_PRESENSI || "ON",
+        modulEticketPresensi: settings.MODUL_ETICKET_PRESENSI || "ON",
         timestamp: timestamp
       }
     };
@@ -2765,6 +2778,13 @@ function getSpjGeneratorData(params, pin) {
     const satuanWaktu = p.satuanWaktu || "hari";
     const isPajakActive = p.isPajakActive !== false; // Default: true (aktif)
 
+    const customRates = p.tarifPajakCustom || {};
+    const rateGol4 = typeof customRates.gol4 === "number" ? customRates.gol4 : 0.15;
+    const rateGol3 = typeof customRates.gol3 === "number" ? customRates.gol3 : 0.05;
+    const rateGol12 = typeof customRates.gol12 === "number" ? customRates.gol12 : 0;
+    const ratePppk = typeof customRates.pppk === "number" ? customRates.pppk : 0;
+    const rateNonAsn = typeof customRates.nonAsn === "number" ? customRates.nonAsn : 0;
+
     let totalBruto = 0;
     let totalPph21 = 0;
     let totalNetto = 0;
@@ -2783,19 +2803,21 @@ function getSpjGeneratorData(params, pin) {
           tarifPersenStr = Math.round(tarifPajak * 100) + "%";
         } else if (statusLower.includes("pns")) {
           if (golUpper.startsWith("IV") || golUpper.includes("GOLONGAN IV")) {
-            tarifPajak = 0.15;
-            tarifPersenStr = "15%";
+            tarifPajak = rateGol4;
+            tarifPersenStr = (rateGol4 * 100) + "%";
           } else if (golUpper.startsWith("III") || golUpper.includes("GOLONGAN III")) {
-            tarifPajak = 0.05;
-            tarifPersenStr = "5%";
+            tarifPajak = rateGol3;
+            tarifPersenStr = (rateGol3 * 100) + "%";
           } else {
-            tarifPajak = 0;
-            tarifPersenStr = "0%";
+            tarifPajak = rateGol12;
+            tarifPersenStr = (rateGol12 * 100) + "%";
           }
+        } else if (statusLower.includes("pppk")) {
+          tarifPajak = ratePppk;
+          tarifPersenStr = (ratePppk * 100) + "%";
         } else {
-          // PPPK dan Non-ASN sesuai kesepakatan: 0%
-          tarifPajak = 0;
-          tarifPersenStr = "0%";
+          tarifPajak = rateNonAsn;
+          tarifPersenStr = (rateNonAsn * 100) + "%";
         }
       }
 

@@ -125,7 +125,7 @@
       border: 1.5px solid #cbd5e1;
       padding: 0.65rem 0.9rem;
       font-size: 0.92rem;
-      transition: all 0.2s ease;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
 
     .form-control:focus, .form-select:focus {
@@ -515,6 +515,9 @@
                 <input type="radio" class="pill-radio" id="statusPppk" name="statusKepegawaian" value="PPPK" onchange="handleStatusPegawaiChange('PPPK')">
                 <label class="pill-label" for="statusPppk"><i class="bi bi-award-fill"></i> PPPK</label>
 
+                <input type="radio" class="pill-radio" id="statusPppkPw" name="statusKepegawaian" value="PPPK PW" onchange="handleStatusPegawaiChange('PPPK PW')">
+                <label class="pill-label" for="statusPppkPw"><i class="bi bi-briefcase-fill"></i> PPPK PW</label>
+
                 <input type="radio" class="pill-radio" id="statusNonAsn" name="statusKepegawaian" value="Non-ASN" onchange="handleStatusPegawaiChange('Non-ASN')">
                 <label class="pill-label" for="statusNonAsn"><i class="bi bi-person"></i> Non-ASN / Lainnya</label>
               </div>
@@ -525,11 +528,11 @@
               <input type="text" class="form-control" id="inputJabatan" name="jabatan" required>
             </div>
 
-            <!-- Dynamic NIP for ASN (PNS & PPPK) -->
+            <!-- Dynamic NIP for ASN (PNS, PPPK, PPPK PW) -->
             <div class="col-md-6 d-none" id="boxNip">
               <label class="form-label" for="inputNip">NIP (Nomor Induk Pegawai) <span class="text-danger">*</span></label>
-              <input type="text" class="form-control" id="inputNip" name="nip" maxlength="25" inputmode="numeric" oninput="this.value = this.value.replace(/\D/g, '')">
-              <div class="form-text small text-muted">Hanya angka tanpa spasi.</div>
+              <input type="text" class="form-control font-monospace" id="inputNip" name="nip" maxlength="18" inputmode="numeric" oninput="this.value = this.value.replace(/\D/g, '').slice(0, 18)" placeholder="Contoh: 198501012010011001">
+              <div class="form-text small text-muted">Wajib tepat 18 digit angka tanpa spasi.</div>
             </div>
 
             <!-- Pilihan Golongan Khusus PNS -->
@@ -537,31 +540,27 @@
               <label class="form-label" for="selectGolonganPns">Pangkat / Golongan Ruang (PNS) <span class="text-danger">*</span></label>
               <select class="form-select" id="selectGolonganPns" onchange="handleGolonganChange(this.value)">
                 <option value="">-- Pilih Golongan PNS --</option>
-                <optgroup label="Golongan IV (Pembina)">
-                  <option value="IV/e|Pembina Utama">IV/e - Pembina Utama</option>
-                  <option value="IV/d|Pembina Utama Madya">IV/d - Pembina Utama Madya</option>
-                  <option value="IV/c|Pembina Utama Muda">IV/c - Pembina Utama Muda</option>
-                  <option value="IV/b|Pembina Tingkat I">IV/b - Pembina Tingkat I</option>
-                  <option value="IV/a|Pembina">IV/a - Pembina</option>
-                </optgroup>
-                <optgroup label="Golongan III (Penata)">
-                  <option value="III/d|Penata Tingkat I">III/d - Penata Tingkat I</option>
-                  <option value="III/c|Penata">III/c - Penata</option>
-                  <option value="III/b|Penata Muda Tingkat I">III/b - Penata Muda Tingkat I</option>
-                  <option value="III/a|Penata Muda">III/a - Penata Muda</option>
-                </optgroup>
-                <optgroup label="Golongan II (Pengatur)">
-                  <option value="II/d|Pengatur Tingkat I">II/d - Pengatur Tingkat I</option>
-                  <option value="II/c|Pengatur">II/c - Pengatur</option>
-                  <option value="II/b|Pengatur Muda Tingkat I">II/b - Pengatur Muda Tingkat I</option>
-                  <option value="II/a|Pengatur Muda">II/a - Pengatur Muda</option>
-                </optgroup>
-                <optgroup label="Golongan I (Juru)">
-                  <option value="I/d|Juru Tingkat I">I/d - Juru Tingkat I</option>
-                  <option value="I/c|Juru">I/c - Juru</option>
-                  <option value="I/b|Juru Muda Tingkat I">I/b - Juru Muda Tingkat I</option>
-                  <option value="I/a|Juru Muda">I/a - Juru Muda</option>
-                </optgroup>
+                <option disabled class="fw-bold bg-light text-dark">── Golongan IV (Pembina) ──</option>
+                <option value="IV/e|Pembina Utama">IV/e - Pembina Utama</option>
+                <option value="IV/d|Pembina Utama Madya">IV/d - Pembina Utama Madya</option>
+                <option value="IV/c|Pembina Utama Muda">IV/c - Pembina Utama Muda</option>
+                <option value="IV/b|Pembina Tingkat I">IV/b - Pembina Tingkat I</option>
+                <option value="IV/a|Pembina">IV/a - Pembina</option>
+                <option disabled class="fw-bold bg-light text-dark">── Golongan III (Penata) ──</option>
+                <option value="III/d|Penata Tingkat I">III/d - Penata Tingkat I</option>
+                <option value="III/c|Penata">III/c - Penata</option>
+                <option value="III/b|Penata Muda Tingkat I">III/b - Penata Muda Tingkat I</option>
+                <option value="III/a|Penata Muda">III/a - Penata Muda</option>
+                <option disabled class="fw-bold bg-light text-dark">── Golongan II (Pengatur) ──</option>
+                <option value="II/d|Pengatur Tingkat I">II/d - Pengatur Tingkat I</option>
+                <option value="II/c|Pengatur">II/c - Pengatur</option>
+                <option value="II/b|Pengatur Muda Tingkat I">II/b - Pengatur Muda Tingkat I</option>
+                <option value="II/a|Pengatur Muda">II/a - Pengatur Muda</option>
+                <option disabled class="fw-bold bg-light text-dark">── Golongan I (Juru) ──</option>
+                <option value="I/d|Juru Tingkat I">I/d - Juru Tingkat I</option>
+                <option value="I/c|Juru">I/c - Juru</option>
+                <option value="I/b|Juru Muda Tingkat I">I/b - Juru Muda Tingkat I</option>
+                <option value="I/a|Juru Muda">I/a - Juru Muda</option>
               </select>
             </div>
 
@@ -1257,6 +1256,17 @@
         selectGolPppk.required = true;
         selectGolPns.value = "";
         handleGolonganChange(selectGolPppk.value);
+      } else if (status === "PPPK PW") {
+        // PPPK PW: Hanya memiliki NIP, TIDAK memiliki pangkat / golongan
+        boxNip.classList.remove("d-none");
+        boxGolPns.classList.add("d-none");
+        boxGolPppk.classList.add("d-none");
+        inputNip.required = true;
+        selectGolPns.required = false;
+        selectGolPppk.required = false;
+        selectGolPns.value = "";
+        selectGolPppk.value = "";
+        if (inputPangkat) inputPangkat.value = "-";
       } else {
         boxNip.classList.add("d-none");
         boxGolPns.classList.add("d-none");
@@ -1332,18 +1342,30 @@
       const nipInput = document.getElementById("inputNip");
       const cleanNip = nipInput ? nipInput.value.replace(/\D/g, "").trim() : "";
 
-      if (statusPegawai === "PNS") {
+      if (statusPegawai === "PNS" || statusPegawai === "PPPK" || statusPegawai === "PPPK PW") {
         if (!cleanNip) {
           Swal.fire({
-            title: "NIP PNS Belum Diisi",
-            text: "Silakan isi NIP Anda berupa angka tanpa spasi.",
+            title: `NIP ${statusPegawai} Belum Diisi`,
+            text: "Silakan masukkan NIP Anda berupa angka tanpa spasi.",
             icon: "warning",
             confirmButtonColor: "#1e3a8a"
           });
           nipInput?.focus();
           return;
         }
+        if (cleanNip.length !== 18) {
+          Swal.fire({
+            title: "Format NIP Tidak Valid",
+            html: `NIP resmi terdiri dari tepat <strong>18 digit angka</strong>.<br><br>Saat ini Anda baru memasukkan <span class="badge bg-danger fs-6">${cleanNip.length} digit</span>. Silakan periksa kembali.`,
+            icon: "warning",
+            confirmButtonColor: "#1e3a8a"
+          });
+          nipInput?.focus();
+          return;
+        }
+      }
 
+      if (statusPegawai === "PNS") {
         const pnsVal = document.getElementById("selectGolonganPns")?.value || "";
         if (!pnsVal) {
           Swal.fire({
@@ -1358,17 +1380,6 @@
         golonganVal = pnsVal.split("|")[0];
         pangkatVal = pnsVal.split("|")[1] || "-";
       } else if (statusPegawai === "PPPK") {
-        if (!cleanNip) {
-          Swal.fire({
-            title: "NIP PPPK Belum Diisi",
-            text: "Silakan isi NIP Anda berupa angka tanpa spasi.",
-            icon: "warning",
-            confirmButtonColor: "#1e3a8a"
-          });
-          nipInput?.focus();
-          return;
-        }
-
         const pppkVal = document.getElementById("selectGolonganPppk")?.value || "";
         if (!pppkVal) {
           Swal.fire({
@@ -1381,6 +1392,12 @@
           return;
         }
         golonganVal = pppkVal;
+        pangkatVal = "-";
+      } else if (statusPegawai === "PPPK PW") {
+        golonganVal = "-";
+        pangkatVal = "-";
+      } else {
+        golonganVal = "-";
         pangkatVal = "-";
       }
 
@@ -1436,10 +1453,13 @@
         riwayatPenyakit: document.getElementById("inputRiwayatKesehatan").value.trim() || "-"
       };
 
+      // Cek apakah kegiatan ini mengaktifkan modul E-Ticket & Presensi
+      const isEticketEnabled = activeSelectedEvent ? (activeSelectedEvent.modulEticketPresensi !== "OFF") : true;
+
       // Tampilkan Loading SweetAlert
       Swal.fire({
         title: "Mengirim Data...",
-        text: "Menyimpan data pendaftaran dan menerbitkan E-Ticket resmi...",
+        text: isEticketEnabled ? "Menyimpan data pendaftaran dan menerbitkan E-Ticket resmi..." : "Menyimpan data pendaftaran peserta...",
         allowOutsideClick: false,
         didOpen: () => {
           Swal.showLoading();
@@ -1454,22 +1474,25 @@
           lastTicketData = response.data || {};
 
           // Cek apakah kegiatan ini mengaktifkan modul E-Ticket & Presensi
-          const isEticketOn = !activeSelectedEvent || activeSelectedEvent.modulEticketPresensi !== "OFF";
+          const backendEticket = String(response.data?.modulEticket || "").toUpperCase();
+          const eventEticket = activeSelectedEvent ? String(activeSelectedEvent.modulEticketPresensi || "").toUpperCase() : "";
+          const isEticketOn = (backendEticket === "OFF" || eventEticket === "OFF") ? false : true;
+
           if (isEticketOn) {
             showETicketModal(lastTicketData);
           } else {
             Swal.fire({
               title: "Pendaftaran Berhasil!",
-              html: `Data pendaftaran Anda telah berhasil tersimpan resmi.<br><br><strong>ID Registrasi:</strong> <span class="badge bg-primary fs-6 px-3 py-1.5">${escapeHtml(lastTicketData.regId || "-")}</span><br><br><span class="text-muted small">Kegiatan ini tidak memerlukan E-Ticket presensi QR di lokasi. Simpan ID Registrasi Anda sebagai bukti pendaftaran sah.</span>`,
+              html: `Data pendaftaran Anda telah berhasil tersimpan resmi ke sistem panitia.<br><br><strong>ID Registrasi:</strong> <span class="badge bg-primary fs-6 px-3 py-1.5">${escapeHtml(lastTicketData.regId || "-")}</span><br><br><span class="text-muted small">Kegiatan ini tidak memerlukan kartu barcode / presensi di lokasi. Simpan ID Registrasi Anda sebagai bukti pendaftaran sah.</span>`,
               icon: "success",
               showCancelButton: true,
-              confirmButtonText: '<i class="bi bi-whatsapp me-1"></i> Kirim ke WhatsApp',
+              confirmButtonText: '<i class="bi bi-whatsapp me-1"></i> Bagikan Bukti ke WA',
               cancelButtonText: "Tutup",
               confirmButtonColor: "#22c55e",
               cancelButtonColor: "#64748b"
             }).then((result) => {
               if (result.isConfirmed) {
-                shareTicketToWhatsApp();
+                shareTicketToWhatsApp(false);
               }
             });
           }
@@ -1500,9 +1523,61 @@
     let currentTicketQrDataUrl = "";
 
     /**
+     * Helper menghasilkan dataURL QR Code beresolusi tinggi dan stabil
+     */
+    function generateQrCodeDataUrl(text) {
+      return new Promise((resolve) => {
+        const safeText = String(text || "REG-UNKNOWN").trim();
+        const tempDiv = document.createElement("div");
+        tempDiv.style.width = "140px";
+        tempDiv.style.height = "140px";
+        tempDiv.style.position = "fixed";
+        tempDiv.style.left = "-9999px";
+        tempDiv.style.top = "-9999px";
+        tempDiv.style.background = "#ffffff";
+        tempDiv.style.opacity = "0";
+        tempDiv.style.pointerEvents = "none";
+        document.body.appendChild(tempDiv);
+
+        try {
+          new QRCode(tempDiv, {
+            text: safeText,
+            width: 140,
+            height: 140,
+            colorDark: "#0f172a",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+          });
+
+          setTimeout(() => {
+            let dataUrl = "";
+            const cv = tempDiv.querySelector("canvas");
+            if (cv) {
+              try {
+                dataUrl = cv.toDataURL("image/png");
+              } catch(e) {}
+            }
+            if (!dataUrl) {
+              const im = tempDiv.querySelector("img");
+              if (im && im.src) dataUrl = im.src;
+            }
+            if (tempDiv.parentNode) tempDiv.parentNode.removeChild(tempDiv);
+            if (!dataUrl) {
+              dataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(safeText)}`;
+            }
+            resolve(dataUrl);
+          }, 100);
+        } catch (e) {
+          if (tempDiv.parentNode) tempDiv.parentNode.removeChild(tempDiv);
+          resolve(`https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(safeText)}`);
+        }
+      });
+    }
+
+    /**
      * Tampilkan Modal E-Ticket dan Render QR Code
      */
-    function showETicketModal(data) {
+    async function showETicketModal(data) {
       document.getElementById("ticketNamaPeserta").textContent = data.namaLengkap || data.nama || "-";
       document.getElementById("ticketSekolahPeserta").textContent = data.namaSekolah || data.sekolah || "-";
       document.getElementById("ticketRegId").textContent = data.regId || "-";
@@ -1513,40 +1588,13 @@
 
       // Render QR Code
       const qrWrapper = document.getElementById("qrcodeWrapper");
-      qrWrapper.innerHTML = "";
+      qrWrapper.innerHTML = '<div class="py-4 text-center"><span class="spinner-border spinner-border-sm text-primary"></span></div>';
       currentTicketQrDataUrl = "";
 
       const regCode = String(data.regId || "REG-UNKNOWN");
-
-      // Coba render via QRCode.js
-      try {
-        new QRCode(qrWrapper, {
-          text: regCode,
-          width: 140,
-          height: 140,
-          colorDark: "#0f172a",
-          colorLight: "#ffffff",
-          correctLevel: QRCode.CorrectLevel.H
-        });
-
-        // Ambil data URL dari canvas yang dihasilkan qrcodejs sesegera mungkin
-        setTimeout(() => {
-          const c = qrWrapper.querySelector("canvas");
-          if (c) {
-            try {
-              currentTicketQrDataUrl = c.toDataURL("image/png");
-              qrWrapper.innerHTML = `<img id="ticketQrImageEl" src="${currentTicketQrDataUrl}" alt="QR Code" width="140" height="140" style="display:block; margin:0 auto; width:140px; height:140px;" />`;
-            } catch (e) {
-              console.warn("Gagal convert canvas QR ke dataURL:", e);
-            }
-          }
-        }, 60);
-      } catch (err) {
-        console.warn("QRCode.js gagal, gunakan fallback generator:", err);
-        const fallbackUrl = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(regCode)}`;
-        currentTicketQrDataUrl = fallbackUrl;
-        qrWrapper.innerHTML = `<img id="ticketQrImageEl" src="${fallbackUrl}" alt="QR Code" width="140" height="140" style="display:block; margin:0 auto; width:140px; height:140px;" crossOrigin="anonymous" />`;
-      }
+      const qrDataUrl = await generateQrCodeDataUrl(regCode);
+      currentTicketQrDataUrl = qrDataUrl;
+      qrWrapper.innerHTML = `<img id="ticketQrImageEl" src="${qrDataUrl}" alt="QR Code" width="140" height="140" style="display:block; margin:0 auto; width:140px; height:140px;" />`;
 
       const modalEl = document.getElementById("modalETicket");
       const modal = new bootstrap.Modal(modalEl);
@@ -1560,26 +1608,13 @@
       const container = document.getElementById("eTicketDoubleContainer");
       if (!container) return;
 
-      const qrWrapper = document.getElementById("qrcodeWrapper");
-
-      // Pastikan dataURL QR code sudah terisi
-      if (!currentTicketQrDataUrl && qrWrapper) {
-        const c = qrWrapper.querySelector("canvas");
-        if (c) {
-          try {
-            currentTicketQrDataUrl = c.toDataURL("image/png");
-          } catch(e) {}
-        }
-        if (!currentTicketQrDataUrl) {
-          const im = qrWrapper.querySelector("img");
-          if (im && im.src) {
-            currentTicketQrDataUrl = im.src;
-          }
-        }
+      const regCode = String(lastTicketData?.regId || "REG-UNKNOWN");
+      if (!currentTicketQrDataUrl || currentTicketQrDataUrl.length < 50) {
+        currentTicketQrDataUrl = await generateQrCodeDataUrl(regCode);
       }
 
-      // Pastikan qrWrapper di DOM asli memiliki elemen <img> dengan dataURL
-      if (currentTicketQrDataUrl && qrWrapper) {
+      const qrWrapper = document.getElementById("qrcodeWrapper");
+      if (qrWrapper && currentTicketQrDataUrl) {
         qrWrapper.innerHTML = `<img id="ticketQrImageEl" src="${currentTicketQrDataUrl}" alt="QR Code" width="140" height="140" style="display:block; margin:0 auto; width:140px; height:140px;" />`;
       }
 
@@ -1590,8 +1625,8 @@
         didOpen: () => Swal.showLoading()
       });
 
-      // Jeda 150ms agar browser selesai me-render dataURL image
-      await new Promise(resolve => setTimeout(resolve, 150));
+      // Jeda 200ms agar browser selesai me-render dataURL image
+      await new Promise(resolve => setTimeout(resolve, 200));
 
       try {
         const canvas = await html2canvas(container, {
@@ -1662,8 +1697,13 @@
     /**
      * Bagikan Tiket ke WhatsApp
      */
-    function shareTicketToWhatsApp() {
+    function shareTicketToWhatsApp(withEticket = true) {
       if (!lastTicketData) return;
+      const isEticketOn = (withEticket !== false) && (!activeSelectedEvent || activeSelectedEvent.modulEticketPresensi !== "OFF");
+      const penutup = isEticketOn
+        ? `_Simpan pesan ini dan bawa E-Ticket saat registrasi presensi di lokasi._`
+        : `_Simpan pesan ini sebagai bukti pendaftaran sah kegiatan._`;
+
       const text = `*BUKTI PENDAFTARAN KEGIATAN KEDINASAN*\n` +
         `Bidang SMP DISDIKBUD Karanganyar\n\n` +
         `*ID Registrasi:* ${lastTicketData.regId || "-"}\n` +
@@ -1671,7 +1711,7 @@
         `*Satuan Pendidikan:* ${lastTicketData.namaSekolah || "-"}\n` +
         `*Kegiatan:* ${lastTicketData.namaKegiatan || "-"}\n` +
         `*Ukuran Kaos:* ${lastTicketData.ukuranKaos || "-"}\n\n` +
-        `_Simpan pesan ini dan bawa E-Ticket saat registrasi di lokasi._`;
+        penutup;
 
       const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
       window.open(url, "_blank");
