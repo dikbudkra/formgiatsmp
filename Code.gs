@@ -23,6 +23,7 @@ const SHEET_MASTER = "Master_SMP";
 const SHEET_CONFIG = "Config";
 const FOLDER_SPJ_ID = "1Rhc_GVXNtFA8wPzkgerLCztrXQeML037";
 const SHEET_TEMPLATE_SPJ = "Master_Template_SPJ";
+const SHEET_TEMPLATE_BINARY = "_Templates_SPJ_Bin";
 const SHEET_MASTER_KEGIATAN = "Master_Kegiatan";
 
 
@@ -2601,15 +2602,101 @@ function getSpjFolder_() {
       return DriveApp.getFolderById(folderId);
     } catch (e) {}
   }
-  const existing = DriveApp.getFoldersByName("Templates_SPJ_Bidang_SMP");
-  if (existing.hasNext()) {
-    return existing.next();
+  try {
+    const existing = DriveApp.getFoldersByName("Templates_SPJ_Bidang_SMP");
+    if (existing.hasNext()) {
+      return existing.next();
+    }
+    return DriveApp.createFolder("Templates_SPJ_Bidang_SMP");
+  } catch (err) {
+    return null;
   }
-  return DriveApp.createFolder("Templates_SPJ_Bidang_SMP");
 }
 
 /**
- * Upload template baru (.xlsx atau .docx) ke Google Drive & rekam di sheet
+ * Penyimpanan Mandiri Binary Template ke Spreadsheet Database
+ * (Solusi Anti-Gagal tanpa memerlukan izin Google Drive / DriveApp)
+ */
+function ensureTemplateBinarySheetReady_() {
+  const ss = getSpreadsheet_();
+  let sheet = ss.getSheetByName(SHEET_TEMPLATE_BINARY);
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_TEMPLATE_BINARY);
+    sheet.appendRow(["Template_ID", "Chunk_Index", "Total_Chunks", "Base64_Chunk"]);
+    try {
+      sheet.hideSheet();
+    } catch (e) {}
+  }
+  return sheet;
+}
+
+function saveTemplateBinaryToSheet_(tplId, base64Data) {
+  const sheet = ensureTemplateBinarySheetReady_();
+  deleteTemplateBinaryFromSheet_(tplId);
+
+  const CHUNK_SIZE = 35000; // Aman di bawah batas 50.000 karakter per sel Google Sheets
+  const totalChunks = Math.ceil(base64Data.length / CHUNK_SIZE);
+  const rows = [];
+
+  for (let i = 0; i < totalChunks; i++) {
+    const chunk = base64Data.substring(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+    rows.push([tplId, i, totalChunks, chunk]);
+  }
+
+  if (rows.length > 0) {
+    sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, 4).setValues(rows);
+  }
+  return true;
+}
+
+function getTemplateBinaryFromSheet_(tplId) {
+  try {
+    const ss = getSpreadsheet_();
+    const sheet = ss.getSheetByName(SHEET_TEMPLATE_BINARY);
+    if (!sheet) return "";
+
+    const data = sheet.getDataRange().getValues();
+    const targetId = String(tplId).trim().replace(/^SHEET:/, "");
+    const chunks = [];
+
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][0]).trim() === targetId) {
+        chunks.push({
+          idx: Number(data[i][1]) || 0,
+          chunk: String(data[i][3] || "")
+        });
+      }
+    }
+
+    if (chunks.length === 0) return "";
+    chunks.sort((a, b) => a.idx - b.idx);
+    return chunks.map(c => c.chunk).join("");
+  } catch (e) {
+    Logger.log("Error getTemplateBinaryFromSheet_: " + e.toString());
+    return "";
+  }
+}
+
+function deleteTemplateBinaryFromSheet_(tplId) {
+  try {
+    const ss = getSpreadsheet_();
+    const sheet = ss.getSheetByName(SHEET_TEMPLATE_BINARY);
+    if (!sheet) return;
+
+    const targetId = String(tplId).trim().replace(/^SHEET:/, "");
+    const data = sheet.getDataRange().getValues();
+    for (let i = data.length - 1; i >= 1; i--) {
+      if (String(data[i][0]).trim() === targetId) {
+        sheet.deleteRow(i + 1);
+      }
+    }
+  } catch (e) {
+    Logger.log("Error deleteTemplateBinaryFromSheet_: " + e.toString());
+  }
+}
+
+/**
+ * Upload template baru (.xlsx atau .docx) ke Google Drive / Spreadsheet & rekam di sheet
  */
 function uploadSpjTemplate(fileData, pin) {
   if (!verifyAdminPin(pin)) {
@@ -2633,17 +2720,34 @@ function uploadSpjTemplate(fileData, pin) {
 
   try {
     ensureDatabaseReady_();
-    const folder = getSpjFolder_();
 
     const decodedBytes = Utilities.base64Decode(fileData.base64Data);
-    const mimeType = ext === "xlsx" 
-      ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" 
-      : "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-    
-    const blob = Utilities.newBlob(decodedBytes, mimeType, fileName);
-    const driveFile = folder.createFile(blob);
-    const fileId = driveFile.getId();
     const fileSizeKb = Math.round(decodedBytes.length / 1024) + " KB";
+    const now = new Date();
+    const dateStr = Utilities.formatDate(now, Session.getScriptTimeZone() || "GMT+7", "dd/MM/yyyy HH:mm");
+    const tplId = "TPL-" + Utilities.formatDate(now, Session.getScriptTimeZone() || "GMT+7", "yyMMdd") + "-" + Math.floor(1000 + Math.random() * 9000);
+
+    let fileId = "";
+    let storageType = "Google Drive";
+
+    // Coba simpan ke Google Drive terlebih dahulu
+    try {
+      const folder = getSpjFolder_();
+      if (!folder) throw new Error("Folder Drive tidak tersedia");
+      const mimeType = ext === "xlsx" 
+        ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" 
+        : "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+      
+      const blob = Utilities.newBlob(decodedBytes, mimeType, fileName);
+      const driveFile = folder.createFile(blob);
+      fileId = driveFile.getId();
+    } catch (driveErr) {
+      Logger.log("DriveApp tidak memiliki izin/error, otomatis beralih ke penyimpanan Database Sheet: " + driveErr.toString());
+      // FALLBACK MANDIRI: Simpan langsung ke sheet binary tanpa memerlukan DriveApp
+      fileId = "SHEET:" + tplId;
+      storageType = "Database Spreadsheet";
+      saveTemplateBinaryToSheet_(tplId, fileData.base64Data);
+    }
 
     // Analisis Cerdas Jemprot AI: deteksi apakah nama/jenis dokumen butuh nominal uang
     const analysis = analyzeSpjWithGemini_(fileData.namaDokumen, ext, fileName);
@@ -2654,10 +2758,6 @@ function uploadSpjTemplate(fileData, pin) {
       ensureDatabaseReady_();
       sheet = ss.getSheetByName(SHEET_TEMPLATE_SPJ);
     }
-
-    const now = new Date();
-    const dateStr = Utilities.formatDate(now, Session.getScriptTimeZone() || "GMT+7", "dd/MM/yyyy HH:mm");
-    const tplId = "TPL-" + Utilities.formatDate(now, Session.getScriptTimeZone() || "GMT+7", "yyMMdd") + "-" + Math.floor(1000 + Math.random() * 9000);
 
     const newRow = [
       tplId,
@@ -2675,7 +2775,7 @@ function uploadSpjTemplate(fileData, pin) {
 
     return {
       success: true,
-      message: `Template "${fileData.namaDokumen}" berhasil diunggah dan disimpan ke Google Drive!`,
+      message: `Template "${fileData.namaDokumen}" berhasil disimpan ke ${storageType}!`,
       template: {
         id: tplId,
         namaDokumen: fileData.namaDokumen,
@@ -2694,7 +2794,7 @@ function uploadSpjTemplate(fileData, pin) {
 }
 
 /**
- * Hapus template dari Google Drive dan database
+ * Hapus template dari Google Drive / Database Sheet
  */
 function deleteSpjTemplate(templateId, pin) {
   if (!verifyAdminPin(pin)) {
@@ -2725,7 +2825,11 @@ function deleteSpjTemplate(templateId, pin) {
     }
 
     if (targetRow > 0) {
-      if (fileIdDrive && fileIdDrive !== "DEFAULT") {
+      // Hapus dari sheet binary jika ada
+      deleteTemplateBinaryFromSheet_(targetId);
+
+      // Hapus dari Drive jika tersimpan di Drive
+      if (fileIdDrive && fileIdDrive !== "DEFAULT" && !fileIdDrive.startsWith("SHEET:")) {
         try {
           DriveApp.getFileById(fileIdDrive).setTrashed(true);
         } catch (e) {
@@ -2748,7 +2852,8 @@ function deleteSpjTemplate(templateId, pin) {
 }
 
 /**
- * Mengambil file template (.xlsx / .docx) dalam format Base64 dari Google Drive untuk Template Injection
+ * Mengambil file template (.xlsx / .docx) dalam format Base64 untuk Template Injection
+ * Otomatis mendukung penyimpanan Database Sheet dan Google Drive
  */
 function getSpjTemplateFile(fileId, pin) {
   if (!verifyAdminPin(pin)) {
@@ -2758,19 +2863,49 @@ function getSpjTemplateFile(fileId, pin) {
     return { success: false, message: "File ID tidak valid atau template bawaan." };
   }
 
+  const cleanFileId = String(fileId).trim();
+
+  // 1. Jika tersimpan di Database Sheet
+  if (cleanFileId.startsWith("SHEET:")) {
+    const tplId = cleanFileId.replace(/^SHEET:/, "");
+    const base64 = getTemplateBinaryFromSheet_(tplId);
+    if (base64) {
+      return {
+        success: true,
+        fileName: tplId,
+        mimeType: "application/octet-stream",
+        base64Data: base64,
+        source: "database"
+      };
+    }
+  }
+
+  // 2. Coba ambil dari Google Drive
   try {
-    const file = DriveApp.getFileById(fileId);
+    const file = DriveApp.getFileById(cleanFileId);
     const blob = file.getBlob();
     const base64 = Utilities.base64Encode(blob.getBytes());
     return {
       success: true,
       fileName: file.getName(),
       mimeType: file.getMimeType(),
-      base64Data: base64
+      base64Data: base64,
+      source: "drive"
     };
   } catch (err) {
+    // 3. Fallback: coba periksa apakah ada di sheet binary
+    const base64 = getTemplateBinaryFromSheet_(cleanFileId);
+    if (base64) {
+      return {
+        success: true,
+        fileName: cleanFileId,
+        mimeType: "application/octet-stream",
+        base64Data: base64,
+        source: "database_fallback"
+      };
+    }
     Logger.log("Error getSpjTemplateFile: " + err.toString());
-    return { success: false, message: "Gagal mengambil file template dari Google Drive: " + err.message };
+    return { success: false, message: "Gagal mengambil file template: " + err.message };
   }
 }
 
