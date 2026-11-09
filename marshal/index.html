@@ -1986,10 +1986,32 @@
     let currentCameraIndex = 0;
 
     /**
-     * Helper API Asinkron
+     * Helper API Asinkron (Mengutamakan GET untuk menghindari batasan POST Google Apps Script)
      */
     async function callGasApi(action, data = {}) {
       const payload = { action, ...data };
+      
+      // Jika request tidak membawa base64 data besar (seperti upload file), gunakan GET agar selalu lolos dan tidak diblokir Google
+      const isLargePayload = Boolean(payload.fileData && payload.fileData.base64Data);
+      
+      if (!isLargePayload) {
+        const queryParams = new URLSearchParams();
+        for (const key in payload) {
+          if (payload[key] !== undefined && payload[key] !== null) {
+            if (typeof payload[key] === "object") {
+              queryParams.append(key, JSON.stringify(payload[key]));
+            } else {
+              queryParams.append(key, String(payload[key]));
+            }
+          }
+        }
+        const getUrl = GAS_API_URL + (GAS_API_URL.includes("?") ? "&" : "?") + queryParams.toString();
+        const res = await fetch(getUrl, { method: "GET" });
+        if (!res.ok) throw new Error("HTTP Status: " + res.status);
+        return await res.json();
+      }
+
+      // Untuk upload file besar gunakan POST text/plain
       const res = await fetch(GAS_API_URL, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -5387,7 +5409,22 @@
           }
         }
 
-        // Terapkan juga input keterangan ekstra yang terdeteksi dari Excel
+        // Format tanggal SPJ pada baris tanda tangan di kanan bawah jika ada
+        const manualSpjTgl = document.getElementById("inputManualSpjHariTanggal")?.value || "";
+        if (manualSpjTgl) {
+          for (let R = headerRow; R <= range.e.r; ++R) {
+            for (let C = range.s.c; C <= range.e.c; ++C) {
+              const cellObj = ws[XLSX.utils.encode_cell({ r: R, c: C })];
+              if (cellObj && cellObj.v !== undefined) {
+                const sVal = String(cellObj.v).trim();
+                if (sVal === "Karanganyar," || sVal.startsWith("Karanganyar,")) {
+                  cellObj.v = "Karanganyar, " + manualSpjTgl;
+                  cellObj.t = "s";
+                }
+              }
+            }
+          }
+        }
         if (Array.isArray(detectedExcelExtraMetaFields)) {
           detectedExcelExtraMetaFields.forEach(f => {
             const inpEl = document.getElementById(f.id);
@@ -5438,12 +5475,18 @@
             else if ((val === "JML" || val.includes("HARI") || val.includes("WAKTU") || val.includes("VOLUME")) && colMap.jml === -1) colMap.jml = C;
             else if (val.includes("SATUAN") && colMap.satuan === -1) colMap.satuan = C;
             else if ((val.includes("TARIF") || val.includes("JASA") || val.includes("HONORARIUM") || val.includes("UANG SAKU") || val.includes("TRANSPORT")) && colMap.tarif === -1 && !val.includes("DAFTAR")) colMap.tarif = C;
-            else if ((val.includes("JUMLAH") || val.includes("BRUTO") || val.includes("KOTOR")) && colMap.bruto === -1) colMap.bruto = C;
+            else if ((val.includes("JUMLAH") || val.includes("BRUTO") || val.includes("KOTOR")) && colMap.bruto === -1 && C !== colMap.jml) colMap.bruto = C;
             else if ((val.includes("PPH") || val.includes("PAJAK") || val.includes("POTONGAN")) && colMap.pph === -1) colMap.pph = C;
             else if ((val.includes("PENERIMAAN") || val.includes("NETTO") || val.includes("DITERIMA") || val.includes("BERSIH")) && colMap.netto === -1) colMap.netto = C;
             else if ((val.includes("TANDA") || val.includes("TTD") || val.includes("TANGAN") || val.includes("PARAF") || val.includes("PRESENSI")) && colMap.ttd === -1) colMap.ttd = C;
           }
         });
+      }
+
+      // Deteksi spesifik format SPJ Uang Saku Dinas jika kolom JUMLAH pertama (Hari x Satuan) bersebelahan dengan JASA
+      if (colMap.tarif !== -1 && colMap.bruto !== -1 && colMap.tarif < colMap.bruto && colMap.jml === -1) {
+        // Pada tabel SPJ Mas Bos: Kolom G (Col 6) adalah JUMLAH (Hari), I (Col 8) adalah JASA, J (Col 9) adalah JUMLAH (Bruto)
+        colMap.jml = colMap.tarif - 2; // Col G
       }
 
       // Default fallback jika mapping otomatis tidak lengkap
