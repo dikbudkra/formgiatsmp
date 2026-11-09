@@ -2087,6 +2087,7 @@ function getAdminDashboardData(pin, targetEventIdOrName) {
       stats: stats,
       participants: participants,
       unregisteredSchools: unregisteredSchools,
+      masterSekolah: allSchools,
       totalMasterSekolah: allSchools.length
     };
   } catch (error) {

@@ -434,14 +434,24 @@
       </div>
     </div>
 
-    <!-- Active Event Switcher in Topbar -->
-    <div class="ms-auto d-flex align-items-center gap-2">
-      <div class="d-flex align-items-center gap-1.5 bg-light px-2.5 py-1 rounded-pill border">
-        <i class="bi bi-calendar2-check-fill text-primary small" id="iconTopbarCalendar"></i>
-        <select class="form-select form-select-sm border-0 bg-transparent fw-bold text-dark py-0 pe-4" id="selectTopbarEvent" onchange="handleEventSwitch(this.value)" style="box-shadow: none; font-size: 0.85rem; max-width: 260px;">
-          <option value="">Memuat Kegiatan...</option>
-        </select>
+    <!-- Active Event Title in Center (Tempat Kosong Diatas) -->
+    <div class="flex-grow-1 d-flex align-items-center justify-content-center px-3 min-w-0" id="topbarActiveEventContainer">
+      <div class="d-inline-flex align-items-center gap-2 px-3 py-1 bg-primary-subtle text-primary border border-primary-subtle rounded-pill shadow-xs text-truncate">
+        <i class="bi bi-award-fill text-primary"></i>
+        <span class="text-secondary small fw-medium d-none d-lg-inline">Kegiatan Aktif:</span>
+        <span class="fw-bold text-truncate" id="topbarActiveEventTitle" style="max-width: 420px;">Memuat Kegiatan...</span>
+        <span class="badge rounded-pill bg-success text-white" id="topbarActiveEventBadgeStatus" style="font-size: 0.68rem;">BUKA</span>
       </div>
+    </div>
+
+    <!-- Actions & Event Switcher in Topbar -->
+    <div class="ms-auto d-flex align-items-center gap-2 flex-shrink-0">
+      <!-- Tombol Ganti Kegiatan (Pop-up Modal) -->
+      <button type="button" class="btn btn-light border btn-sm rounded-pill px-3 py-1.5 fw-bold text-dark d-flex align-items-center gap-1.5 shadow-sm" id="btnTopbarGantiGiat" onclick="openModalPilihKegiatanTopbar()" title="Ganti Kegiatan yang Ditampilkan">
+        <i class="bi bi-calendar2-check-fill text-primary" id="iconTopbarCalendar"></i>
+        <span id="labelTombolGantiGiat">Ganti Giat</span>
+        <i class="bi bi-chevron-down text-muted small ms-0.5"></i>
+      </button>
 
       <a href="../index.html" target="_blank" class="btn btn-outline-secondary btn-sm rounded-pill px-2.5 py-1 d-none d-md-inline-flex align-items-center gap-1" title="Buka Form Publik">
         <i class="bi bi-box-arrow-up-right"></i>
@@ -983,9 +993,14 @@
           <h3 class="h4 fw-bold text-dark mb-0">Monitoring Satuan Pendidikan</h3>
           <p class="text-muted small mb-0">Pantau sekolah yang sudah mendaftar dan yang belum mengirim delegasi</p>
         </div>
-        <button class="btn btn-success btn-sm rounded-pill px-3 fw-bold" onclick="openModalWaBlastSekolah()">
-          <i class="bi bi-whatsapp me-1"></i> WhatsApp Blast Pengingat
-        </button>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <button class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold shadow-sm" onclick="openModalDownloadMonitoringSekolah()">
+            <i class="bi bi-file-earmark-excel-fill me-1 text-success"></i> Download Data Sekolah (.xlsx)
+          </button>
+          <button class="btn btn-success btn-sm rounded-pill px-3 fw-bold shadow-sm" onclick="openModalWaBlastSekolah()">
+            <i class="bi bi-whatsapp me-1"></i> WhatsApp Blast Pengingat
+          </button>
+        </div>
       </div>
 
       <div class="row g-4">
@@ -993,6 +1008,9 @@
           <div class="card card-modern p-4 h-100">
             <div class="d-flex justify-content-between align-items-center mb-3">
               <h5 class="fw-bold text-danger mb-0"><i class="bi bi-x-circle me-1"></i> Belum Mendaftar (<span id="countBelumDaftar">0</span>)</h5>
+              <button class="btn btn-sm btn-outline-danger rounded-pill px-2.5 py-1 small fw-semibold" onclick="exportMonitoringSekolahXLSX('belum')" title="Download Excel Sekolah Belum Daftar">
+                <i class="bi bi-download me-1"></i> Unduh Excel
+              </button>
             </div>
             <div class="table-responsive overflow-auto" style="max-height: 480px;">
               <table class="table table-sm table-hover align-middle mb-0">
@@ -1009,6 +1027,9 @@
           <div class="card card-modern p-4 h-100">
             <div class="d-flex justify-content-between align-items-center mb-3">
               <h5 class="fw-bold text-success mb-0"><i class="bi bi-check-circle me-1"></i> Sudah Mendaftar (<span id="countSudahDaftar">0</span>)</h5>
+              <button class="btn btn-sm btn-outline-success rounded-pill px-2.5 py-1 small fw-semibold" onclick="exportMonitoringSekolahXLSX('sudah')" title="Download Excel Sekolah Sudah Daftar">
+                <i class="bi bi-download me-1"></i> Unduh Excel
+              </button>
             </div>
             <div class="table-responsive overflow-auto" style="max-height: 480px;">
               <table class="table table-sm table-hover align-middle mb-0">
@@ -2141,6 +2162,9 @@
           allEventsList = res.allEvents || [];
           
           populateTopbarEvents(allEventsList, res.settings?.ID_KEGIATAN);
+          if (res.settings?.NAMA_KEGIATAN) {
+            updateTopbarActiveEventDisplay(res.settings.NAMA_KEGIATAN, res.settings.STATUS_FORM);
+          }
           renderDashboardStats(res);
           renderManajemenKegiatan(allEventsList);
           renderParticipantsTable(res.participants || []);
@@ -2179,36 +2203,108 @@
     }
 
     /**
-     * Switch Active Event
+     * Tampilan Judul Kegiatan Aktif di Topbar (Tempat Kosong Diatas)
+     */
+    function updateTopbarActiveEventDisplay(eventName, eventStatus) {
+      const titleEl = document.getElementById("topbarActiveEventTitle");
+      const badgeEl = document.getElementById("topbarActiveEventBadgeStatus");
+      const cleanName = eventName || "Belum Ada Kegiatan";
+
+      if (titleEl) {
+        titleEl.textContent = cleanName;
+        titleEl.title = `Kegiatan Aktif: ${cleanName}`;
+      }
+      if (badgeEl) {
+        if (eventStatus) {
+          badgeEl.textContent = eventStatus;
+          badgeEl.className = `badge rounded-pill ${eventStatus === 'BUKA' ? 'bg-success text-white' : 'bg-danger text-white'}`;
+          badgeEl.style.display = "";
+        } else {
+          badgeEl.style.display = "none";
+        }
+      }
+    }
+
+    /**
+     * Populate Topbar Data
      */
     function populateTopbarEvents(events, activeId) {
-      const select = document.getElementById("selectTopbarEvent");
-      if (!select) return;
+      allEventsList = events || [];
+      activeEventId = activeId || (events && events[0] ? events[0].idKegiatan : "");
 
-      if (!events || events.length === 0) {
-        select.innerHTML = '<option value="">-- Belum Ada Kegiatan --</option>';
-        activeEventId = "";
+      const activeEvent = allEventsList.find(e => e.idKegiatan === activeEventId) || allEventsList[0];
+      if (activeEvent) {
+        updateTopbarActiveEventDisplay(activeEvent.namaKegiatan, activeEvent.statusForm);
+      } else {
+        updateTopbarActiveEventDisplay("Belum Ada Kegiatan", "");
+      }
+    }
+
+    /**
+     * Pop-up Modal Pilih Kegiatan (Fungsi sama seperti tombol mata di tabel kegiatan)
+     */
+    function openModalPilihKegiatanTopbar() {
+      if (!allEventsList || allEventsList.length === 0) {
+        Swal.fire({
+          icon: "info",
+          title: "Belum Ada Kegiatan",
+          text: "Saat ini belum ada daftar kegiatan di database. Silakan tambahkan kegiatan baru melalui tab Manajemen Multi-Kegiatan."
+        });
         return;
       }
 
-      select.innerHTML = events.map(e => `
-        <option value="${escapeHtml(e.idKegiatan)}" ${e.idKegiatan === activeId ? 'selected' : ''}>
-          ${escapeHtml(e.namaKegiatan)} (${e.statusForm})
-        </option>
-      `).join("");
-      activeEventId = activeId || (events[0] ? events[0].idKegiatan : "");
+      const eventsHtml = allEventsList.map(ev => {
+        const isActive = ev.idKegiatan === activeEventId;
+        const isBuka = ev.statusForm === "BUKA";
+        return `
+          <div class="card p-3 mb-2.5 text-start border rounded-3 event-card-picker ${isActive ? 'border-primary bg-primary-subtle shadow-sm' : 'border-light-subtle bg-white'}" 
+               style="cursor: pointer; transition: all 0.15s ease-in-out;"
+               onclick="Swal.close(); handleEventSwitch('${escapeHtml(ev.idKegiatan)}');">
+            <div class="d-flex align-items-center justify-content-between gap-3">
+              <div class="min-w-0 flex-grow-1">
+                <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                  <span class="fw-bold text-dark fs-6 text-truncate">${escapeHtml(ev.namaKegiatan)}</span>
+                  ${isActive ? '<span class="badge bg-primary text-white rounded-pill small"><i class="bi bi-check2-circle me-1"></i>Sedang Tampil</span>' : ''}
+                </div>
+                <div class="text-muted small">
+                  <span class="me-2"><i class="bi bi-calendar3 me-1"></i>${escapeHtml(ev.tanggalPelaksanaan || '-')}</span>
+                  <span><i class="bi bi-geo-alt me-1"></i>${escapeHtml(ev.lokasiKegiatan || '-')}</span>
+                </div>
+              </div>
+              <div class="d-flex flex-column align-items-end gap-1.5 flex-shrink-0">
+                <span class="badge ${isBuka ? 'bg-success' : 'bg-danger'} rounded-pill">${ev.statusForm}</span>
+                <button type="button" class="btn btn-sm ${isActive ? 'btn-primary text-white' : 'btn-outline-primary'} rounded-pill px-3 py-1 small fw-semibold">
+                  <i class="bi bi-eye-fill me-1"></i>${isActive ? 'Aktif' : 'Tampilkan'}
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      Swal.fire({
+        title: "Pilih Kegiatan",
+        html: `
+          <p class="text-muted small mb-3">Pilih kegiatan di bawah ini untuk menampilkan dashboard, presensi, dan rekap pesertanya:</p>
+          <div class="overflow-auto text-start px-1" style="max-height: 420px;">
+            ${eventsHtml}
+          </div>
+        `,
+        showConfirmButton: false,
+        showCancelButton: true,
+        cancelButtonText: "Tutup",
+        cancelButtonColor: "#6c757d",
+        width: "560px"
+      });
     }
 
     async function handleEventSwitch(eventId) {
       if (!eventId) return;
       activeEventId = eventId;
 
-      const selectTopbar = document.getElementById("selectTopbarEvent");
+      const btnGanti = document.getElementById("btnTopbarGantiGiat");
       const iconCal = document.getElementById("iconTopbarCalendar");
-      if (selectTopbar) {
-        selectTopbar.value = eventId;
-        selectTopbar.disabled = true;
-      }
+      if (btnGanti) btnGanti.disabled = true;
       if (iconCal) {
         iconCal.className = "spinner-border spinner-border-sm text-primary";
         iconCal.style.width = "0.85rem";
@@ -2227,7 +2323,15 @@
         Swal.close();
         if (res && res.success) {
           currentDashboardData = res;
+          allEventsList = res.allEvents || allEventsList;
+
+          const ev = allEventsList.find(e => e.idKegiatan === eventId);
+          const eventName = res.settings?.NAMA_KEGIATAN || (ev ? ev.namaKegiatan : eventId);
+          const eventStatus = res.settings?.STATUS_FORM || (ev ? ev.statusForm : "");
+
+          updateTopbarActiveEventDisplay(eventName, eventStatus);
           renderDashboardStats(res);
+          renderManajemenKegiatan(allEventsList);
           renderParticipantsTable(res.participants || []);
           renderMatriksKaos(res.participants || []);
           renderMonitoringSekolah(res);
@@ -2237,7 +2341,7 @@
             toast: true,
             position: 'top-end',
             icon: 'success',
-            title: `Beralih ke kegiatan: ${res.settings?.NAMA_KEGIATAN || eventId}`,
+            title: `Beralih ke kegiatan: ${eventName}`,
             showConfirmButton: false,
             timer: 1800
           });
@@ -2256,9 +2360,9 @@
           icon: "error"
         });
       } finally {
-        if (selectTopbar) selectTopbar.disabled = false;
+        if (btnGanti) btnGanti.disabled = false;
         if (iconCal) {
-          iconCal.className = "bi bi-calendar2-check-fill text-primary small";
+          iconCal.className = "bi bi-calendar2-check-fill text-primary";
           iconCal.style.width = "";
           iconCal.style.height = "";
         }
@@ -2567,7 +2671,7 @@
               <button class="btn btn-outline-primary btn-sm rounded-pill px-2 py-1" onclick="openModalEditKegiatan('${escapeHtml(ev.idKegiatan)}')" title="Edit Kegiatan">
                 <i class="bi bi-pencil-fill"></i>
               </button>
-              <button class="btn btn-outline-${ev.statusForm === 'BUKA' ? 'warning' : 'success'} btn-sm rounded-pill px-2 py-1" onclick="toggleEventStatus('${escapeHtml(ev.idKegiatan)}', '${ev.statusForm}')" title="${ev.statusForm === 'BUKA' ? 'Tutup Pendaftaran' : 'Buka Pendaftaran'}">
+              <button class="btn btn-sm rounded-pill px-2 py-1 ${ev.statusForm === 'BUKA' ? 'btn-primary text-white shadow-sm' : 'btn-light border text-muted'}" style="${ev.statusForm === 'BUKA' ? 'background-color: #0d6efd; border-color: #0d6efd; color: #ffffff; box-shadow: 0 0 8px rgba(13,110,253,0.45);' : 'background-color: #f8f9fa; border-color: #ced4da; color: #6c757d;'}" onclick="toggleEventStatus('${escapeHtml(ev.idKegiatan)}', '${ev.statusForm}')" title="${ev.statusForm === 'BUKA' ? 'Status: BUKA / ON (Klik untuk Tutup Pendaftaran)' : 'Status: TUTUP / MATI (Klik untuk Buka Pendaftaran)'}">
                 <i class="bi bi-power"></i>
               </button>
               <button class="btn btn-outline-danger btn-sm rounded-pill px-2 py-1" onclick="confirmDeleteEvent('${escapeHtml(ev.idKegiatan)}', '${escapeHtml(ev.namaKegiatan)}')" title="Arsipkan & Hapus Kegiatan">
@@ -3176,29 +3280,272 @@
     /**
      * TAB 5: MONITORING SEKOLAH
      */
+    const DEFAULT_MASTER_SEKOLAH_KARANGANYAR = [
+      { npsn: "20312064", nama: "SMP NEGERI 1 KARANGANYAR", status: "Negeri", kecamatan: "Karanganyar" },
+      { npsn: "20312065", nama: "SMP NEGERI 2 KARANGANYAR", status: "Negeri", kecamatan: "Karanganyar" },
+      { npsn: "20312066", nama: "SMP NEGERI 3 KARANGANYAR", status: "Negeri", kecamatan: "Karanganyar" },
+      { npsn: "20312067", nama: "SMP NEGERI 4 KARANGANYAR", status: "Negeri", kecamatan: "Karanganyar" },
+      { npsn: "20312068", nama: "SMP NEGERI 5 KARANGANYAR", status: "Negeri", kecamatan: "Karanganyar" },
+      { npsn: "20312069", nama: "SMP NEGERI 1 JATEN", status: "Negeri", kecamatan: "Jaten" },
+      { npsn: "20312070", nama: "SMP NEGERI 2 JATEN", status: "Negeri", kecamatan: "Jaten" },
+      { npsn: "20312071", nama: "SMP NEGERI 1 COLOMADU", status: "Negeri", kecamatan: "Colomadu" },
+      { npsn: "20312072", nama: "SMP NEGERI 2 COLOMADU", status: "Negeri", kecamatan: "Colomadu" },
+      { npsn: "20312073", nama: "SMP NEGERI 3 COLOMADU", status: "Negeri", kecamatan: "Colomadu" },
+      { npsn: "20312074", nama: "SMP NEGERI 1 GONDANGREJO", status: "Negeri", kecamatan: "Gondangrejo" },
+      { npsn: "20312075", nama: "SMP NEGERI 2 GONDANGREJO", status: "Negeri", kecamatan: "Gondangrejo" },
+      { npsn: "20312076", nama: "SMP NEGERI 1 KEBAKKRAMAT", status: "Negeri", kecamatan: "Kebakkramat" },
+      { npsn: "20312077", nama: "SMP NEGERI 2 KEBAKKRAMAT", status: "Negeri", kecamatan: "Kebakkramat" },
+      { npsn: "20312078", nama: "SMP NEGERI 3 KEBAKKRAMAT", status: "Negeri", kecamatan: "Kebakkramat" },
+      { npsn: "20312079", nama: "SMP NEGERI 1 TASIKMADU", status: "Negeri", kecamatan: "Tasikmadu" },
+      { npsn: "20312080", nama: "SMP NEGERI 2 TASIKMADU", status: "Negeri", kecamatan: "Tasikmadu" },
+      { npsn: "20312081", nama: "SMP NEGERI 1 MATESIH", status: "Negeri", kecamatan: "Matesih" },
+      { npsn: "20312082", nama: "SMP NEGERI 2 MATESIH", status: "Negeri", kecamatan: "Matesih" },
+      { npsn: "20312083", nama: "SMP NEGERI 1 KARANGPANDAN", status: "Negeri", kecamatan: "Karangpandan" },
+      { npsn: "20312084", nama: "SMP NEGERI 2 KARANGPANDAN", status: "Negeri", kecamatan: "Karangpandan" },
+      { npsn: "20312085", nama: "SMP NEGERI 1 NGARGOYOSO", status: "Negeri", kecamatan: "Ngargoyoso" },
+      { npsn: "20312086", nama: "SMP NEGERI 2 NGARGOYOSO", status: "Negeri", kecamatan: "Ngargoyoso" },
+      { npsn: "20312087", nama: "SMP NEGERI 1 TAWANGMANGU", status: "Negeri", kecamatan: "Tawangmangu" },
+      { npsn: "20312088", nama: "SMP NEGERI 2 TAWANGMANGU", status: "Negeri", kecamatan: "Tawangmangu" },
+      { npsn: "20312089", nama: "SMP NEGERI 1 JUMAPOLO", status: "Negeri", kecamatan: "Jumapolo" },
+      { npsn: "20312090", nama: "SMP NEGERI 2 JUMAPOLO", status: "Negeri", kecamatan: "Jumapolo" },
+      { npsn: "20312091", nama: "SMP NEGERI 3 JUMAPOLO", status: "Negeri", kecamatan: "Jumapolo" },
+      { npsn: "20312092", nama: "SMP NEGERI 1 JUMANTONO", status: "Negeri", kecamatan: "Jumantono" },
+      { npsn: "20312093", nama: "SMP NEGERI 2 JUMANTONO", status: "Negeri", kecamatan: "Jumantono" },
+      { npsn: "20312094", nama: "SMP NEGERI 1 JATIPURO", status: "Negeri", kecamatan: "Jatipuro" },
+      { npsn: "20312095", nama: "SMP NEGERI 2 JATIPURO", status: "Negeri", kecamatan: "Jatipuro" },
+      { npsn: "20312096", nama: "SMP NEGERI 3 JATIPURO", status: "Negeri", kecamatan: "Jatipuro" },
+      { npsn: "20312097", nama: "SMP NEGERI 1 JATIYOSO", status: "Negeri", kecamatan: "Jatiyoso" },
+      { npsn: "20312098", nama: "SMP NEGERI 2 JATIYOSO", status: "Negeri", kecamatan: "Jatiyoso" },
+      { npsn: "20312099", nama: "SMP NEGERI 1 KERJO", status: "Negeri", kecamatan: "Kerjo" },
+      { npsn: "20312100", nama: "SMP NEGERI 2 KERJO", status: "Negeri", kecamatan: "Kerjo" },
+      { npsn: "20312101", nama: "SMP NEGERI 1 JENAWI", status: "Negeri", kecamatan: "Jenawi" },
+      { npsn: "20312102", nama: "SMP NEGERI 2 JENAWI", status: "Negeri", kecamatan: "Jenawi" },
+      { npsn: "20312103", nama: "SMP NEGERI 1 MOJOGEDANG", status: "Negeri", kecamatan: "Mojogedang" },
+      { npsn: "20312104", nama: "SMP NEGERI 2 MOJOGEDANG", status: "Negeri", kecamatan: "Mojogedang" },
+      { npsn: "20312105", nama: "SMP NEGERI 3 MOJOGEDANG", status: "Negeri", kecamatan: "Mojogedang" },
+      { npsn: "20312106", nama: "SMP MUHAMMADIYAH 1 KARANGANYAR", status: "Swasta", kecamatan: "Karanganyar" },
+      { npsn: "20312107", nama: "SMP MUHAMMADIYAH 2 KARANGANYAR", status: "Swasta", kecamatan: "Karanganyar" },
+      { npsn: "20312108", nama: "SMP MUHAMMADIYAH 3 KARANGANYAR", status: "Swasta", kecamatan: "Karanganyar" },
+      { npsn: "20312109", nama: "SMP MUHAMMADIYAH 4 KARANGANYAR", status: "Swasta", kecamatan: "Karanganyar" },
+      { npsn: "20312110", nama: "SMP MUHAMMADIYAH 7 COLOMADU", status: "Swasta", kecamatan: "Colomadu" },
+      { npsn: "20312111", nama: "SMP MUHAMMADIYAH 9 GONDANGREJO", status: "Swasta", kecamatan: "Gondangrejo" },
+      { npsn: "70035571", nama: "SMP AL AMAANAH MATESIH", status: "Swasta", kecamatan: "Matesih" }
+    ];
+
+    let cachedMonitoringSekolah = { belum: [], sudah: [] };
+
     function renderMonitoringSekolah(data) {
       const participants = data.participants || [];
-      const master = data.masterSekolah || [];
+      const master = (data.masterSekolah && data.masterSekolah.length > 0)
+        ? data.masterSekolah
+        : ((data.unregisteredSchools && data.unregisteredSchools.length > 0) ? data.unregisteredSchools : DEFAULT_MASTER_SEKOLAH_KARANGANYAR);
 
-      const registeredNpsn = new Set(participants.map(p => p.npsn));
+      const registeredNpsn = new Set(participants.map(p => String(p.npsn || "").trim()));
+      const registeredName = new Set(participants.map(p => String(p.namaSekolah || "").trim().toLowerCase()));
+
       const registeredCount = {};
+      const registeredSchoolMeta = {};
       participants.forEach(p => {
-        registeredCount[p.namaSekolah] = (registeredCount[p.namaSekolah] || 0) + 1;
+        const schName = String(p.namaSekolah || "").trim();
+        registeredCount[schName] = (registeredCount[schName] || 0) + 1;
+        if (!registeredSchoolMeta[schName]) {
+          registeredSchoolMeta[schName] = { npsn: p.npsn || "-", kecamatan: p.kecamatan || "-" };
+        }
       });
 
-      const belum = master.filter(m => !registeredNpsn.has(m.npsn));
-      const sudah = Object.keys(registeredCount).map(sch => ({ nama: sch, count: registeredCount[sch] }));
+      const belum = master.filter(m => {
+        const npsnMatch = m.npsn && registeredNpsn.has(String(m.npsn).trim());
+        const nameMatch = m.nama && registeredName.has(String(m.nama).trim().toLowerCase());
+        return !npsnMatch && !nameMatch;
+      }).map(m => ({
+        nama: m.nama || "-",
+        npsn: m.npsn || "-",
+        kecamatan: m.kecamatan || "-"
+      }));
+
+      const sudah = Object.keys(registeredCount).map(sch => {
+        const m = master.find(x => String(x.nama).trim().toLowerCase() === sch.toLowerCase() || (x.npsn && String(x.npsn).trim() === registeredSchoolMeta[sch]?.npsn));
+        return {
+          nama: sch,
+          npsn: m ? m.npsn : (registeredSchoolMeta[sch]?.npsn || "-"),
+          kecamatan: m ? m.kecamatan : (registeredSchoolMeta[sch]?.kecamatan || "-"),
+          count: registeredCount[sch]
+        };
+      });
+
+      cachedMonitoringSekolah = { belum, sudah };
 
       document.getElementById("countBelumDaftar").textContent = belum.length;
       document.getElementById("countSudahDaftar").textContent = sudah.length;
 
-      document.getElementById("tbodySekolahBelumDaftar").innerHTML = belum.map((b, i) => `
+      document.getElementById("tbodySekolahBelumDaftar").innerHTML = belum.length ? belum.map((b, i) => `
         <tr><td>${i+1}</td><td class="fw-bold">${escapeHtml(b.nama)}</td><td>${escapeHtml(b.kecamatan)}</td></tr>
-      `).join("");
+      `).join("") : '<tr><td colspan="3" class="text-center py-3 text-muted">Semua sekolah telah mendaftar!</td></tr>';
 
-      document.getElementById("tbodySekolahSudahDaftar").innerHTML = sudah.map((s, i) => `
+      document.getElementById("tbodySekolahSudahDaftar").innerHTML = sudah.length ? sudah.map((s, i) => `
         <tr><td>${i+1}</td><td class="fw-bold">${escapeHtml(s.nama)}</td><td><span class="badge bg-success-subtle text-success">${s.count} Peserta</span></td></tr>
-      `).join("");
+      `).join("") : '<tr><td colspan="3" class="text-center py-3 text-muted">Belum ada sekolah yang mendaftar.</td></tr>';
+    }
+
+    function openModalDownloadMonitoringSekolah() {
+      const belumCount = cachedMonitoringSekolah?.belum?.length || 0;
+      const sudahCount = cachedMonitoringSekolah?.sudah?.length || 0;
+      const s = currentDashboardData?.settings || {};
+      const activeEventName = s.NAMA_KEGIATAN && s.NAMA_KEGIATAN !== "Belum Ada Kegiatan" ? s.NAMA_KEGIATAN : (activeEventId || "Kegiatan");
+
+      Swal.fire({
+        title: "Download Data Sekolah (.xlsx)",
+        html: `
+          <p class="text-muted small mb-3">Silakan tentukan data sekolah kegiatan <strong>${escapeHtml(activeEventName)}</strong> yang ingin Anda unduh dalam format Microsoft Excel:</p>
+          <div class="d-grid gap-2 text-start">
+            <button id="btnDlBelum" type="button" class="btn btn-outline-danger p-3 rounded-3 text-start d-flex align-items-center justify-content-between shadow-sm">
+              <div>
+                <div class="fw-bold text-danger"><i class="bi bi-x-circle-fill me-1"></i> 1. Sekolah BELUM Mendaftar</div>
+                <div class="small text-muted">Daftar SMP yang belum mengirimkan delegasi (${belumCount} Sekolah)</div>
+              </div>
+              <i class="bi bi-download fs-4 text-danger"></i>
+            </button>
+            <button id="btnDlSudah" type="button" class="btn btn-outline-success p-3 rounded-3 text-start d-flex align-items-center justify-content-between shadow-sm">
+              <div>
+                <div class="fw-bold text-success"><i class="bi bi-check-circle-fill me-1"></i> 2. Sekolah SUDAH Mendaftar</div>
+                <div class="small text-muted">Daftar SMP yang sudah mendaftar beserta kuota/jumlah peserta (${sudahCount} Sekolah)</div>
+              </div>
+              <i class="bi bi-download fs-4 text-success"></i>
+            </button>
+            <button id="btnDlSemua" type="button" class="btn btn-outline-primary p-3 rounded-3 text-start d-flex align-items-center justify-content-between shadow-sm">
+              <div>
+                <div class="fw-bold text-primary"><i class="bi bi-file-earmark-spreadsheet-fill me-1"></i> 3. Seluruh Sekolah (2 Sheet)</div>
+                <div class="small text-muted">Unduh kedua data sekaligus dalam 1 berkas Excel (Sheet Belum & Sheet Sudah)</div>
+              </div>
+              <i class="bi bi-download fs-4 text-primary"></i>
+            </button>
+          </div>
+        `,
+        showConfirmButton: false,
+        showCancelButton: true,
+        cancelButtonText: "Tutup",
+        cancelButtonColor: "#6c757d",
+        didOpen: () => {
+          document.getElementById("btnDlBelum")?.addEventListener("click", () => {
+            Swal.close();
+            exportMonitoringSekolahXLSX("belum");
+          });
+          document.getElementById("btnDlSudah")?.addEventListener("click", () => {
+            Swal.close();
+            exportMonitoringSekolahXLSX("sudah");
+          });
+          document.getElementById("btnDlSemua")?.addEventListener("click", () => {
+            Swal.close();
+            exportMonitoringSekolahXLSX("semua");
+          });
+        }
+      });
+    }
+
+    function exportMonitoringSekolahXLSX(type) {
+      if (typeof XLSX === "undefined") {
+        Swal.fire({
+          icon: "error",
+          title: "Pustaka Belum Siap",
+          text: "Pustaka SheetJS (XLSX) belum selesai dimuat. Silakan coba sesaat lagi."
+        });
+        return;
+      }
+
+      const s = currentDashboardData?.settings || {};
+      const rawEventName = s.NAMA_KEGIATAN && s.NAMA_KEGIATAN !== "Belum Ada Kegiatan" ? s.NAMA_KEGIATAN : (activeEventId || "Kegiatan");
+      const cleanEventName = rawEventName.replace(/[/\\?%*:|"<>]/g, "_").trim().substring(0, 35);
+      const todayStr = new Date().toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" });
+      const fileDate = new Date().toISOString().slice(0, 10);
+
+      const wb = XLSX.utils.book_new();
+
+      const belumData = cachedMonitoringSekolah.belum || [];
+      const sudahData = cachedMonitoringSekolah.sudah || [];
+
+      if (type === "belum" || type === "semua") {
+        const rowsBelum = [
+          ["DATA SATUAN PENDIDIKAN (SMP) YANG BELUM MENDAFTAR"],
+          [`Kegiatan: ${rawEventName}`],
+          [`Waktu Unduh: ${todayStr}`],
+          [`Total Belum Mendaftar: ${belumData.length} Sekolah`],
+          [],
+          ["NO", "NAMA SEKOLAH", "NPSN", "KECAMATAN", "STATUS PENDAFTARAN"]
+        ];
+
+        belumData.forEach((b, idx) => {
+          rowsBelum.push([
+            idx + 1,
+            b.nama || "-",
+            b.npsn || "-",
+            b.kecamatan || "-",
+            "BELUM MENDAFTAR"
+          ]);
+        });
+
+        const wsBelum = XLSX.utils.aoa_to_sheet(rowsBelum);
+        wsBelum["!cols"] = [
+          { wch: 6 },
+          { wch: 42 },
+          { wch: 16 },
+          { wch: 24 },
+          { wch: 22 }
+        ];
+        XLSX.utils.book_append_sheet(wb, wsBelum, "Belum Mendaftar");
+      }
+
+      if (type === "sudah" || type === "semua") {
+        const rowsSudah = [
+          ["DATA SATUAN PENDIDIKAN (SMP) YANG SUDAH MENDAFTAR"],
+          [`Kegiatan: ${rawEventName}`],
+          [`Waktu Unduh: ${todayStr}`],
+          [`Total Sudah Mendaftar: ${sudahData.length} Sekolah`],
+          [],
+          ["NO", "NAMA SEKOLAH", "NPSN", "KECAMATAN", "JUMLAH PESERTA TERDAFTAR", "STATUS PENDAFTARAN"]
+        ];
+
+        sudahData.forEach((sItem, idx) => {
+          rowsSudah.push([
+            idx + 1,
+            sItem.nama || "-",
+            sItem.npsn || "-",
+            sItem.kecamatan || "-",
+            sItem.count || 0,
+            "SUDAH MENDAFTAR"
+          ]);
+        });
+
+        const wsSudah = XLSX.utils.aoa_to_sheet(rowsSudah);
+        wsSudah["!cols"] = [
+          { wch: 6 },
+          { wch: 42 },
+          { wch: 16 },
+          { wch: 24 },
+          { wch: 26 },
+          { wch: 22 }
+        ];
+        XLSX.utils.book_append_sheet(wb, wsSudah, "Sudah Mendaftar");
+      }
+
+      let fileName = "";
+      if (type === "belum") {
+        fileName = `Rekap-SMP-Belum-Daftar-${cleanEventName}-${fileDate}.xlsx`;
+      } else if (type === "sudah") {
+        fileName = `Rekap-SMP-Sudah-Daftar-${cleanEventName}-${fileDate}.xlsx`;
+      } else {
+        fileName = `Rekap-Monitoring-Sekolah-${cleanEventName}-${fileDate}.xlsx`;
+      }
+
+      XLSX.writeFile(wb, fileName);
+
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: `File berhasil diunduh: ${fileName}`,
+        showConfirmButton: false,
+        timer: 2500
+      });
     }
 
     function openModalWaBlastSekolah() {
