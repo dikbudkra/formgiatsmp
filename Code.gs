@@ -587,6 +587,10 @@ function handleApiRequest_(action, payload) {
     case "askGemini":
       return askGeminiAboutActiveEvent(payload.question || payload.prompt, payload.pin, payload.targetEventIdOrName || payload.eventId);
 
+    case "scanSpjTemplateWithGemini":
+    case "scan_spj_template":
+      return scanSpjTemplateWithGemini(payload.templateId, payload.docName || payload.namaDokumen, payload.fileType || payload.tipeFile, payload.cellGrid, payload.pin);
+
     case "testGemini":
       return testGeminiConnection();
 
@@ -3334,4 +3338,133 @@ Keluarkan HANYA JSON tanpa markdown:
       : ["No", "Nama Lengkap & Gelar", "NIP", "Golongan", "Jabatan", "Asal Satuan Pendidikan", "No. WhatsApp", "Tanda Tangan"],
     signatureCount: isFinance ? 3 : 2
   };
+}
+
+/**
+ * =========================================================================
+ * JEMPROT AI - MEMORY & TEMPLATE SPJ SCANNER (KECERDASAN GEMINI API)
+ * Mempelajari struktur sel spreadsheet Excel dari contoh format SPJ di Drive
+ * dan menyimpannya ke memori database agar dokumen download 100% presisi.
+ * =========================================================================
+ */
+function scanSpjTemplateWithGemini(templateId, docName, fileType, cellGrid, pin) {
+  if (!verifyAdminPin(pin)) {
+    return { success: false, message: "Akses ditolak: PIN Panitia tidak valid." };
+  }
+
+  const apiKey = getGeminiApiKey_();
+  if (!apiKey) {
+    return { success: false, message: "API Key Gemini belum disetel di Script Properties." };
+  }
+
+  try {
+    const prompt = 
+      "Anda adalah 'Jemprot AI - Memory & SPJ Specialist' DISDIKBUD Karanganyar.\n" +
+      "Tugas Anda: Mempelajari struktur tabel Excel dari contoh format SPJ berikut dan menghasilkan pemetaan koordinat kolom dan format isian yang presisi.\n\n" +
+      "Nama Dokumen: " + (docName || "Template SPJ") + "\n" +
+      "Tipe File: " + (fileType || "XLSX") + "\n\n" +
+      "Berikut cuplikan sel spreadsheet (koordinat dan nilainya):\n" +
+      JSON.stringify(cellGrid || [], null, 2) + "\n\n" +
+      "Aturan Analisis:\n" +
+      "1. Tentukan baris header tabel (NO, NAMA, GOL, JABATAN, UNIT KERJA, dll) dan baris contoh data pengisian pertama.\n" +
+      "2. Petakan kolom (indeks kolom 0-based: A=0, B=1, C=2, D=3, E=4, F=5, G=6, dst):\n" +
+      "   - no: kolom nomor urut\n" +
+      "   - nama: kolom nama peserta\n" +
+      "   - nip: kolom NIP (jika ada kolom terpisah, jika tidak ada isi -1)\n" +
+      "   - gol: kolom golongan (IV, III, IX, dll)\n" +
+      "   - jabatan: kolom jabatan (Guru, dll)\n" +
+      "   - unit: kolom unit kerja / sekolah\n" +
+      "   - jml: kolom jumlah hari/volume (misal angka 1)\n" +
+      "   - satuan: kolom satuan waktu (misal kata 'hari')\n" +
+      "   - tarif: kolom jasa/tarif satuan (misal Rp200,000)\n" +
+      "   - bruto: kolom jumlah kotor/bruto (misal Rp200,000)\n" +
+      "   - pph: kolom potongan PPh 21 (misal Rp30,000)\n" +
+      "   - netto: kolom penerimaan bersih (misal Rp170,000)\n" +
+      "   - ttd: kolom tanda tangan\n" +
+      "3. Perhatikan jika ada kolom 'JUMLAH' gabungan (misal kolom F = 1 dan kolom G = 'hari', lalu kolom H = JASA, kolom I = JUMLAH). Jangan tertukar!\n" +
+      "4. Format angka uang: apakah menggunakan awalan 'Rp' (hasRpPrefix: true/false).\n" +
+      "5. Gaya tanda tangan: 'number_only' (angka 1, 2, 3 polos), 'dots' (1. ......), atau 'zigzag'.\n" +
+      "6. Format golongan: apakah cukup angka romawi sederhana seperti 'IV' / 'III' (cleanGolongan: true).\n" +
+      "7. Baris footer Jumlah/Total dan kolom-kolom yang dijumlahkan.\n\n" +
+      "Kembalikan HANYA JSON murni tanpa markdown dengan format persis:\n" +
+      "{\n" +
+      "  \"headerRow\": 3,\n" +
+      "  \"sampleDataRow\": 4,\n" +
+      "  \"colMap\": {\n" +
+      "    \"no\": 0,\n" +
+      "    \"nama\": 1,\n" +
+      "    \"nip\": -1,\n" +
+      "    \"gol\": 2,\n" +
+      "    \"jabatan\": 3,\n" +
+      "    \"unit\": 4,\n" +
+      "    \"jml\": 5,\n" +
+      "    \"satuan\": 6,\n" +
+      "    \"tarif\": 7,\n" +
+      "    \"bruto\": 8,\n" +
+      "    \"pph\": 9,\n" +
+      "    \"netto\": 10,\n" +
+      "    \"ttd\": 11\n" +
+      "  },\n" +
+      "  \"satuanVal\": \"hari\",\n" +
+      "  \"hasRpPrefix\": true,\n" +
+      "  \"currencyPrefix\": \"Rp\",\n" +
+      "  \"ttdStyle\": \"number_only\",\n" +
+      "  \"cleanGolongan\": true,\n" +
+      "  \"footer\": {\n" +
+      "    \"hasTotalRow\": true,\n" +
+      "    \"totalLabelCol\": 1,\n" +
+      "    \"sumCols\": [7, 8, 9, 10]\n" +
+      "  },\n" +
+      "  \"summary\": \"Struktur dokumen SPJ dipelajari presisi oleh Jemprot AI\"\n" +
+      "}";
+
+    const aiRes = callGeminiAPI_(apiKey, prompt, "Anda adalah Jemprot AI spesialis SPJ. Keluarkan HANYA JSON murni.");
+    if (!aiRes.success) {
+      return aiRes;
+    }
+
+    let parsed = null;
+    try {
+      let rawAnswer = aiRes.answer.trim();
+      if (rawAnswer.startsWith("```json")) {
+        rawAnswer = rawAnswer.replace(/^```json\s*/i, "").replace(/```\s*$/i, "").trim();
+      } else if (rawAnswer.startsWith("```")) {
+        rawAnswer = rawAnswer.replace(/^```\s*/, "").replace(/```\s*$/, "").trim();
+      }
+      parsed = JSON.parse(rawAnswer);
+    } catch (e) {
+      Logger.log("Gagal parse JSON Gemini: " + aiRes.answer);
+      return { success: false, message: "Gemini merespons tetapi format JSON tidak terbaca: " + e.message };
+    }
+
+    // Simpan hasil ke sheet Master_Template_SPJ jika templateId tersedia
+    if (templateId) {
+      try {
+        const ss = getSpreadsheet_();
+        const sheet = ss.getSheetByName(SHEET_TEMPLATE_SPJ);
+        if (sheet) {
+          const data = sheet.getDataRange().getValues();
+          for (let i = 1; i < data.length; i++) {
+            if (String(data[i][0]).trim() === templateId || String(data[i][3]).trim() === templateId) {
+              let existingMeta = {};
+              try { existingMeta = JSON.parse(data[i][7] || "{}"); } catch(e){}
+              existingMeta.aiMemory = parsed;
+              sheet.getRange(i + 1, 8).setValue(JSON.stringify(existingMeta));
+              break;
+            }
+          }
+        }
+      } catch (e) {
+        Logger.log("Gagal simpan aiMemory ke sheet: " + e.message);
+      }
+    }
+
+    return {
+      success: true,
+      aiMemory: parsed,
+      message: "Format dokumen berhasil dipelajari oleh Gemini AI!"
+    };
+  } catch (err) {
+    return { success: false, message: "Terjadi kesalahan saat memindai dengan Gemini: " + err.message };
+  }
 }

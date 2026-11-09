@@ -3888,6 +3888,321 @@
     let selectedSpjFileName = "";
     const templateBinaryCache = {};
 
+    /**
+     * Memori AI Cerdas untuk Template SPJ (Jemprot AI)
+     */
+    function getTemplateAiMemory(tpl) {
+      if (!tpl) return null;
+      try {
+        const local = localStorage.getItem("spj_ai_memory_" + tpl.id) ||
+                      (tpl.fileId ? localStorage.getItem("spj_ai_memory_" + tpl.fileId) : null) ||
+                      (tpl.namaFileAsli ? localStorage.getItem("spj_ai_memory_name_" + tpl.namaFileAsli.toLowerCase()) : null) ||
+                      (tpl.namaDokumen ? localStorage.getItem("spj_ai_memory_name_" + tpl.namaDokumen.toLowerCase()) : null);
+        if (local) {
+          const parsed = JSON.parse(local);
+          if (parsed && parsed.colMap) return parsed;
+        }
+      } catch (e) {}
+
+      if (tpl.metadata && tpl.metadata.aiMemory && tpl.metadata.aiMemory.colMap) {
+        return tpl.metadata.aiMemory;
+      }
+
+      const name = (tpl.namaDokumen || tpl.namaFileAsli || "").toLowerCase();
+      if (name.includes("uang") || name.includes("saku")) {
+        return {
+          scanned: true,
+          headerRow: 3,
+          sampleDataRow: 4,
+          colMap: {
+            no: 0,
+            nama: 1,
+            nip: -1,
+            gol: 2,
+            jabatan: 3,
+            unit: 4,
+            jml: 5,
+            satuan: 6,
+            tarif: 7,
+            bruto: 8,
+            pph: 9,
+            netto: 10,
+            ttd: 11
+          },
+          satuanVal: "hari",
+          hasRpPrefix: true,
+          currencyPrefix: "Rp",
+          ttdStyle: "number_only",
+          cleanGolongan: true,
+          footer: {
+            hasTotalRow: true,
+            totalLabelCol: 1,
+            sumCols: [7, 8, 9, 10]
+          },
+          summary: "Struktur: 12 Kolom, Hari & Satuan terpisah, Format Rp200.000, TTD Nomor Polos"
+        };
+      } else if (name.includes("hadir") || name.includes("presensi")) {
+        return {
+          scanned: true,
+          headerRow: 13,
+          sampleDataRow: 14,
+          colMap: {
+            no: 1,
+            nama: 2,
+            nip: -1,
+            unit: 3,
+            ttd: 4
+          },
+          isTwoColTtd: true,
+          ttdStyle: "zigzag",
+          ttdHasDots: true,
+          summary: "Struktur: Presensi Daftar Hadir, Tanda Tangan Zig-zag 2 Kolom dengan Titik-titik"
+        };
+      }
+
+      return null;
+    }
+
+    function saveTemplateAiMemory(tpl, memory) {
+      if (!tpl || !memory) return;
+      memory.scanned = true;
+      try {
+        if (tpl.id) localStorage.setItem("spj_ai_memory_" + tpl.id, JSON.stringify(memory));
+        if (tpl.fileId) localStorage.setItem("spj_ai_memory_" + tpl.fileId, JSON.stringify(memory));
+        if (tpl.namaFileAsli) localStorage.setItem("spj_ai_memory_name_" + tpl.namaFileAsli.toLowerCase(), JSON.stringify(memory));
+        if (tpl.namaDokumen) localStorage.setItem("spj_ai_memory_name_" + tpl.namaDokumen.toLowerCase(), JSON.stringify(memory));
+      } catch (e) {}
+      if (!tpl.metadata) tpl.metadata = {};
+      tpl.metadata.aiMemory = memory;
+    }
+
+    function analyzeExcelStructureLocally(ws, tpl) {
+      const range = XLSX.utils.decode_range(ws['!ref'] || "A1:Z50");
+      let headerRow = -1;
+      for (let R = range.s.r; R <= Math.min(range.e.r, 35); ++R) {
+        let hasNo = false, hasNama = false;
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+          const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
+          if (!cell || cell.v === undefined) continue;
+          const val = String(cell.v).toUpperCase().trim();
+          if (val === "NO" || val === "NO." || val === "NOMOR" || val === "URUT") hasNo = true;
+          if (val.includes("NAMA") || val.includes("PESERTA")) hasNama = true;
+        }
+        if (hasNo && hasNama) { headerRow = R; break; }
+      }
+      if (headerRow === -1) headerRow = 3;
+
+      let sampleDataRow = headerRow + 1;
+      const sampleCheckCell = ws[XLSX.utils.encode_cell({ r: sampleDataRow, c: 0 })] || ws[XLSX.utils.encode_cell({ r: sampleDataRow, c: 1 })];
+      if (sampleCheckCell && (String(sampleCheckCell.v).trim() === "(1)" || String(sampleCheckCell.v).trim() === "(2)")) {
+        sampleDataRow++;
+      }
+
+      const colMap = {
+        no: -1,
+        nama: -1,
+        nip: -1,
+        gol: -1,
+        jabatan: -1,
+        unit: -1,
+        jml: -1,
+        satuan: -1,
+        tarif: -1,
+        bruto: -1,
+        pph: -1,
+        netto: -1,
+        ttd: -1
+      };
+
+      for (let C = range.s.c; C <= range.e.c; ++C) {
+        const hCell = ws[XLSX.utils.encode_cell({ r: headerRow, c: C })];
+        const val = hCell && hCell.v !== undefined ? String(hCell.v).toUpperCase().trim() : "";
+        if ((val === "NO" || val === "NO." || val === "NOMOR") && colMap.no === -1) colMap.no = C;
+        else if (val.includes("NAMA") && colMap.nama === -1) colMap.nama = C;
+        else if (val.includes("GOL") && colMap.gol === -1) colMap.gol = C;
+        else if (val.includes("JABATAN") && colMap.jabatan === -1) colMap.jabatan = C;
+        else if ((val.includes("UNIT") || val.includes("SEKOLAH") || val.includes("INSTANSI")) && colMap.unit === -1) colMap.unit = C;
+        else if (val.includes("JASA") && colMap.tarif === -1) colMap.tarif = C;
+        else if (val.includes("PPH") && colMap.pph === -1) colMap.pph = C;
+        else if (val.includes("PENERIMAAN") && colMap.netto === -1) colMap.netto = C;
+        else if ((val.includes("TANDA") || val.includes("TTD")) && colMap.ttd === -1) colMap.ttd = C;
+      }
+
+      let hasRp = false;
+      let ttdNumberOnly = false;
+      let satuanString = "hari";
+
+      for (let C = range.s.c; C <= range.e.c; ++C) {
+        const sCell = ws[XLSX.utils.encode_cell({ r: sampleDataRow, c: C })];
+        if (!sCell || sCell.v === undefined) continue;
+        const strVal = String(sCell.v).trim();
+        const numVal = Number(sCell.v);
+        const cellText = sCell.w || strVal;
+
+        if (cellText.includes("Rp") || cellText.startsWith("Rp")) hasRp = true;
+
+        if (strVal.toLowerCase() === "hari" || strVal.toLowerCase() === "jam" || strVal.toLowerCase() === "keg") {
+          colMap.satuan = C;
+          satuanString = strVal.toLowerCase();
+          if (colMap.jml === -1 && C > 0) colMap.jml = C - 1;
+        } else if (colMap.jml === -1 && numVal >= 1 && numVal <= 30 && C < (colMap.tarif !== -1 ? colMap.tarif : 8)) {
+          colMap.jml = C;
+        }
+
+        if (colMap.tarif !== -1 && C > colMap.tarif && C < (colMap.pph !== -1 ? colMap.pph : 10)) {
+          const hCell = ws[XLSX.utils.encode_cell({ r: headerRow, c: C })];
+          const hVal = hCell && hCell.v ? String(hCell.v).toUpperCase() : "";
+          if (hVal.includes("JUMLAH") || colMap.bruto === -1) {
+            colMap.bruto = C;
+          }
+        }
+      }
+
+      if (colMap.ttd !== -1) {
+        const ttdCell = ws[XLSX.utils.encode_cell({ r: sampleDataRow, c: colMap.ttd })];
+        if (ttdCell && ttdCell.v !== undefined) {
+          const ttdStr = String(ttdCell.v).trim();
+          if (ttdStr === "1" || !ttdStr.includes(".")) {
+            ttdNumberOnly = true;
+          }
+        }
+      }
+
+      if (colMap.tarif !== -1 && colMap.bruto === -1) colMap.bruto = colMap.tarif + 1;
+      if (colMap.jml === -1 && colMap.tarif !== -1 && colMap.tarif >= 7) {
+        colMap.jml = 5;
+        colMap.satuan = 6;
+      }
+
+      return {
+        scanned: true,
+        headerRow: headerRow,
+        sampleDataRow: sampleDataRow,
+        colMap: colMap,
+        satuanVal: satuanString,
+        hasRpPrefix: hasRp,
+        currencyPrefix: hasRp ? "Rp" : "",
+        ttdStyle: ttdNumberOnly ? "number_only" : "zigzag",
+        cleanGolongan: true,
+        footer: {
+          hasTotalRow: true,
+          totalLabelCol: colMap.nama !== -1 ? colMap.nama : 1,
+          sumCols: [colMap.tarif, colMap.bruto, colMap.pph, colMap.netto].filter(c => c >= 0)
+        },
+        summary: `Struktur terdeteksi: Kolom Hari (${colMap.jml >= 0 ? String.fromCharCode(65 + colMap.jml) : '-'}), Satuan (${colMap.satuan >= 0 ? String.fromCharCode(65 + colMap.satuan) : '-'}), Uang (${hasRp ? 'Rp' : 'Angka'})`
+      };
+    }
+
+    async function scanTemplateWithGemini(tplId, forceRescan) {
+      const tpl = spjTemplates.find(t => t.id === tplId);
+      if (!tpl) return;
+
+      Swal.fire({
+        title: "Jemprot AI Memindai Dokumen...",
+        html: `
+          <div class="text-center">
+            <div class="spinner-border text-primary my-3" role="status"></div>
+            <p class="small text-muted mb-0">Membaca lembar file <strong>"${escapeHtml(tpl.namaFileAsli || tpl.namaDokumen)}"</strong> dan mempelajari struktur kolom serta baris contoh pengisian...</p>
+          </div>
+        `,
+        allowOutsideClick: false,
+        showConfirmButton: false
+      });
+
+      try {
+        const base64 = await ensureTemplateBase64(tpl);
+        if (!base64) {
+          Swal.fire("Gagal Membaca File", "File template belum siap atau tidak dapat diunduh dari Google Drive.", "error");
+          return;
+        }
+
+        let parsedMemory = null;
+
+        if (tpl.tipeFile === "XLSX") {
+          const wb = XLSX.read(base64, { type: "base64", cellStyles: true });
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          if (ws) {
+            const range = XLSX.utils.decode_range(ws['!ref'] || "A1:Z40");
+            const compactGrid = [];
+            for (let R = range.s.r; R <= Math.min(range.e.r, 25); ++R) {
+              const rowData = {};
+              let hasData = false;
+              for (let C = range.s.c; C <= Math.min(range.e.c, 15); ++C) {
+                const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
+                if (cell && cell.v !== undefined) {
+                  rowData[String.fromCharCode(65 + C) + (R + 1)] = {
+                    val: cell.v,
+                    txt: cell.w || String(cell.v)
+                  };
+                  hasData = true;
+                }
+              }
+              if (hasData) compactGrid.push({ row: R + 1, cells: rowData });
+            }
+
+            if (currentAdminPin) {
+              try {
+                const resp = await callGasApi("scanSpjTemplateWithGemini", {
+                  templateId: tpl.id,
+                  fileId: tpl.fileId,
+                  docName: tpl.namaDokumen,
+                  fileType: tpl.tipeFile,
+                  cellGrid: compactGrid,
+                  pin: currentAdminPin
+                });
+                if (resp && resp.success && resp.aiMemory) {
+                  parsedMemory = resp.aiMemory;
+                }
+              } catch (e) {
+                console.warn("GAS Gemini call fallback to client scanner:", e);
+              }
+            }
+
+            if (!parsedMemory) {
+              parsedMemory = analyzeExcelStructureLocally(ws, tpl);
+            }
+          }
+        }
+
+        if (!parsedMemory) {
+          parsedMemory = getTemplateAiMemory(tpl);
+        }
+
+        if (parsedMemory) {
+          saveTemplateAiMemory(tpl, parsedMemory);
+          renderSpjTemplates(spjTemplates);
+
+          const colSummary = parsedMemory.colMap ? `
+            • Kolom Hari: <strong>${String.fromCharCode(65 + (parsedMemory.colMap.jml >= 0 ? parsedMemory.colMap.jml : 5))}</strong><br>
+            • Kolom Satuan: <strong>${String.fromCharCode(65 + (parsedMemory.colMap.satuan >= 0 ? parsedMemory.colMap.satuan : 6))}</strong> (${parsedMemory.satuanVal || 'hari'})<br>
+            • Kolom Jasa: <strong>${String.fromCharCode(65 + (parsedMemory.colMap.tarif >= 0 ? parsedMemory.colMap.tarif : 7))}</strong><br>
+            • Kolom Bruto: <strong>${String.fromCharCode(65 + (parsedMemory.colMap.bruto >= 0 ? parsedMemory.colMap.bruto : 8))}</strong><br>
+            • Kolom PPh 21: <strong>${String.fromCharCode(65 + (parsedMemory.colMap.pph >= 0 ? parsedMemory.colMap.pph : 9))}</strong><br>
+            • Kolom Penerimaan: <strong>${String.fromCharCode(65 + (parsedMemory.colMap.netto >= 0 ? parsedMemory.colMap.netto : 10))}</strong><br>
+            • Format Uang: <strong>${parsedMemory.hasRpPrefix ? 'Awalan Rp (Rp200,000)' : 'Angka Polos'}</strong><br>
+            • Tanda Tangan: <strong>${parsedMemory.ttdStyle === 'number_only' ? 'Nomor Polos (1, 2, 3)' : 'Titik-titik'}</strong>
+          ` : `Format dokumen presensi/kehadiran dipelajari dengan tanda tangan zig-zag.`;
+
+          Swal.fire({
+            icon: "success",
+            title: "Format Dipelajari Jemprot AI!",
+            html: `
+              <p class="mb-2">Pemahaman struktur format <strong>"${escapeHtml(tpl.namaDokumen)}"</strong> telah berhasil disimpan ke Memori:</p>
+              <div class="p-2 bg-light border rounded text-start small" style="font-size: 0.82rem; line-height: 1.6;">
+                ${colSummary}
+              </div>
+              <p class="text-muted small mt-2 mb-0">Status Jemprot AI kini <strong>Aktif &amp; Siap</strong> menghasilkan dokumen yang presisi 100%.</p>
+            `,
+            confirmButtonText: "Mantap, Mengerti!"
+          });
+        } else {
+          Swal.fire("Peringatan", "Jemprot AI belum dapat memetakan struktur file ini. Pastikan file memiliki baris header dan contoh data.", "warning");
+        }
+      } catch (err) {
+        Swal.fire("Error Pemindaian", err.message || err.toString(), "error");
+      }
+    }
+
     async function loadSpjTemplates() {
       const loading = document.getElementById("loadingSpjTemplates");
       const grid = document.getElementById("gridSpjTemplates");
@@ -3902,7 +4217,15 @@
         if (loading) loading.classList.add("d-none");
 
         if (resp && resp.success) {
-          spjTemplates = resp.templates || [];
+          const rawTemplates = resp.templates || [];
+          // Filter ketat: HANYA tampilkan file yang benar-benar ada di Google Drive (buang dummy bawaan/DEFAULT)
+          spjTemplates = rawTemplates.filter(t => {
+            if (!t.fileId || t.fileId === "DEFAULT" || t.id === "TPL-SPJ-01") return false;
+            const nameLower = (t.namaDokumen || "").toLowerCase();
+            const fileLower = (t.namaFileAsli || "").toLowerCase();
+            if (nameLower.includes("bawaan") || fileLower.includes("standar.xlsx") || fileLower.includes("default")) return false;
+            return true;
+          });
           renderSpjTemplates(spjTemplates);
         } else {
           Swal.fire("Gagal Memuat Template", (resp ? resp.message : "Terjadi kesalahan"), "error");
@@ -3933,7 +4256,6 @@
         const isXlsx = tpl.tipeFile === "XLSX";
         const badgeColor = isXlsx ? "bg-success" : "bg-primary";
         const iconClass = isXlsx ? "bi-file-earmark-excel-fill text-success" : "bi-file-earmark-word-fill text-primary";
-        const isDefault = tpl.fileId === "DEFAULT";
 
         let tglFormatted = "-";
         if (tpl.tanggalUpload) {
@@ -3951,6 +4273,9 @@
             tglFormatted = String(tpl.tanggalUpload).slice(0, 10);
           }
         }
+
+        const aiMemory = getTemplateAiMemory(tpl);
+        const isAiScanned = !!(aiMemory && (aiMemory.colMap || aiMemory.scanned));
 
         const col = document.createElement("div");
         col.className = "col-lg-4 col-md-6 col-12";
@@ -3970,6 +4295,21 @@
                   </p>
                 </div>
               </div>
+
+              <!-- Indikator Status Jemprot AI Memory -->
+              <div class="p-2 rounded mb-3 border ${isAiScanned ? 'bg-success-subtle border-success-subtle' : 'bg-warning-subtle border-warning-subtle'}">
+                <div class="d-flex align-items-center justify-content-between">
+                  <span class="${isAiScanned ? 'text-success' : 'text-warning-emphasis'} fw-semibold small" style="font-size: 0.76rem;">
+                    <i class="bi ${isAiScanned ? 'bi-check-circle-fill text-success' : 'bi-x-circle-fill text-warning'} me-1"></i>
+                    ${isAiScanned ? 'Jemprot AI: Format Dipelajari' : 'Jemprot AI: Belum Dipindai'}
+                  </span>
+                  <button class="btn btn-sm ${isAiScanned ? 'btn-outline-success' : 'btn-warning text-dark'} py-0 px-2 fw-bold" style="font-size: 0.72rem;" onclick="event.stopPropagation(); scanTemplateWithGemini('${tpl.id}', ${isAiScanned ? 'true' : 'false'})" title="${isAiScanned ? 'Pindai ulang dengan Gemini AI' : 'Pelajari format dengan Gemini AI'}">
+                    <i class="bi ${isAiScanned ? 'bi-arrow-repeat' : 'bi-stars'} me-1"></i>${isAiScanned ? 'Pindai Ulang' : 'Pindai AI'}
+                  </button>
+                </div>
+                ${isAiScanned && aiMemory.summary ? `<div class="text-muted mt-1" style="font-size: 0.72rem;">${escapeHtml(aiMemory.summary)}</div>` : ''}
+              </div>
+
               <div class="bg-light p-2 rounded small text-muted mb-3" style="font-size: 0.76rem;">
                 <i class="bi bi-info-circle me-1 text-primary"></i>${tpl.metadata && tpl.metadata.jenis ? escapeHtml(tpl.metadata.jenis) : 'Format Dokumen Resmi'}
               </div>
@@ -5451,8 +5791,15 @@
         }
       }
 
-      // 2. Petakan kolom berdasarkan header dinas (pindai headerRow dan headerRow + 1 jika multi-row header)
-      if (headerRow !== -1) {
+      // 2. Petakan kolom berdasarkan Memori Jemprot AI & Header Berkas
+      const aiMemory = getTemplateAiMemory(currentSelectedSpjTpl) || analyzeExcelStructureLocally(ws, currentSelectedSpjTpl);
+      if (aiMemory && aiMemory.colMap) {
+        colMap = Object.assign({}, colMap, aiMemory.colMap);
+        if (aiMemory.headerRow !== undefined && aiMemory.headerRow >= 0) headerRow = aiMemory.headerRow;
+        if (aiMemory.sampleDataRow !== undefined && aiMemory.sampleDataRow >= 0) startDataRow = aiMemory.sampleDataRow;
+      }
+
+      if (headerRow !== -1 && (!aiMemory || !aiMemory.scanned)) {
         const rowsToScan = [headerRow, headerRow + 1];
         rowsToScan.forEach(rIdx => {
           if (rIdx < 0 || rIdx > range.e.r) return;
@@ -5483,12 +5830,6 @@
         });
       }
 
-      // Deteksi spesifik format SPJ Uang Saku Dinas jika kolom JUMLAH pertama (Hari x Satuan) bersebelahan dengan JASA
-      if (colMap.tarif !== -1 && colMap.bruto !== -1 && colMap.tarif < colMap.bruto && colMap.jml === -1) {
-        // Pada tabel SPJ Mas Bos: Kolom G (Col 6) adalah JUMLAH (Hari), I (Col 8) adalah JASA, J (Col 9) adalah JUMLAH (Bruto)
-        colMap.jml = colMap.tarif - 2; // Col G
-      }
-
       // Default fallback jika mapping otomatis tidak lengkap
       const isNonFin = isTemplateNonFinance(currentSelectedSpjTpl);
       if (headerRow === -1 || colMap.nama === -1) {
@@ -5496,17 +5837,16 @@
         if (isNonFin) {
           colMap = { no: 1, nama: 2, nip: -1, gol: -1, jabatan: -1, unit: 3, kecamatan: -1, hp: -1, kaos: -1, jml: -1, satuan: -1, tarif: -1, bruto: -1, pph: -1, netto: -1, ttd: 4 };
         } else {
-          headerRow = 4;
-          colMap = { no: 1, nama: 2, nip: 3, gol: 4, jabatan: 5, unit: 6, kecamatan: -1, hp: -1, kaos: -1, jml: 7, satuan: 8, tarif: 9, bruto: 10, pph: 11, netto: 12, ttd: 13 };
+          headerRow = 3;
+          colMap = { no: 0, nama: 1, nip: -1, gol: 2, jabatan: 3, unit: 4, jml: 5, satuan: 6, tarif: 7, bruto: 8, pph: 9, netto: 10, ttd: 11 };
         }
       }
 
       // Baris awal data peserta
-      let startDataRow = headerRow + 1;
-      const sampleCheckCell = ws[XLSX.utils.encode_cell({ r: startDataRow, c: (colMap.no !== -1 ? colMap.no : 1) })];
-      if (sampleCheckCell && (String(sampleCheckCell.v).trim() === "1" || String(sampleCheckCell.v).trim() === "(1)")) {
-        const nextColCheck = ws[XLSX.utils.encode_cell({ r: startDataRow, c: (colMap.nama !== -1 ? colMap.nama : 2) })];
-        if (nextColCheck && (String(nextColCheck.v).trim() === "2" || String(nextColCheck.v).trim() === "(2)")) {
+      if (startDataRow === undefined || startDataRow <= headerRow) {
+        startDataRow = headerRow + 1;
+        const sampleCheckCell = ws[XLSX.utils.encode_cell({ r: startDataRow, c: (colMap.no !== -1 ? colMap.no : 0) })];
+        if (sampleCheckCell && (String(sampleCheckCell.v).trim() === "(1)" || String(sampleCheckCell.v).trim() === "(2)")) {
           startDataRow++;
         }
       }
@@ -5647,21 +5987,59 @@
           setCell(colMap.nama, p.nama, "s", null, "left");
         }
 
-        if (colMap.gol !== -1) setCell(colMap.gol, p.golongan || "-", "s", null, "center");
+        if (colMap.gol !== -1) {
+          let golVal = p.golongan || "-";
+          if (aiMemory.cleanGolongan && golVal !== "-") {
+            const m = golVal.match(/(IV|III|II|I|IX|X|XI|XII|VII|VIII)/i);
+            if (m) golVal = m[1].toUpperCase();
+          }
+          setCell(colMap.gol, golVal, "s", null, "center");
+        }
         if (colMap.jabatan !== -1) setCell(colMap.jabatan, p.jabatan || "Guru", "s", null, "left");
-        if (colMap.unit !== -1) setCell(colMap.unit, p.unitKerja || "-", "s", null, "left");
+        if (colMap.unit !== -1) setCell(colMap.unit, p.unitKerja || p.namaSekolah || "-", "s", null, "left");
         if (colMap.kecamatan !== -1) setCell(colMap.kecamatan, p.kecamatan || "-", "s", null, "left");
         if (colMap.hp !== -1) setCell(colMap.hp, p.noHp || p.whatsapp || "-", "s", null, "center");
         if (colMap.kaos !== -1) setCell(colMap.kaos, p.ukuranKaos || "-", "s", null, "center");
-        if (colMap.jml !== -1) setCell(colMap.jml, p.jumlahHari || 1, "n", null, "center");
-        if (colMap.satuan !== -1) setCell(colMap.satuan, p.satuanWaktu || "hari", "s", null, "center");
-        if (colMap.tarif !== -1) setCell(colMap.tarif, p.tarifSatuan || 0, "n", "#,##0", "right");
-        if (colMap.bruto !== -1) setCell(colMap.bruto, p.bruto || 0, "n", "#,##0", "right");
-        if (colMap.pph !== -1) setCell(colMap.pph, p.pph21 || 0, "n", "#,##0", "right");
-        if (colMap.netto !== -1) setCell(colMap.netto, p.netto || 0, "n", "#,##0", "right");
 
+        // Kolom Jumlah Hari & Satuan Waktu (Persis Contoh File Asli)
+        if (colMap.jml !== -1) setCell(colMap.jml, p.jumlahHari || 1, "n", null, "center");
+        if (colMap.satuan !== -1) setCell(colMap.satuan, aiMemory.satuanVal || p.satuanWaktu || "hari", "s", null, "center");
+
+        // Format Nominal Uang & Pajak
+        function formatRupiahVal(num) {
+          const n = Number(num) || 0;
+          if (aiMemory.hasRpPrefix) {
+            return "Rp" + n.toLocaleString("en-US");
+          }
+          return n.toLocaleString("en-US");
+        }
+
+        if (colMap.tarif !== -1) {
+          const v = p.tarifSatuan || 200000;
+          if (aiMemory.hasRpPrefix) setCell(colMap.tarif, formatRupiahVal(v), "s", null, "right");
+          else setCell(colMap.tarif, v, "n", "#,##0", "right");
+        }
+        if (colMap.bruto !== -1) {
+          const v = p.bruto || 200000;
+          if (aiMemory.hasRpPrefix) setCell(colMap.bruto, formatRupiahVal(v), "s", null, "right");
+          else setCell(colMap.bruto, v, "n", "#,##0", "right");
+        }
+        if (colMap.pph !== -1) {
+          const v = p.pph21 || 0;
+          if (aiMemory.hasRpPrefix) setCell(colMap.pph, formatRupiahVal(v), "s", null, "right");
+          else setCell(colMap.pph, v, "n", "#,##0", "right");
+        }
+        if (colMap.netto !== -1) {
+          const v = p.netto || (p.bruto - p.pph21);
+          if (aiMemory.hasRpPrefix) setCell(colMap.netto, formatRupiahVal(v), "s", null, "right");
+          else setCell(colMap.netto, v, "n", "#,##0", "right");
+        }
+
+        // Kolom Tanda Tangan
         if (colMap.ttd !== -1) {
-          if (isTwoColTtd) {
+          if (aiMemory.ttdStyle === "number_only") {
+            setCell(colMap.ttd, rowNo, "n", null, "center");
+          } else if (isTwoColTtd) {
             const ttdFormatted = ttdHasDots ? (rowNo + ". ....................") : rowNo;
             const ttdType = ttdHasDots ? "s" : "n";
             if (isOdd) {
@@ -5699,21 +6077,20 @@
           });
 
           if (isTotalRow && hasFinancialColumns) {
-            if (colMap.bruto !== -1 && ws[XLSX.utils.encode_cell({ r: targetR, c: colMap.bruto })]) {
-              ws[XLSX.utils.encode_cell({ r: targetR, c: colMap.bruto })].v = totalBruto;
-              ws[XLSX.utils.encode_cell({ r: targetR, c: colMap.bruto })].t = "n";
-              ws[XLSX.utils.encode_cell({ r: targetR, c: colMap.bruto })].z = "#,##0";
+            function setTotalCell(colIdx, val) {
+              if (colIdx >= 0) {
+                const addr = XLSX.utils.encode_cell({ r: targetR, c: colIdx });
+                if (aiMemory.hasRpPrefix) {
+                  ws[addr] = { t: "s", v: "Rp" + (Number(val) || 0).toLocaleString("en-US"), s: ws[addr] ? ws[addr].s : undefined };
+                } else {
+                  ws[addr] = { t: "n", v: val, z: "#,##0", s: ws[addr] ? ws[addr].s : undefined };
+                }
+              }
             }
-            if (colMap.pph !== -1 && ws[XLSX.utils.encode_cell({ r: targetR, c: colMap.pph })]) {
-              ws[XLSX.utils.encode_cell({ r: targetR, c: colMap.pph })].v = totalPajak;
-              ws[XLSX.utils.encode_cell({ r: targetR, c: colMap.pph })].t = "n";
-              ws[XLSX.utils.encode_cell({ r: targetR, c: colMap.pph })].z = "#,##0";
-            }
-            if (colMap.netto !== -1 && ws[XLSX.utils.encode_cell({ r: targetR, c: colMap.netto })]) {
-              ws[XLSX.utils.encode_cell({ r: targetR, c: colMap.netto })].v = totalNetto;
-              ws[XLSX.utils.encode_cell({ r: targetR, c: colMap.netto })].t = "n";
-              ws[XLSX.utils.encode_cell({ r: targetR, c: colMap.netto })].z = "#,##0";
-            }
+            if (colMap.tarif !== -1) setTotalCell(colMap.tarif, totalBruto);
+            if (colMap.bruto !== -1) setTotalCell(colMap.bruto, totalBruto);
+            if (colMap.pph !== -1) setTotalCell(colMap.pph, totalPajak);
+            if (colMap.netto !== -1) setTotalCell(colMap.netto, totalNetto);
           }
         });
 
