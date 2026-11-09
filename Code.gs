@@ -1108,26 +1108,155 @@ function toggleEventStatus(eventId, newStatus, pin) {
 }
 
 /**
- * Hapus Kegiatan dari Daftar
+ * Hapus / Arsipkan Kegiatan dari Daftar
+ * Jika terdapat data peserta pada kegiatan ini di Data_Peserta, otomatis arsipkan
+ * ke sheet baru bernama 'ARSIP_[NamaKegiatan]' dan hapus data peserta tersebut dari Data_Peserta
+ * agar database tetap bersih dan data lama tidak hilang.
  */
 function deleteEvent(eventId, pin) {
   if (!verifyAdminPin(pin)) {
     return { success: false, message: "Akses ditolak: PIN Panitia tidak valid." };
   }
+
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(15000);
+  } catch (e) {
+    return { success: false, message: "Server sedang sibuk, silakan coba beberapa saat lagi." };
+  }
+
   try {
     const ss = getSpreadsheet_();
-    const sheet = ss.getSheetByName(SHEET_MASTER_KEGIATAN);
-    if (!sheet) return { success: false, message: "Sheet Master_Kegiatan tidak ditemukan." };
+    const sheetKegiatan = ss.getSheetByName(SHEET_MASTER_KEGIATAN);
+    if (!sheetKegiatan) {
+      lock.releaseLock();
+      return { success: false, message: "Sheet Master_Kegiatan tidak ditemukan." };
+    }
 
-    const data = sheet.getDataRange().getValues();
-    for (let i = 1; i < data.length; i++) {
-      if (String(data[i][0]).trim() === String(eventId).trim()) {
-        sheet.deleteRow(i + 1);
-        return { success: true, message: "Kegiatan berhasil dihapus." };
+    const dataKegiatan = sheetKegiatan.getDataRange().getValues();
+    let eventRowIndex = -1;
+    let targetEventName = "";
+
+    for (let i = 1; i < dataKegiatan.length; i++) {
+      if (String(dataKegiatan[i][0]).trim() === String(eventId).trim()) {
+        eventRowIndex = i + 1; // 1-based index
+        targetEventName = String(dataKegiatan[i][1] || "").trim();
+        break;
       }
     }
-    return { success: false, message: "ID Kegiatan tidak ditemukan." };
+
+    if (eventRowIndex === -1) {
+      lock.releaseLock();
+      return { success: false, message: "ID Kegiatan tidak ditemukan." };
+    }
+
+    // 1. Cek Peserta Terdaftar di Sheet Data_Peserta
+    const sheetPeserta = ss.getSheetByName(SHEET_PESERTA);
+    let totalArchived = 0;
+    let finalArchiveName = "";
+
+    if (sheetPeserta && sheetPeserta.getLastRow() > 1) {
+      const pesertaData = sheetPeserta.getDataRange().getValues();
+      const headers = pesertaData[0];
+      const lastCol = sheetPeserta.getLastColumn();
+
+      // Cari kolom "Nama Kegiatan" (biasanya kolom 3 / index 2)
+      let colKegiatanIdx = 2;
+      for (let c = 0; c < headers.length; c++) {
+        if (String(headers[c]).toLowerCase().includes("kegiatan")) {
+          colKegiatanIdx = c;
+          break;
+        }
+      }
+
+      // Kumpulkan baris peserta yang sesuai dengan kegiatan ini
+      const matchingRowIndices = []; // 1-based row numbers
+      const archivedRows = [];
+
+      for (let r = 1; r < pesertaData.length; r++) {
+        const rowVal = pesertaData[r];
+        const rowKegiatan = String(rowVal[colKegiatanIdx] || "").trim();
+        if (rowKegiatan.toLowerCase() === targetEventName.toLowerCase() ||
+            rowKegiatan.toLowerCase() === String(eventId).toLowerCase()) {
+          matchingRowIndices.push(r + 1);
+          archivedRows.push(rowVal);
+        }
+      }
+
+      // Jika ada data peserta yang perlu diarsipkan
+      if (archivedRows.length > 0) {
+        totalArchived = archivedRows.length;
+        const cleanName = (targetEventName || "Kegiatan")
+          .replace(/[:\\/?*\[\]]/g, "_")
+          .trim()
+          .substring(0, 70);
+
+        const baseArchiveName = "ARSIP_" + cleanName;
+        finalArchiveName = baseArchiveName;
+        let v = 1;
+        while (ss.getSheetByName(finalArchiveName)) {
+          v++;
+          finalArchiveName = baseArchiveName.substring(0, 85 - String(v).length) + "_v" + v;
+        }
+
+        const newSheet = ss.insertSheet(finalArchiveName);
+        newSheet.appendRow(headers);
+        newSheet.getRange(1, 1, 1, lastCol)
+          .setFontWeight("bold")
+          .setBackground("#ea580c")
+          .setFontColor("#ffffff");
+        newSheet.setFrozenRows(1);
+
+        // Masukkan seluruh baris data peserta
+        const chunkSize = 500;
+        for (let i = 0; i < archivedRows.length; i += chunkSize) {
+          const chunk = archivedRows.slice(i, i + chunkSize);
+          newSheet.getRange(newSheet.getLastRow() + 1, 1, chunk.length, chunk[0].length).setValues(chunk);
+        }
+
+        try {
+          newSheet.autoResizeColumns(1, Math.min(lastCol, 22));
+        } catch (eResize) {}
+
+        // Hapus baris peserta dari Data_Peserta dari bawah ke atas agar indeks tidak geser
+        matchingRowIndices.reverse().forEach(rowIndex => {
+          sheetPeserta.deleteRow(rowIndex);
+        });
+      }
+    }
+
+    // 2. Hapus baris kegiatan dari Master_Kegiatan
+    sheetKegiatan.deleteRow(eventRowIndex);
+
+    // 3. Reset sheet Config jika kegiatan yang dihapus merupakan kegiatan yang sedang aktif di Config
+    const sheetConfig = ss.getSheetByName(SHEET_CONFIG);
+    if (sheetConfig) {
+      const cfgData = sheetConfig.getDataRange().getValues();
+      for (let i = 1; i < cfgData.length; i++) {
+        const k = String(cfgData[i][0]).trim();
+        if (k === "NAMA_KEGIATAN" && String(cfgData[i][1]).trim().toLowerCase() === targetEventName.toLowerCase()) {
+          sheetConfig.getRange(i + 1, 2).setValue("KEGIATAN BIDANG SMP");
+        } else if (k === "STATUS_FORM" && String(cfgData[i][1]).trim().toLowerCase() === targetEventName.toLowerCase()) {
+          sheetConfig.getRange(i + 1, 2).setValue("TUTUP");
+        }
+      }
+    }
+
+    lock.releaseLock();
+
+    let msg = `Kegiatan "${targetEventName}" berhasil dihapus dari daftar aktif.`;
+    if (totalArchived > 0) {
+      msg = `Kegiatan "${targetEventName}" berhasil diarsipkan ke sheet "${finalArchiveName}" (${totalArchived} peserta) dan dihapus dari daftar aktif. Data peserta aman tersimpan!`;
+    }
+
+    return {
+      success: true,
+      archiveSheetName: finalArchiveName,
+      totalArchived: totalArchived,
+      message: msg
+    };
   } catch (err) {
+    try { lock.releaseLock(); } catch (e) {}
     Logger.log("Error deleteEvent: " + err.toString());
     return { success: false, message: err.message };
   }

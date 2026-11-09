@@ -1931,6 +1931,11 @@
      * Ganti Tab Konten
      */
     function switchTab(tabId, el) {
+      // Jika berpindah dari scanner ke tab lain, matikan kamera scanner seketika
+      if (tabId !== "tabPresensiScanner") {
+        stopScannerCamera();
+      }
+
       document.querySelectorAll(".tab-pane").forEach(t => t.classList.add("d-none"));
       const target = document.getElementById(tabId);
       if (target) target.classList.remove("d-none");
@@ -2143,11 +2148,27 @@
     async function stopScannerCamera() {
       if (html5QrScanner) {
         try {
-          await html5QrScanner.stop();
+          if (html5QrScanner.isScanning) {
+            await html5QrScanner.stop();
+          }
+        } catch (e) {}
+        try {
+          html5QrScanner.clear();
         } catch (e) {}
       }
-      document.getElementById("btnStartCamera").classList.remove("d-none");
-      document.getElementById("btnStopCamera").classList.add("d-none");
+      try {
+        const videoEls = document.querySelectorAll("#qrReader video");
+        videoEls.forEach(v => {
+          if (v.srcObject && typeof v.srcObject.getTracks === "function") {
+            v.srcObject.getTracks().forEach(t => t.stop());
+            v.srcObject = null;
+          }
+        });
+      } catch (e) {}
+      const btnStart = document.getElementById("btnStartCamera");
+      const btnStop = document.getElementById("btnStopCamera");
+      if (btnStart) btnStart.classList.remove("d-none");
+      if (btnStop) btnStop.classList.add("d-none");
     }
 
     function switchCameraFacingMode() {
@@ -2281,8 +2302,8 @@
               <button class="btn btn-outline-${ev.statusForm === 'BUKA' ? 'warning' : 'success'} btn-sm rounded-pill px-2 py-1" onclick="toggleEventStatus('${escapeHtml(ev.idKegiatan)}', '${ev.statusForm}')" title="${ev.statusForm === 'BUKA' ? 'Tutup Pendaftaran' : 'Buka Pendaftaran'}">
                 <i class="bi bi-power"></i>
               </button>
-              <button class="btn btn-outline-danger btn-sm rounded-pill px-2 py-1" onclick="confirmDeleteEvent('${escapeHtml(ev.idKegiatan)}', '${escapeHtml(ev.namaKegiatan)}')" title="Hapus Kegiatan">
-                <i class="bi bi-trash-fill"></i>
+              <button class="btn btn-outline-danger btn-sm rounded-pill px-2 py-1" onclick="confirmDeleteEvent('${escapeHtml(ev.idKegiatan)}', '${escapeHtml(ev.namaKegiatan)}')" title="Arsipkan & Hapus Kegiatan">
+                <i class="bi bi-archive-fill"></i>
               </button>
             </div>
           </td>
@@ -2366,14 +2387,15 @@
     }
 
     async function confirmDeleteEvent(eventId, eventName) {
+      const cleanName = eventName ? eventName.replace(/[:\\/?*\[\]]/g, "_").trim().substring(0, 30) : "Kegiatan";
       const resSwal = await Swal.fire({
-        title: "Hapus Kegiatan?",
-        html: `Apakah Anda yakin ingin menghapus kegiatan:<br><strong>${escapeHtml(eventName)}</strong><br><small class="text-muted">(ID: <code>${escapeHtml(eventId)}</code>)</small>?<br><br><span class="text-danger small fw-semibold">Perhatian: Seluruh data konfigurasi kegiatan ini akan dihapus dari sistem.</span>`,
+        title: "Arsipkan & Hapus Kegiatan?",
+        html: `Apakah Anda yakin ingin mengarsipkan kegiatan:<br><strong>${escapeHtml(eventName)}</strong><br><small class="text-muted">(ID: <code>${escapeHtml(eventId)}</code>)</small>?<br><br><div class="alert alert-info text-start small mb-0"><i class="bi bi-shield-check text-primary me-1"></i> <strong>Data Aman:</strong> Seluruh data peserta kegiatan ini akan otomatis dipindahkan ke sheet baru <strong>ARSIP_${escapeHtml(cleanName)}</strong> di Google Spreadsheet sebelum kegiatan dihapus dari daftar aktif.</div>`,
         icon: "warning",
         showCancelButton: true,
-        confirmButtonColor: "#dc2626",
+        confirmButtonColor: "#ea580c",
         cancelButtonColor: "#64748b",
-        confirmButtonText: '<i class="bi bi-trash-fill me-1"></i> Ya, Hapus Sekarang',
+        confirmButtonText: '<i class="bi bi-archive-fill me-1"></i> Ya, Arsipkan & Hapus',
         cancelButtonText: "Batal"
       });
 
@@ -2381,8 +2403,8 @@
 
       try {
         Swal.fire({
-          title: "Menghapus Kegiatan...",
-          text: "Mohon tunggu sebentar",
+          title: "Mengarsipkan & Menghapus...",
+          text: "Memindahkan data peserta ke sheet ARSIP dan memperbarui database...",
           allowOutsideClick: false,
           didOpen: () => Swal.showLoading()
         });
@@ -2390,26 +2412,22 @@
         const res = await callGasApi("deleteEvent", { eventId, pin: currentAdminPin });
         if (res && res.success) {
           await Swal.fire({
-            title: "Berhasil!",
-            text: res.message || "Kegiatan berhasil dihapus.",
+            title: "Berhasil Diarsipkan!",
+            text: res.message || "Kegiatan berhasil diarsipkan.",
             icon: "success",
             confirmButtonColor: "#1e3a8a"
           });
           loadDashboardInitial();
         } else {
           Swal.fire({
-            title: "Gagal Menghapus",
-            text: res.message || "Kegiatan tidak dapat dihapus.",
+            title: "Gagal",
+            text: res.message || "Gagal mengarsipkan kegiatan.",
             icon: "error"
           });
         }
       } catch (err) {
-        console.error("Gagal hapus kegiatan:", err);
-        Swal.fire({
-          title: "Error",
-          text: "Terjadi kesalahan saat menghubungi server.",
-          icon: "error"
-        });
+        console.error("Gagal deleteEvent:", err);
+        Swal.fire({ title: "Error", text: "Terjadi kesalahan saat memproses arsip kegiatan.", icon: "error" });
       }
     }
 
