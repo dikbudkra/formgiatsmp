@@ -249,11 +249,22 @@
       text-align: center;
       cursor: pointer;
       transition: all 0.2s ease;
+      position: relative;
     }
-    .spj-dropzone:hover, .spj-dropzone.dragover {
+    .spj-dropzone * {
+      pointer-events: none;
+    }
+    .spj-dropzone:hover {
       background: #dcfce7;
       border-color: #047857;
       transform: scale(1.01);
+    }
+    .spj-dropzone.dragover {
+      background: #bbf7d0 !important;
+      border-color: #059669 !important;
+      border-style: solid !important;
+      box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.25) !important;
+      transform: scale(1.02);
     }
     @media print {
       body * {
@@ -1953,6 +1964,7 @@
       if (savedPin) {
         verifyAndOpenDashboard(savedPin);
       }
+      initSpjDropzone();
     });
 
     /**
@@ -3951,7 +3963,60 @@
       renderSpjTemplates(filtered);
     }
 
+    /**
+     * Inisialisasi Drag and Drop pada Modal Upload Template SPJ & Doc
+     */
+    function initSpjDropzone() {
+      const dropzone = document.getElementById("dropzoneSpj");
+      const fileInput = document.getElementById("fileInputSpj");
+      if (!dropzone) return;
+      if (dropzone.dataset.dropzoneInitialized === "true") return;
+      dropzone.dataset.dropzoneInitialized = "true";
+
+      ["dragenter", "dragover"].forEach(evtName => {
+        dropzone.addEventListener(evtName, function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          dropzone.classList.add("dragover");
+        }, false);
+      });
+
+      ["dragleave", "dragend"].forEach(evtName => {
+        dropzone.addEventListener(evtName, function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          dropzone.classList.remove("dragover");
+        }, false);
+      });
+
+      dropzone.addEventListener("drop", function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.remove("dragover");
+
+        const dt = e.dataTransfer;
+        if (dt && dt.files && dt.files.length > 0) {
+          try {
+            if (fileInput) fileInput.files = dt.files;
+          } catch (err) {}
+          handleFileSelectSpj(dt.files);
+        }
+      }, false);
+
+      const modalEl = document.getElementById("modalUploadSpj");
+      if (modalEl) {
+        ["dragover", "drop"].forEach(evtName => {
+          modalEl.addEventListener(evtName, function(e) {
+            if (!dropzone.contains(e.target) && e.target !== dropzone) {
+              e.preventDefault();
+            }
+          }, false);
+        });
+      }
+    }
+
     function openModalUploadSpj() {
+      initSpjDropzone();
       selectedSpjFileBase64 = null;
       selectedSpjFileName = "";
       const docNameInp = document.getElementById("inputSpjDocName");
