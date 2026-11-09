@@ -21,7 +21,7 @@ const SHEET_PESERTA = "Data_Peserta";
 const SHEET_LOGIN_PANITIA = "Login_Panitia";
 const SHEET_MASTER = "Master_SMP";
 const SHEET_CONFIG = "Config";
-const FOLDER_SPJ_ID = "1Rhc_GVXNtFA8wPzkgerLCztrXQeML037";
+const FOLDER_SPJ_ID = "1LUkGynFOoyV2AqDjVjdl7SwHM9jE9QCp";
 const SHEET_TEMPLATE_SPJ = "Master_Template_SPJ";
 const SHEET_TEMPLATE_BINARY = "_Templates_SPJ_Bin";
 const SHEET_MASTER_KEGIATAN = "Master_Kegiatan";
@@ -2581,6 +2581,9 @@ function getSpjTemplateList(pin) {
       }
     }
 
+    // Sinkronkan file baru yang mungkin di-upload manual langsung ke folder Google Drive
+    syncSpjDriveFolderFiles_(sheet, templates);
+
     return {
       success: true,
       templates: templates,
@@ -2597,10 +2600,12 @@ function getSpjTemplateList(pin) {
  */
 function getSpjFolder_() {
   const folderId = FOLDER_SPJ_ID;
-  if (folderId && folderId !== "1Rhc_GVXNtFA8wPzkgerLCztrXQeML037") {
+  if (folderId) {
     try {
       return DriveApp.getFolderById(folderId);
-    } catch (e) {}
+    } catch (e) {
+      Logger.log("Peringatan: Gagal akses FOLDER_SPJ_ID: " + e.toString());
+    }
   }
   try {
     const existing = DriveApp.getFoldersByName("Templates_SPJ_Bidang_SMP");
@@ -2610,6 +2615,86 @@ function getSpjFolder_() {
     return DriveApp.createFolder("Templates_SPJ_Bidang_SMP");
   } catch (err) {
     return null;
+  }
+}
+
+/**
+ * Sinkronisasi otomatis file yang diupload manual ke Google Drive folder SPJ
+ */
+function syncSpjDriveFolderFiles_(sheet, existingTemplates) {
+  try {
+    const folder = getSpjFolder_();
+    if (!folder) return;
+
+    const files = folder.getFiles();
+    const existingFileIds = new Set(existingTemplates.map(t => String(t.fileId || "").trim()));
+    const existingNames = new Set(existingTemplates.map(t => String(t.namaDokumen || "").toLowerCase().trim()));
+
+    while (files.hasNext()) {
+      const file = files.next();
+      const fileId = file.getId();
+      const fileName = file.getName();
+      const mime = file.getMimeType();
+
+      // Cek apakah file ini sudah terdaftar di database sheet
+      if (existingFileIds.has(fileId)) continue;
+
+      let ext = fileName.split('.').pop().toLowerCase();
+      let isEligible = false;
+
+      if (ext === "xlsx" || ext === "docx") {
+        isEligible = true;
+      } else if (mime === MimeType.GOOGLE_SHEETS) {
+        ext = "xlsx";
+        isEligible = true;
+      } else if (mime === MimeType.GOOGLE_DOCS) {
+        ext = "docx";
+        isEligible = true;
+      }
+
+      if (!isEligible) continue;
+
+      const baseName = fileName.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ").trim();
+      const cleanDocName = baseName ? (baseName.charAt(0).toUpperCase() + baseName.slice(1)) : fileName;
+
+      if (existingNames.has(cleanDocName.toLowerCase())) continue;
+
+      const now = new Date();
+      const dateStr = Utilities.formatDate(file.getLastUpdated() || now, Session.getScriptTimeZone() || "GMT+7", "dd/MM/yyyy HH:mm");
+      const tplId = "TPL-" + Utilities.formatDate(now, Session.getScriptTimeZone() || "GMT+7", "yyMMdd") + "-" + Math.floor(1000 + Math.random() * 9000);
+      const fileSizeKb = Math.round(file.getSize() / 1024) + " KB";
+      const analysis = analyzeSpjWithGemini_(cleanDocName, ext, fileName);
+
+      const newRow = [
+        tplId,
+        cleanDocName,
+        ext.toUpperCase(),
+        fileId,
+        fileName,
+        fileSizeKb,
+        dateStr,
+        JSON.stringify(analysis),
+        "Aktif"
+      ];
+
+      sheet.appendRow(newRow);
+      existingFileIds.add(fileId);
+      existingNames.add(cleanDocName.toLowerCase());
+
+      existingTemplates.push({
+        id: tplId,
+        namaDokumen: cleanDocName,
+        tipeFile: ext.toUpperCase(),
+        fileId: fileId,
+        namaFileAsli: fileName,
+        ukuranFile: fileSizeKb,
+        tanggalUpload: dateStr,
+        metadata: analysis,
+        status: "Aktif"
+      });
+    }
+  } catch (err) {
+    Logger.log("Peringatan saat sinkronisasi Drive folder SPJ: " + err.toString());
   }
 }
 
@@ -2883,12 +2968,41 @@ function getSpjTemplateFile(fileId, pin) {
   // 2. Coba ambil dari Google Drive
   try {
     const file = DriveApp.getFileById(cleanFileId);
-    const blob = file.getBlob();
+    const mime = file.getMimeType();
+    let blob;
+
+    // Jika file berupa Google Sheets atau Google Docs asli di Drive, ekspor ke XLSX atau DOCX
+    if (mime === MimeType.GOOGLE_SHEETS) {
+      const exportUrl = "https://docs.google.com/spreadsheets/d/" + cleanFileId + "/export?format=xlsx";
+      const resp = UrlFetchApp.fetch(exportUrl, {
+        headers: { Authorization: "Bearer " + ScriptApp.getOAuthToken() },
+        muteHttpExceptions: true
+      });
+      if (resp.getResponseCode() === 200) {
+        blob = Utilities.newBlob(resp.getContent(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", file.getName() + ".xlsx");
+      } else {
+        blob = file.getBlob();
+      }
+    } else if (mime === MimeType.GOOGLE_DOCS) {
+      const exportUrl = "https://docs.google.com/document/d/" + cleanFileId + "/export?format=docx";
+      const resp = UrlFetchApp.fetch(exportUrl, {
+        headers: { Authorization: "Bearer " + ScriptApp.getOAuthToken() },
+        muteHttpExceptions: true
+      });
+      if (resp.getResponseCode() === 200) {
+        blob = Utilities.newBlob(resp.getContent(), "application/vnd.openxmlformats-officedocument.wordprocessingml.document", file.getName() + ".docx");
+      } else {
+        blob = file.getBlob();
+      }
+    } else {
+      blob = file.getBlob();
+    }
+
     const base64 = Utilities.base64Encode(blob.getBytes());
     return {
       success: true,
       fileName: file.getName(),
-      mimeType: file.getMimeType(),
+      mimeType: blob.getContentType() || mime,
       base64Data: base64,
       source: "drive"
     };
