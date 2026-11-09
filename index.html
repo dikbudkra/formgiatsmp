@@ -140,7 +140,11 @@
     }
 
     .pill-radio {
-      display: none;
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+      pointer-events: none;
     }
 
     .pill-label {
@@ -453,8 +457,8 @@
             </label>
             <div class="input-group">
               <span class="input-group-text bg-light text-muted"><i class="bi bi-search"></i></span>
-              <input type="text" class="form-control" id="schoolSearchInput" placeholder="Ketik nama sekolah atau NPSN (Contoh: SMPN 1 Karanganyar)..." autocomplete="off" onfocus="openSchoolDropdown()" oninput="filterSchoolList(this.value)">
-              <button class="btn btn-outline-secondary" type="button" onclick="toggleSchoolDropdown()">
+              <input type="text" class="form-control" id="schoolSearchInput" placeholder="Ketik nama sekolah atau NPSN (Contoh: SMPN 1 Karanganyar)..." autocomplete="off" oninput="handleSchoolSearchInput(this.value)">
+              <button class="btn btn-outline-secondary" type="button" onclick="toggleSchoolDropdown()" title="Tampilkan / Sembunyikan Daftar Sekolah">
                 <i class="bi bi-chevron-down"></i>
               </button>
             </div>
@@ -482,40 +486,11 @@
           <!-- OPSI B: FORM KHUSUS TAMU / OPD LAIN (BUKAN SMP) -->
           <div id="boxInstansiOpd" class="mb-4 d-none">
             <div class="card p-3 bg-light border-0 rounded-3 mb-2">
-              <div class="row g-3">
-                <div class="col-md-7 col-12">
-                  <label class="form-label fw-bold text-dark" for="inputNamaOpd">
-                    Nama OPD / Dinas / Lembaga / Instansi Tamu <span class="text-danger">*</span>
-                  </label>
-                  <input type="text" class="form-control" id="inputNamaOpd" placeholder="Contoh: Bappeda / Dinas Kesehatan / BPBD / Setda / Kemenag" oninput="handleOpdInputChange()">
-                  <div class="form-text small">Tuliskan nama instansi atau dinas asal tamu secara lengkap.</div>
-                </div>
-                <div class="col-md-5 col-12">
-                  <label class="form-label fw-bold text-dark" for="selectKecamatanOpd">
-                    Wilayah / Kecamatan Kantor <span class="text-danger">*</span>
-                  </label>
-                  <select class="form-select" id="selectKecamatanOpd" onchange="handleOpdInputChange()">
-                    <option value="Karanganyar" selected>Karanganyar (Kompleks Perkantoran / Pusat)</option>
-                    <option value="Tasikmadu">Tasikmadu</option>
-                    <option value="Jaten">Jaten</option>
-                    <option value="Kebakkramat">Kebakkramat</option>
-                    <option value="Gondangrejo">Gondangrejo</option>
-                    <option value="Colomadu">Colomadu</option>
-                    <option value="Mojogedang">Mojogedang</option>
-                    <option value="Kerjo">Kerjo</option>
-                    <option value="Jenawi">Jenawi</option>
-                    <option value="Karangpandan">Karangpandan</option>
-                    <option value="Ngargoyoso">Ngargoyoso</option>
-                    <option value="Tawangmangu">Tawangmangu</option>
-                    <option value="Matesih">Matesih</option>
-                    <option value="Jumapolo">Jumapolo</option>
-                    <option value="Jumantono">Jumantono</option>
-                    <option value="Jatipuro">Jatipuro</option>
-                    <option value="Jatiyoso">Jatiyoso</option>
-                    <option value="Luar Karanganyar">Luar Kabupaten Karanganyar</option>
-                  </select>
-                </div>
-              </div>
+              <label class="form-label fw-bold text-dark" for="inputNamaOpd">
+                Nama OPD / Dinas / Lembaga / Instansi Tamu <span class="text-danger">*</span>
+              </label>
+              <input type="text" class="form-control" id="inputNamaOpd" placeholder="Contoh: Bappeda / Dinas Kesehatan / Setda / Diskominfo / BPBD / Kemenag" oninput="handleOpdInputChange()">
+              <div class="form-text small">Tuliskan nama instansi, dinas, atau lembaga asal tamu secara lengkap.</div>
             </div>
           </div>
 
@@ -534,7 +509,7 @@
             <div class="col-md-6">
               <label class="form-label">Status Kepegawaian <span class="text-danger">*</span></label>
               <div class="pill-selector">
-                <input type="radio" class="pill-radio" id="statusPns" name="statusKepegawaian" value="PNS" onchange="handleStatusPegawaiChange('PNS')" required>
+                <input type="radio" class="pill-radio" id="statusPns" name="statusKepegawaian" value="PNS" onchange="handleStatusPegawaiChange('PNS')">
                 <label class="pill-label" for="statusPns"><i class="bi bi-award"></i> PNS</label>
 
                 <input type="radio" class="pill-radio" id="statusPppk" name="statusKepegawaian" value="PPPK" onchange="handleStatusPegawaiChange('PPPK')">
@@ -550,19 +525,77 @@
               <input type="text" class="form-control" id="inputJabatan" name="jabatan" required>
             </div>
 
-            <!-- Dynamic NIP & Golongan for ASN -->
+            <!-- Dynamic NIP for ASN (PNS & PPPK) -->
             <div class="col-md-6 d-none" id="boxNip">
               <label class="form-label" for="inputNip">NIP (Nomor Induk Pegawai) <span class="text-danger">*</span></label>
               <input type="text" class="form-control" id="inputNip" name="nip" placeholder="Contoh: 198501012010011001" maxlength="25">
             </div>
 
-            <div class="col-md-6 d-none" id="boxGolongan">
-              <label class="form-label" for="selectGolongan" id="labelGolongan">Pangkat / Golongan Ruang <span class="text-danger">*</span></label>
-              <select class="form-select" id="selectGolongan" name="golongan" onchange="handleGolonganChange(this.value)">
-                <option value="">-- Pilih Golongan Ruang --</option>
+            <!-- Pilihan Golongan Khusus PNS -->
+            <div class="col-md-6 d-none" id="boxGolonganPns">
+              <label class="form-label" for="selectGolonganPns">Pangkat / Golongan Ruang (PNS) <span class="text-danger">*</span></label>
+              <select class="form-select" id="selectGolonganPns" onchange="handleGolonganChange(this.value)">
+                <option value="">-- Pilih Golongan PNS --</option>
+                <optgroup label="Golongan IV (Pembina)">
+                  <option value="IV/e|Pembina Utama">IV/e - Pembina Utama</option>
+                  <option value="IV/d|Pembina Utama Madya">IV/d - Pembina Utama Madya</option>
+                  <option value="IV/c|Pembina Utama Muda">IV/c - Pembina Utama Muda</option>
+                  <option value="IV/b|Pembina Tingkat I">IV/b - Pembina Tingkat I</option>
+                  <option value="IV/a|Pembina">IV/a - Pembina</option>
+                </optgroup>
+                <optgroup label="Golongan III (Penata)">
+                  <option value="III/d|Penata Tingkat I">III/d - Penata Tingkat I</option>
+                  <option value="III/c|Penata">III/c - Penata</option>
+                  <option value="III/b|Penata Muda Tingkat I">III/b - Penata Muda Tingkat I</option>
+                  <option value="III/a|Penata Muda">III/a - Penata Muda</option>
+                </optgroup>
+                <optgroup label="Golongan II (Pengatur)">
+                  <option value="II/d|Pengatur Tingkat I">II/d - Pengatur Tingkat I</option>
+                  <option value="II/c|Pengatur">II/c - Pengatur</option>
+                  <option value="II/b|Pengatur Muda Tingkat I">II/b - Pengatur Muda Tingkat I</option>
+                  <option value="II/a|Pengatur Muda">II/a - Pengatur Muda</option>
+                </optgroup>
+                <optgroup label="Golongan I (Juru)">
+                  <option value="I/d|Juru Tingkat I">I/d - Juru Tingkat I</option>
+                  <option value="I/c|Juru">I/c - Juru</option>
+                  <option value="I/b|Juru Muda Tingkat I">I/b - Juru Muda Tingkat I</option>
+                  <option value="I/a|Juru Muda">I/a - Juru Muda</option>
+                </optgroup>
               </select>
-              <input type="hidden" id="inputPangkat" name="pangkat" value="">
             </div>
+
+            <!-- Pilihan Golongan Khusus PPPK -->
+            <div class="col-md-6 d-none" id="boxGolonganPppk">
+              <label class="form-label" for="selectGolonganPppk">Golongan / Jenjang (PPPK) <span class="text-danger">*</span></label>
+              <select class="form-select" id="selectGolonganPppk" onchange="handleGolonganChange(this.value)">
+                <option value="">-- Pilih Golongan PPPK --</option>
+                <optgroup label="Jenjang Ahli (PPPK)">
+                  <option value="Golongan IX|Ahli Pertama">Golongan IX - Ahli Pertama</option>
+                  <option value="Golongan X|Ahli Pertama">Golongan X - Ahli Pertama</option>
+                  <option value="Golongan XI|Ahli Muda">Golongan XI - Ahli Muda</option>
+                  <option value="Golongan XIV|Ahli Madya">Golongan XIV - Ahli Madya</option>
+                </optgroup>
+                <optgroup label="Jenjang Terampil &amp; Pelaksana (PPPK)">
+                  <option value="Golongan VII|Terampil">Golongan VII - Terampil</option>
+                  <option value="Golongan VIII|Terampil">Golongan VIII - Terampil</option>
+                  <option value="Golongan VI|Terampil">Golongan VI - Terampil</option>
+                  <option value="Golongan V|Pelaksana">Golongan V - Pelaksana</option>
+                </optgroup>
+                <optgroup label="Golongan PPPK Lainnya">
+                  <option value="Golongan I|PPPK">Golongan I</option>
+                  <option value="Golongan II|PPPK">Golongan II</option>
+                  <option value="Golongan III|PPPK">Golongan III</option>
+                  <option value="Golongan IV|PPPK">Golongan IV</option>
+                  <option value="Golongan XII|PPPK">Golongan XII</option>
+                  <option value="Golongan XIII|PPPK">Golongan XIII</option>
+                  <option value="Golongan XV|PPPK">Golongan XV</option>
+                  <option value="Golongan XVI|PPPK">Golongan XVI</option>
+                  <option value="Golongan XVII|PPPK">Golongan XVII</option>
+                </optgroup>
+              </select>
+            </div>
+
+            <input type="hidden" id="inputPangkat" name="pangkat" value="">
           </div>
 
           <!-- SEKSI 3: DATA PRIBADI PESERTA -->
@@ -1051,30 +1084,31 @@
     /**
      * Autocomplete & Pencarian Sekolah
      */
-    function openSchoolDropdown() {
+    function handleSchoolSearchInput(val) {
       const container = document.getElementById("schoolListContainer");
-      container.style.display = "block";
-      filterSchoolList(document.getElementById("schoolSearchInput").value);
-    }
-
-    function closeSchoolDropdown() {
-      setTimeout(() => {
-        const container = document.getElementById("schoolListContainer");
+      const keyword = (val || "").trim();
+      if (keyword.length === 0) {
         if (container) container.style.display = "none";
-      }, 250);
+        return;
+      }
+      filterSchoolList(keyword);
+      if (container) container.style.display = "block";
     }
 
     function toggleSchoolDropdown() {
       const container = document.getElementById("schoolListContainer");
+      if (!container) return;
       if (container.style.display === "block") {
         container.style.display = "none";
       } else {
-        openSchoolDropdown();
+        filterSchoolList(document.getElementById("schoolSearchInput").value);
+        container.style.display = "block";
       }
     }
 
     function filterSchoolList(keyword) {
       const container = document.getElementById("schoolListContainer");
+      if (!container) return;
       const cleanKeyword = (keyword || "").toLowerCase().trim();
 
       const filtered = masterSchoolList.filter(s => {
@@ -1110,6 +1144,8 @@
       const boxOpd = document.getElementById("boxInstansiOpd");
       const inputOpd = document.getElementById("inputNamaOpd");
       const quotaAlert = document.getElementById("quotaWarningAlert");
+      const drop = document.getElementById("schoolListContainer");
+      if (drop) drop.style.display = "none";
 
       if (kat === "OPD") {
         if (boxSmp) boxSmp.classList.add("d-none");
@@ -1132,14 +1168,12 @@
 
     function handleOpdInputChange() {
       const inputOpd = document.getElementById("inputNamaOpd");
-      const selectKec = document.getElementById("selectKecamatanOpd");
       const opdName = inputOpd ? inputOpd.value.trim() : "";
-      const kecName = selectKec ? selectKec.value : "Karanganyar";
 
       document.getElementById("selectedSchoolName").value = opdName;
       document.getElementById("selectedSchoolNpsn").value = "-";
       document.getElementById("selectedSchoolStatus").value = "OPD / Tamu Undangan";
-      document.getElementById("selectedSchoolKecamatan").value = kecName;
+      document.getElementById("selectedSchoolKecamatan").value = "-";
     }
 
     function switchToOpdMode() {
@@ -1196,160 +1230,71 @@
       document.getElementById("selectedSchoolBadge").classList.add("d-none");
       document.getElementById("schoolSearchInput").parentElement.classList.remove("d-none");
       document.getElementById("schoolSearchInput").value = "";
-      document.getElementById("schoolSearchInput").focus();
+      const drop = document.getElementById("schoolListContainer");
+      if (drop) drop.style.display = "none";
     }
 
-    /**
-     * Matriks Pilihan Golongan & Pangkat (PNS & PPPK)
-     */
-    const DAFTAR_GOLONGAN_PNS = [
-      {
-        kategori: "Golongan IV (Pembina)",
-        items: [
-          { val: "IV/e|Pembina Utama", label: "IV/e - Pembina Utama" },
-          { val: "IV/d|Pembina Utama Madya", label: "IV/d - Pembina Utama Madya" },
-          { val: "IV/c|Pembina Utama Muda", label: "IV/c - Pembina Utama Muda" },
-          { val: "IV/b|Pembina Tingkat I", label: "IV/b - Pembina Tingkat I" },
-          { val: "IV/a|Pembina", label: "IV/a - Pembina" }
-        ]
-      },
-      {
-        kategori: "Golongan III (Penata)",
-        items: [
-          { val: "III/d|Penata Tingkat I", label: "III/d - Penata Tingkat I" },
-          { val: "III/c|Penata", label: "III/c - Penata" },
-          { val: "III/b|Penata Muda Tingkat I", label: "III/b - Penata Muda Tingkat I" },
-          { val: "III/a|Penata Muda", label: "III/a - Penata Muda" }
-        ]
-      },
-      {
-        kategori: "Golongan II (Pengatur)",
-        items: [
-          { val: "II/d|Pengatur Tingkat I", label: "II/d - Pengatur Tingkat I" },
-          { val: "II/c|Pengatur", label: "II/c - Pengatur" },
-          { val: "II/b|Pengatur Muda Tingkat I", label: "II/b - Pengatur Muda Tingkat I" },
-          { val: "II/a|Pengatur Muda", label: "II/a - Pengatur Muda" }
-        ]
-      },
-      {
-        kategori: "Golongan I (Juru)",
-        items: [
-          { val: "I/d|Juru Tingkat I", label: "I/d - Juru Tingkat I" },
-          { val: "I/c|Juru", label: "I/c - Juru" },
-          { val: "I/b|Juru Muda Tingkat I", label: "I/b - Juru Muda Tingkat I" },
-          { val: "I/a|Juru Muda", label: "I/a - Juru Muda" }
-        ]
+    // Tutup dropdown sekolah jika klik di luar box pencarian
+    document.addEventListener("click", function(event) {
+      const box = document.getElementById("boxPencarianSekolah");
+      const drop = document.getElementById("schoolListContainer");
+      if (drop && box && !box.contains(event.target)) {
+        drop.style.display = "none";
       }
-    ];
-
-    const DAFTAR_GOLONGAN_PPPK = [
-      {
-        kategori: "Jenjang Ahli (PPPK)",
-        items: [
-          { val: "Golongan IX|Ahli Pertama", label: "Golongan IX - Ahli Pertama" },
-          { val: "Golongan X|Ahli Pertama", label: "Golongan X - Ahli Pertama" },
-          { val: "Golongan XI|Ahli Muda", label: "Golongan XI - Ahli Muda" },
-          { val: "Golongan XIV|Ahli Madya", label: "Golongan XIV - Ahli Madya" }
-        ]
-      },
-      {
-        kategori: "Jenjang Terampil & Pelaksana (PPPK)",
-        items: [
-          { val: "Golongan VII|Terampil", label: "Golongan VII - Terampil" },
-          { val: "Golongan VIII|Terampil", label: "Golongan VIII - Terampil" },
-          { val: "Golongan VI|Terampil", label: "Golongan VI - Terampil" },
-          { val: "Golongan V|Pelaksana", label: "Golongan V - Pelaksana" }
-        ]
-      },
-      {
-        kategori: "Golongan PPPK Lainnya",
-        items: [
-          { val: "Golongan I|PPPK", label: "Golongan I" },
-          { val: "Golongan II|PPPK", label: "Golongan II" },
-          { val: "Golongan III|PPPK", label: "Golongan III" },
-          { val: "Golongan IV|PPPK", label: "Golongan IV" },
-          { val: "Golongan XII|PPPK", label: "Golongan XII" },
-          { val: "Golongan XIII|PPPK", label: "Golongan XIII" },
-          { val: "Golongan XV|PPPK", label: "Golongan XV" },
-          { val: "Golongan XVI|PPPK", label: "Golongan XVI" },
-          { val: "Golongan XVII|PPPK", label: "Golongan XVII" }
-        ]
-      }
-    ];
-
-    function renderGolonganOptions(status) {
-      const select = document.getElementById("selectGolongan");
-      const label = document.getElementById("labelGolongan");
-      if (!select) return;
-
-      select.innerHTML = "";
-
-      if (status === "PNS") {
-        if (label) label.innerHTML = 'Pangkat / Golongan Ruang (PNS) <span class="text-danger">*</span>';
-        select.innerHTML = '<option value="">-- Pilih Golongan PNS --</option>';
-        DAFTAR_GOLONGAN_PNS.forEach(grp => {
-          const optgroup = document.createElement("optgroup");
-          optgroup.label = grp.kategori;
-          grp.items.forEach(it => {
-            const opt = document.createElement("option");
-            opt.value = it.val;
-            opt.textContent = it.label;
-            optgroup.appendChild(opt);
-          });
-          select.appendChild(optgroup);
-        });
-      } else if (status === "PPPK") {
-        if (label) label.innerHTML = 'Golongan / Jenjang (PPPK) <span class="text-danger">*</span>';
-        select.innerHTML = '<option value="">-- Pilih Golongan PPPK --</option>';
-        DAFTAR_GOLONGAN_PPPK.forEach(grp => {
-          const optgroup = document.createElement("optgroup");
-          optgroup.label = grp.kategori;
-          grp.items.forEach(it => {
-            const opt = document.createElement("option");
-            opt.value = it.val;
-            opt.textContent = it.label;
-            optgroup.appendChild(opt);
-          });
-          select.appendChild(optgroup);
-        });
-      }
-    }
+    });
 
     /**
      * Handler Pilihan Status Kepegawaian (PNS / PPPK / Non-ASN)
      */
     function handleStatusPegawaiChange(status) {
       const boxNip = document.getElementById("boxNip");
-      const boxGolongan = document.getElementById("boxGolongan");
+      const boxGolPns = document.getElementById("boxGolonganPns");
+      const boxGolPppk = document.getElementById("boxGolonganPppk");
       const inputNip = document.getElementById("inputNip");
-      const selectGolongan = document.getElementById("selectGolongan");
+      const selectGolPns = document.getElementById("selectGolonganPns");
+      const selectGolPppk = document.getElementById("selectGolonganPppk");
       const inputPangkat = document.getElementById("inputPangkat");
 
-      if (status === "PNS" || status === "PPPK") {
+      if (status === "PNS") {
         boxNip.classList.remove("d-none");
-        boxGolongan.classList.remove("d-none");
+        boxGolPns.classList.remove("d-none");
+        boxGolPppk.classList.add("d-none");
         inputNip.required = true;
-        selectGolongan.required = true;
-        
-        renderGolonganOptions(status);
-        if (inputPangkat) inputPangkat.value = "";
+        selectGolPns.required = true;
+        selectGolPppk.required = false;
+        selectGolPppk.value = "";
+        handleGolonganChange(selectGolPns.value);
+      } else if (status === "PPPK") {
+        boxNip.classList.remove("d-none");
+        boxGolPns.classList.add("d-none");
+        boxGolPppk.classList.remove("d-none");
+        inputNip.required = true;
+        selectGolPns.required = false;
+        selectGolPppk.required = true;
+        selectGolPns.value = "";
+        handleGolonganChange(selectGolPppk.value);
       } else {
         boxNip.classList.add("d-none");
-        boxGolongan.classList.add("d-none");
+        boxGolPns.classList.add("d-none");
+        boxGolPppk.classList.add("d-none");
         inputNip.required = false;
-        selectGolongan.required = false;
+        selectGolPns.required = false;
+        selectGolPppk.required = false;
         inputNip.value = "";
-        selectGolongan.value = "";
-        if (inputPangkat) inputPangkat.value = "";
+        selectGolPns.value = "";
+        selectGolPppk.value = "";
+        if (inputPangkat) inputPangkat.value = "-";
       }
     }
 
     function handleGolonganChange(val) {
+      const inputPangkat = document.getElementById("inputPangkat");
+      if (!inputPangkat) return;
       if (val && val.includes("|")) {
         const parts = val.split("|");
-        document.getElementById("inputPangkat").value = parts[1] || "";
+        inputPangkat.value = parts[1] || "-";
       } else {
-        document.getElementById("inputPangkat").value = "";
+        inputPangkat.value = "-";
       }
     }
 
@@ -1374,7 +1319,7 @@
         if (isOpd) {
           Swal.fire({
             title: "Instansi Tamu Belum Diisi",
-            text: "Silakan ketik nama instansi, dinas, atau OPD asal tamu terlebih dahulu.",
+            text: "Silakan ketik nama instansi, dinas, atau lembaga asal tamu terlebih dahulu.",
             icon: "warning",
             confirmButtonColor: "#1e3a8a"
           });
@@ -1391,6 +1336,41 @@
         return;
       }
 
+      // Validasi Status Kepegawaian & Golongan
+      const statusPegawai = document.querySelector('input[name="statusKepegawaian"]:checked')?.value || "Non-ASN";
+      let golonganVal = "-";
+      let pangkatVal = "-";
+
+      if (statusPegawai === "PNS") {
+        const pnsVal = document.getElementById("selectGolonganPns")?.value || "";
+        if (!pnsVal) {
+          Swal.fire({
+            title: "Golongan PNS Belum Dipilih",
+            text: "Silakan pilih Pangkat / Golongan Ruang Anda terlebih dahulu.",
+            icon: "warning",
+            confirmButtonColor: "#1e3a8a"
+          });
+          document.getElementById("selectGolonganPns")?.focus();
+          return;
+        }
+        golonganVal = pnsVal.split("|")[0];
+        pangkatVal = pnsVal.split("|")[1] || "-";
+      } else if (statusPegawai === "PPPK") {
+        const pppkVal = document.getElementById("selectGolonganPppk")?.value || "";
+        if (!pppkVal) {
+          Swal.fire({
+            title: "Golongan PPPK Belum Dipilih",
+            text: "Silakan pilih Golongan / Jenjang PPPK Anda terlebih dahulu.",
+            icon: "warning",
+            confirmButtonColor: "#1e3a8a"
+          });
+          document.getElementById("selectGolonganPppk")?.focus();
+          return;
+        }
+        golonganVal = pppkVal.split("|")[0];
+        pangkatVal = pppkVal.split("|")[1] || "-";
+      }
+
       // Kumpulkan Payload Form
       const formData = {
         idKegiatan: document.getElementById("formEventId").value,
@@ -1398,13 +1378,13 @@
         namaSekolah: schoolName,
         npsn: document.getElementById("selectedSchoolNpsn").value || "-",
         statusSekolah: document.getElementById("selectedSchoolStatus").value || (isOpd ? "OPD / Tamu Undangan" : "SMP"),
-        kecamatan: document.getElementById("selectedSchoolKecamatan").value || "Karanganyar",
+        kecamatan: document.getElementById("selectedSchoolKecamatan").value || "-",
         kategoriUnit: isOpd ? "LAIN" : "SMP",
-        statusKepegawaian: document.querySelector('input[name="statusKepegawaian"]:checked')?.value || "Non-ASN",
+        statusKepegawaian: statusPegawai,
         jabatan: document.getElementById("inputJabatan").value.trim(),
-        nip: document.getElementById("inputNip").value.trim(),
-        golongan: document.getElementById("selectGolongan").value ? document.getElementById("selectGolongan").value.split("|")[0] : "-",
-        pangkat: document.getElementById("inputPangkat").value || "-",
+        nip: document.getElementById("inputNip").value.trim() || "-",
+        golongan: golonganVal,
+        pangkat: pangkatVal,
         namaLengkap: document.getElementById("inputNamaLengkap").value.trim(),
         jenisKelamin: document.querySelector('input[name="jenisKelamin"]:checked')?.value || "Laki-laki",
         ukuranKaos: document.querySelector('input[name="ukuranKaos"]:checked')?.value || "L",
@@ -1438,6 +1418,7 @@
           // Reset Form
           document.getElementById("registrationForm").reset();
           resetSchoolSelection();
+          handleStatusPegawaiChange("Non-ASN");
         } else {
           Swal.fire({
             title: "Pendaftaran Gagal",
