@@ -1139,7 +1139,7 @@
     <section id="tabGeminiAi" class="tab-pane d-none">
       <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
-          <h3 class="h4 fw-bold text-dark mb-0">Asisten Jemprot AI Kedinasan</h3>
+          <h3 class="h4 fw-bold text-dark mb-0">Asisten Jemprot AI Panitia</h3>
           <p class="text-muted small mb-0">Analisis cerdas kehadiran, rekap logistik, dan asisten panitia</p>
         </div>
       </div>
@@ -1153,7 +1153,7 @@
             <div class="chat-bubble chat-bubble-ai">
               <div class="d-flex align-items-center gap-1.5 mb-1.5">
                 <strong class="text-primary small">Jemprot AI</strong>
-                <span class="badge bg-warning text-dark py-0.5 px-1.5 rounded-pill" style="font-size:0.65rem;">Asisten Kedinasan</span>
+                <span class="badge bg-warning text-dark py-0.5 px-1.5 rounded-pill" style="font-size:0.65rem;">Asisten Panitia</span>
               </div>
               <div>Halo Panitia! Saya siap membantu menganalisis data peserta, kehadiran presensi, dan kebutuhan logistik kegiatan aktif ini. Ada yang bisa saya bantu?</div>
               <span class="chat-time">Siap Melayani</span>
@@ -1219,7 +1219,7 @@
     </section>
 
     <!-- ==================== BRANDING FOOTER JEMPROT ==================== -->
-    <footer class="py-3 mt-5 border-top bg-white text-center">
+    <footer class="py-3 mt-auto border-top bg-white text-center rounded-3">
       <div class="container">
         <div class="d-flex align-items-center justify-content-center flex-wrap gap-1 text-muted small">
           <span class="fw-semibold text-secondary" style="font-size: 0.72rem; letter-spacing: 0.05em;">DIGITALLY SHAPED BY</span>
@@ -2163,14 +2163,21 @@
     function renderDashboardStats(data) {
       const s = data.settings || {};
       const participants = data.participants || [];
+      const isNoEvents = (!s.ID_KEGIATAN || s.NAMA_KEGIATAN === "Belum Ada Kegiatan" || s.NAMA_KEGIATAN === "Belum Ada Kegiatan Aktif") && (!allEventsList || allEventsList.length === 0);
 
-      if (!s.ID_KEGIATAN && (!allEventsList || allEventsList.length === 0)) {
+      if (isNoEvents) {
         document.getElementById("dashEventTitle").textContent = "Belum Ada Kegiatan";
         document.getElementById("dashEventSubtitle").textContent = "Silakan klik tab Kelola Multi-Kegiatan untuk menambah kegiatan baru.";
+        document.getElementById("lblDetailTanggal").textContent = "-";
+        document.getElementById("lblDetailLokasi").textContent = "-";
+        document.getElementById("lblDetailKuota").textContent = "0";
         document.getElementById("lblDetailStatus").textContent = "TUTUP";
       } else {
         document.getElementById("dashEventTitle").textContent = s.NAMA_KEGIATAN || "Kegiatan Aktif";
         document.getElementById("dashEventSubtitle").textContent = s.SUB_KEGIATAN || "Bidang SMP DISDIKBUD Karanganyar";
+        document.getElementById("lblDetailTanggal").textContent = s.TANGGAL_PELAKSANAAN || "-";
+        document.getElementById("lblDetailLokasi").textContent = s.LOKASI_KEGIATAN || "-";
+        document.getElementById("lblDetailKuota").textContent = s.KUOTA_PER_SEKOLAH || "-";
         document.getElementById("lblDetailStatus").textContent = s.STATUS_FORM || "BUKA";
       }
 
@@ -2203,11 +2210,6 @@
           alertPresensi.classList.remove("d-flex");
         }
       }
-
-      document.getElementById("lblDetailTanggal").textContent = s.TANGGAL_PELAKSANAAN || "-";
-      document.getElementById("lblDetailLokasi").textContent = s.LOKASI_KEGIATAN || "-";
-      document.getElementById("lblDetailKuota").textContent = s.KUOTA_PER_SEKOLAH || "-";
-      document.getElementById("lblDetailStatus").textContent = s.STATUS_FORM || "BUKA";
     }
 
     /**
@@ -2997,8 +2999,20 @@
     }
 
     function openModalWaBlastSekolah() {
+      const s = currentDashboardData?.settings || {};
+      const activeEventName = s.NAMA_KEGIATAN && s.NAMA_KEGIATAN !== "Belum Ada Kegiatan" && s.NAMA_KEGIATAN !== "Belum Ada Kegiatan Aktif" ? s.NAMA_KEGIATAN : "";
+
+      if (!activeEventName) {
+        Swal.fire({
+          icon: "warning",
+          title: "Kegiatan Belum Dipilih",
+          text: "Silakan buat atau pilih kegiatan aktif terlebih dahulu sebelum mengirim WhatsApp blast pengingat."
+        });
+        return;
+      }
+
       const belumRows = Array.from(document.querySelectorAll("#tbodySekolahBelumDaftar tr td.fw-bold")).map(el => el.textContent);
-      const text = `*PENGINGAT RESMI PENDAFTARAN KEGIATAN KEDINASAN*\n` +
+      const text = `*PENGINGAT PENDAFTARAN KEGIATAN ${activeEventName.toUpperCase()}*\n` +
         `Bidang SMP DISDIKBUD Kabupaten Karanganyar\n\n` +
         `Yth. Bapak/Ibu Kepala SMP se-Kabupaten Karanganyar,\n` +
         `Diberitahukan bahwa pendaftaran kegiatan sedang dibuka. Satuan pendidikan yang belum mendaftar (${belumRows.length} sekolah) dimohon segera mengirim perwakilan melalui tautan berikut:\n` +
@@ -4276,7 +4290,7 @@
           <div class="chat-bubble chat-bubble-ai">
             <div class="d-flex align-items-center gap-1.5 mb-1.5">
               <strong class="text-primary small">Jemprot AI</strong>
-              <span class="badge bg-warning text-dark py-0.5 px-1.5 rounded-pill" style="font-size:0.65rem;">Asisten Kedinasan</span>
+              <span class="badge bg-warning text-dark py-0.5 px-1.5 rounded-pill" style="font-size:0.65rem;">Asisten Panitia</span>
             </div>
             <div class="d-flex align-items-center gap-2 py-1">
               <div class="typing-indicator"><span></span><span></span><span></span></div>
@@ -4302,7 +4316,7 @@
               <div class="d-flex align-items-center justify-content-between mb-1.5 gap-2">
                 <div class="d-flex align-items-center gap-1.5">
                   <strong class="text-primary small">Jemprot AI</strong>
-                  <span class="badge bg-warning text-dark py-0.5 px-1.5 rounded-pill" style="font-size:0.65rem;">Asisten Kedinasan</span>
+                  <span class="badge bg-warning text-dark py-0.5 px-1.5 rounded-pill" style="font-size:0.65rem;">Asisten Panitia</span>
                 </div>
               </div>
               <div class="chat-ai-content">${formattedText}</div>

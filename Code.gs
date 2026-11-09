@@ -1229,15 +1229,19 @@ function deleteEvent(eventId, pin) {
     sheetKegiatan.deleteRow(eventRowIndex);
 
     // 3. Reset sheet Config jika kegiatan yang dihapus merupakan kegiatan yang sedang aktif di Config
+    // atau jika seluruh kegiatan di Master_Kegiatan telah habis (0 kegiatan aktif)
     const sheetConfig = ss.getSheetByName(SHEET_CONFIG);
     if (sheetConfig) {
       const cfgData = sheetConfig.getDataRange().getValues();
+      const remainingEvents = Math.max(0, sheetKegiatan.getLastRow() - 1);
       for (let i = 1; i < cfgData.length; i++) {
         const k = String(cfgData[i][0]).trim();
-        if (k === "NAMA_KEGIATAN" && String(cfgData[i][1]).trim().toLowerCase() === targetEventName.toLowerCase()) {
+        if (k === "NAMA_KEGIATAN" && (remainingEvents <= 0 || String(cfgData[i][1]).trim().toLowerCase() === targetEventName.toLowerCase())) {
           sheetConfig.getRange(i + 1, 2).setValue("KEGIATAN BIDANG SMP");
-        } else if (k === "STATUS_FORM" && String(cfgData[i][1]).trim().toLowerCase() === targetEventName.toLowerCase()) {
+        } else if (k === "STATUS_FORM" && (remainingEvents <= 0 || String(cfgData[i][1]).trim().toLowerCase() === targetEventName.toLowerCase())) {
           sheetConfig.getRange(i + 1, 2).setValue("TUTUP");
+        } else if (remainingEvents <= 0 && (k === "TANGGAL_PELAKSANAAN" || k === "LOKASI_KEGIATAN")) {
+          sheetConfig.getRange(i + 1, 2).setValue("-");
         }
       }
     }
@@ -1552,7 +1556,9 @@ function getInitialFormData(targetEventIdOrName) {
         NAMA_KEGIATAN: "Belum Ada Kegiatan Aktif",
         SUB_KEGIATAN: "Saat ini belum ada formulir pendaftaran yang dibuka oleh panitia.",
         STATUS_FORM: "TUTUP",
-        KUOTA_PER_SEKOLAH: "0"
+        KUOTA_PER_SEKOLAH: "0",
+        TANGGAL_PELAKSANAAN: "-",
+        LOKASI_KEGIATAN: "-"
       };
     }
 
@@ -1890,7 +1896,9 @@ function getAdminDashboardData(pin, targetEventIdOrName) {
         STATUS_FORM: "TUTUP",
         KUOTA_PER_SEKOLAH: "0",
         MODUL_KAOS: "OFF",
-        MODUL_LENGAN: "OFF"
+        MODUL_LENGAN: "OFF",
+        TANGGAL_PELAKSANAAN: "-",
+        LOKASI_KEGIATAN: "-"
       };
     }
 
