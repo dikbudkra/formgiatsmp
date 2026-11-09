@@ -1,0 +1,73 @@
+{
+  "id": "formgiatsmp-app",
+  "name": "Form Kegiatan Kedinasan - Bidang SMP",
+  "short_name": "FormGiatSMP",
+  "description": "Aplikasi Pendaftaran Peserta & Manajemen Kegiatan Kedinasan Bidang SMP DISDIKBUD Karanganyar",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "orientation": "portrait-primary",
+  "background_color": "#f8fafc",
+  "theme_color": "#1e3a8a",
+  "categories": [
+    "education",
+    "productivity",
+    "government"
+  ],
+  "icons": [
+    {
+      "src": "./icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Formulir Pendaftaran",
+      "short_name": "Pendaftaran",
+      "description": "Buka formulir pendaftaran kegiatan kedinasan",
+      "url": "./index.html",
+      "icons": [
+        {
+          "src": "./icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Portal Panitia (Marshal)",
+      "short_name": "Marshal",
+      "description": "Buka dashboard portal manajemen panitia kegiatan",
+      "url": "./marshal.html",
+      "icons": [
+        {
+          "src": "./icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}

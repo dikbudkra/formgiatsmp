@@ -6,7 +6,13 @@
   <title>Portal Marshal &amp; Panitia - Disdikbud Karanganyar</title>
   
   <meta name="description" content="Dashboard Manajemen Kegiatan &amp; Presensi QR Code Bidang SMP DISDIKBUD Karanganyar">
-  <link rel="icon" type="image/png" href="https://lh3.googleusercontent.com/d/1e1LH5ZgYyLjclSNXwMAU5Zy_PKiju5z-">
+  <meta name="theme-color" content="#1e3a8a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="MarshalSMP">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="./icons/favicon.png">
 
   <!-- Google Fonts: Plus Jakarta Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -437,7 +443,12 @@
         </select>
       </div>
 
-      <a href="../" target="_blank" class="btn btn-outline-secondary btn-sm rounded-pill px-2.5 py-1 d-none d-md-inline-flex align-items-center gap-1" title="Buka Form Publik">
+      <button id="btnPwaInstallMarshal" class="btn btn-warning btn-sm rounded-pill px-2.5 py-1 d-none align-items-center gap-1 shadow-sm" onclick="triggerPwaInstall()" title="Install Aplikasi Portal Panitia">
+        <i class="bi bi-download"></i>
+        <span class="small fw-bold">Install</span>
+      </button>
+
+      <a href="./index.html" target="_blank" class="btn btn-outline-secondary btn-sm rounded-pill px-2.5 py-1 d-none d-md-inline-flex align-items-center gap-1" title="Buka Form Publik">
         <i class="bi bi-box-arrow-up-right"></i>
         <span class="small">Form Publik</span>
       </a>
@@ -4562,6 +4573,55 @@
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
+    }
+
+    // Registrasi PWA Service Worker & Install Prompt
+    let deferredPromptMarshal;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPromptMarshal = e;
+      const btn = document.getElementById('btnPwaInstallMarshal');
+      if (btn) {
+        btn.classList.remove('d-none');
+        btn.classList.add('d-inline-flex');
+      }
+    });
+
+    function triggerPwaInstall() {
+      if (!deferredPromptMarshal) return;
+      deferredPromptMarshal.prompt();
+      deferredPromptMarshal.userChoice.then((choice) => {
+        if (choice.outcome === 'accepted') {
+          console.log('[PWA] Panitia memasang aplikasi Portal Marshal');
+        }
+        deferredPromptMarshal = null;
+        const btn = document.getElementById('btnPwaInstallMarshal');
+        if (btn) {
+          btn.classList.add('d-none');
+          btn.classList.remove('d-inline-flex');
+        }
+      });
+    }
+
+    window.addEventListener('appinstalled', () => {
+      console.log('[PWA] Portal Marshal berhasil diinstal!');
+      const btn = document.getElementById('btnPwaInstallMarshal');
+      if (btn) {
+        btn.classList.add('d-none');
+        btn.classList.remove('d-inline-flex');
+      }
+    });
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then((reg) => {
+            console.log('[PWA] Service Worker aktif di Portal Marshal:', reg.scope);
+          })
+          .catch((err) => {
+            console.warn('[PWA] Gagal meregistrasi Service Worker:', err);
+          });
+      });
     }
   </script>
 </body>

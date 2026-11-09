@@ -5,9 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Portal Pendaftaran Kegiatan - Disdikbud Karanganyar</title>
   
-  <!-- Meta SEO & Favicon -->
+  <!-- Meta SEO, PWA & Favicon -->
   <meta name="description" content="Portal Resmi Pendaftaran Kegiatan Kedinasan Bidang SMP Dinas Pendidikan dan Kebudayaan Kabupaten Karanganyar">
-  <link rel="icon" type="image/png" href="https://lh3.googleusercontent.com/d/1e1LH5ZgYyLjclSNXwMAU5Zy_PKiju5z-">
+  <meta name="theme-color" content="#1e3a8a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="FormGiatSMP">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="./icons/favicon.png">
 
   <!-- Google Fonts: Plus Jakarta Sans -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -353,8 +359,12 @@
           </div>
         </div>
 
-        <div>
-          <a href="./marshal/" class="btn btn-outline-light btn-sm rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-sm">
+        <div class="d-flex align-items-center gap-2">
+          <button id="btnPwaInstall" class="btn btn-warning btn-sm rounded-pill px-3 py-1.5 fw-bold d-none align-items-center gap-1.5 shadow-sm" onclick="triggerPwaInstall()" title="Install Aplikasi ke HP / Komputer">
+            <i class="bi bi-download"></i>
+            <span>Install App</span>
+          </button>
+          <a href="./marshal.html" class="btn btn-outline-light btn-sm rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-sm">
             <i class="bi bi-shield-lock-fill text-warning"></i>
             <span>Portal Panitia</span>
           </a>
@@ -1735,6 +1745,55 @@
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
+    }
+
+    // Registrasi PWA Service Worker & Install Prompt
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const btn = document.getElementById('btnPwaInstall');
+      if (btn) {
+        btn.classList.remove('d-none');
+        btn.classList.add('d-inline-flex');
+      }
+    });
+
+    function triggerPwaInstall() {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then((choice) => {
+        if (choice.outcome === 'accepted') {
+          console.log('[PWA] Pengguna memasang aplikasi');
+        }
+        deferredPrompt = null;
+        const btn = document.getElementById('btnPwaInstall');
+        if (btn) {
+          btn.classList.add('d-none');
+          btn.classList.remove('d-inline-flex');
+        }
+      });
+    }
+
+    window.addEventListener('appinstalled', () => {
+      console.log('[PWA] Aplikasi berhasil diinstal!');
+      const btn = document.getElementById('btnPwaInstall');
+      if (btn) {
+        btn.classList.add('d-none');
+        btn.classList.remove('d-inline-flex');
+      }
+    });
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then((reg) => {
+            console.log('[PWA] Service Worker aktif dengan scope:', reg.scope);
+          })
+          .catch((err) => {
+            console.warn('[PWA] Gagal meregistrasi Service Worker:', err);
+          });
+      });
     }
   </script>
 </body>
