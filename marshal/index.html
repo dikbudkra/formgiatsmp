@@ -668,85 +668,116 @@
         </div>
       </div>
 
-      <!-- KARTU 2 TABEL KAOS LENGKAP -->
+      <!-- TABEL TUNGGAL REKAP KAOS KOMPREHENSIF -->
       <div class="row g-4">
-        <!-- TABEL 1: KAOS BERDASARKAN GENDER (L/P) -->
         <div class="col-12">
           <div class="card card-modern p-4">
             <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-              <h5 class="fw-bold text-dark mb-0">
-                <i class="bi bi-tag-fill text-warning me-2"></i> 1. Rekap Ukuran Kaos Berdasarkan Gender (Laki-laki / Perempuan)
-              </h5>
-              <span class="badge bg-light text-secondary border">Tabel Distribusi Peserta</span>
+              <div>
+                <h5 class="fw-bold text-dark mb-0">
+                  <i class="bi bi-tag-fill text-warning me-2"></i> Rekapitulasi Terpadu Logistik Kaos
+                </h5>
+                <p class="text-muted small mb-0">Kombinasi lengkap ukuran (S s.d. 4XL), model lengan (pendek/panjang), dan jenis kelamin (L/P)</p>
+              </div>
+              <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1.5 fw-bold rounded-pill">
+                Format Siap Konveksi &amp; Panitia
+              </span>
             </div>
-            <div class="table-responsive">
-              <table class="table table-bordered text-center align-middle mb-0" style="font-size: 0.85rem;">
-                <thead class="table-light fw-bold">
-                  <tr>
-                    <th class="text-start ps-3">Kategori Peserta</th>
-                    <th>S</th><th>M</th><th>L</th><th>XL</th><th>XXL</th><th>3XL</th><th>4XL</th>
-                    <th class="table-warning text-dark">TOTAL KAOS</th>
-                  </tr>
-                </thead>
-                <tbody class="fw-semibold">
-                  <tr>
-                    <td class="text-start ps-3 fw-bold text-primary"><i class="bi bi-gender-male me-1.5"></i>Laki-laki</td>
-                    <td id="kL_S">0</td><td id="kL_M">0</td><td id="kL_L">0</td><td id="kL_XL">0</td><td id="kL_XXL">0</td><td id="kL_3XL">0</td><td id="kL_4XL">0</td>
-                    <td class="fw-bold table-primary" id="kL_Total">0</td>
-                  </tr>
-                  <tr>
-                    <td class="text-start ps-3 fw-bold text-danger"><i class="bi bi-gender-female me-1.5"></i>Perempuan</td>
-                    <td id="kP_S">0</td><td id="kP_M">0</td><td id="kP_L">0</td><td id="kP_XL">0</td><td id="kP_XXL">0</td><td id="kP_3XL">0</td><td id="kP_4XL">0</td>
-                    <td class="fw-bold table-danger" id="kP_Total">0</td>
-                  </tr>
-                </tbody>
-                <tfoot class="table-light fw-bold border-top">
-                  <tr>
-                    <td class="text-start ps-3 text-dark"><i class="bi bi-calculator me-1.5"></i>Total Kaos</td>
-                    <td id="kT_S">0</td><td id="kT_M">0</td><td id="kT_L">0</td><td id="kT_XL">0</td><td id="kT_XXL">0</td><td id="kT_3XL">0</td><td id="kT_4XL">0</td>
-                    <td class="fw-bold table-warning text-primary fs-6" id="kT_Total">0</td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          </div>
-        </div>
 
-        <!-- TABEL 2: KAOS RINCIAN LENGAN PENDEK & PANJANG PER UKURAN -->
-        <div class="col-12">
-          <div class="card card-modern p-4">
-            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-              <h5 class="fw-bold text-dark mb-0">
-                <i class="bi bi-layers-fill text-info me-2"></i> 2. Rincian Kaos Lengan Pendek &amp; Lengan Panjang per Ukuran
-              </h5>
-              <span class="badge bg-light text-secondary border">Siap Konveksi</span>
-            </div>
             <div class="table-responsive">
               <table class="table table-bordered text-center align-middle mb-0" style="font-size: 0.85rem;">
                 <thead class="table-light fw-bold">
                   <tr>
-                    <th class="text-start ps-3">Model Lengan</th>
+                    <th class="text-start ps-3" style="min-width: 200px;">Kategori / Model Kaos</th>
                     <th>S</th><th>M</th><th>L</th><th>XL</th><th>XXL</th><th>3XL</th><th>4XL</th>
-                    <th class="table-warning text-dark">TOTAL KAOS</th>
+                    <th class="table-warning text-dark" style="min-width: 100px;">TOTAL</th>
                   </tr>
                 </thead>
                 <tbody class="fw-semibold">
-                  <tr>
-                    <td class="text-start ps-3 fw-bold text-success"><i class="bi bi-check2-circle me-1.5"></i>Lengan Pendek</td>
-                    <td id="kLen_Pendek_S">0</td><td id="kLen_Pendek_M">0</td><td id="kLen_Pendek_L">0</td><td id="kLen_Pendek_XL">0</td><td id="kLen_Pendek_XXL">0</td><td id="kLen_Pendek_3XL">0</td><td id="kLen_Pendek_4XL">0</td>
-                    <td class="fw-bold table-success" id="kLen_Pendek_Total">0</td>
+                  <!-- SEKSI 1: LAKI-LAKI -->
+                  <tr class="table-primary-subtle text-start">
+                    <td colspan="9" class="ps-3 fw-bold text-primary">
+                      <i class="bi bi-gender-male me-1.5"></i> PESERTA LAKI-LAKI (PUTRA)
+                    </td>
                   </tr>
                   <tr>
-                    <td class="text-start ps-3 fw-bold text-info"><i class="bi bi-check2-circle me-1.5"></i>Lengan Panjang</td>
-                    <td id="kLen_Panjang_S">0</td><td id="kLen_Panjang_M">0</td><td id="kLen_Panjang_L">0</td><td id="kLen_Panjang_XL">0</td><td id="kLen_Panjang_XXL">0</td><td id="kLen_Panjang_3XL">0</td><td id="kLen_Panjang_4XL">0</td>
-                    <td class="fw-bold table-info" id="kLen_Panjang_Total">0</td>
+                    <td class="text-start ps-4 text-secondary">
+                      <i class="bi bi-dash me-1"></i>Lengan Pendek
+                    </td>
+                    <td id="kL_Pendek_S">0</td><td id="kL_Pendek_M">0</td><td id="kL_Pendek_L">0</td><td id="kL_Pendek_XL">0</td><td id="kL_Pendek_XXL">0</td><td id="kL_Pendek_3XL">0</td><td id="kL_Pendek_4XL">0</td>
+                    <td class="fw-bold" id="kL_Pendek_Total">0</td>
+                  </tr>
+                  <tr>
+                    <td class="text-start ps-4 text-secondary">
+                      <i class="bi bi-dash me-1"></i>Lengan Panjang
+                    </td>
+                    <td id="kL_Panjang_S">0</td><td id="kL_Panjang_M">0</td><td id="kL_Panjang_L">0</td><td id="kL_Panjang_XL">0</td><td id="kL_Panjang_XXL">0</td><td id="kL_Panjang_3XL">0</td><td id="kL_Panjang_4XL">0</td>
+                    <td class="fw-bold" id="kL_Panjang_Total">0</td>
+                  </tr>
+                  <tr class="table-light fw-bold border-bottom">
+                    <td class="text-start ps-3 text-primary">
+                      Subtotal Kaos Laki-laki
+                    </td>
+                    <td id="kSub_L_S">0</td><td id="kSub_L_M">0</td><td id="kSub_L_L">0</td><td id="kSub_L_XL">0</td><td id="kSub_L_XXL">0</td><td id="kSub_L_3XL">0</td><td id="kSub_L_4XL">0</td>
+                    <td class="fw-bold table-primary text-primary" id="kSub_L_Total">0</td>
+                  </tr>
+
+                  <!-- SEKSI 2: PEREMPUAN -->
+                  <tr class="table-danger-subtle text-start">
+                    <td colspan="9" class="ps-3 fw-bold text-danger">
+                      <i class="bi bi-gender-female me-1.5"></i> PESERTA PEREMPUAN (PUTRI)
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="text-start ps-4 text-secondary">
+                      <i class="bi bi-dash me-1"></i>Lengan Pendek
+                    </td>
+                    <td id="kP_Pendek_S">0</td><td id="kP_Pendek_M">0</td><td id="kP_Pendek_L">0</td><td id="kP_Pendek_XL">0</td><td id="kP_Pendek_XXL">0</td><td id="kP_Pendek_3XL">0</td><td id="kP_Pendek_4XL">0</td>
+                    <td class="fw-bold" id="kP_Pendek_Total">0</td>
+                  </tr>
+                  <tr>
+                    <td class="text-start ps-4 text-secondary">
+                      <i class="bi bi-dash me-1"></i>Lengan Panjang
+                    </td>
+                    <td id="kP_Panjang_S">0</td><td id="kP_Panjang_M">0</td><td id="kP_Panjang_L">0</td><td id="kP_Panjang_XL">0</td><td id="kP_Panjang_XXL">0</td><td id="kP_Panjang_3XL">0</td><td id="kP_Panjang_4XL">0</td>
+                    <td class="fw-bold" id="kP_Panjang_Total">0</td>
+                  </tr>
+                  <tr class="table-light fw-bold border-bottom">
+                    <td class="text-start ps-3 text-danger">
+                      Subtotal Kaos Perempuan
+                    </td>
+                    <td id="kSub_P_S">0</td><td id="kSub_P_M">0</td><td id="kSub_P_L">0</td><td id="kSub_P_XL">0</td><td id="kSub_P_XXL">0</td><td id="kSub_P_3XL">0</td><td id="kSub_P_4XL">0</td>
+                    <td class="fw-bold table-danger text-danger" id="kSub_P_Total">0</td>
+                  </tr>
+
+                  <!-- SEKSI 3: REKAPITULASI MODEL LENGAN -->
+                  <tr class="table-success-subtle text-start">
+                    <td colspan="9" class="ps-3 fw-bold text-success">
+                      <i class="bi bi-layers-fill me-1.5"></i> REKAPITULASI MODEL LENGAN (SIAP KONVEKSI)
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="text-start ps-4 text-success fw-bold">
+                      <i class="bi bi-check2-circle me-1"></i>Total Lengan Pendek (L + P)
+                    </td>
+                    <td id="kTot_Pendek_S">0</td><td id="kTot_Pendek_M">0</td><td id="kTot_Pendek_L">0</td><td id="kTot_Pendek_XL">0</td><td id="kTot_Pendek_XXL">0</td><td id="kTot_Pendek_3XL">0</td><td id="kTot_Pendek_4XL">0</td>
+                    <td class="fw-bold table-success text-success" id="kTot_Pendek_Grand">0</td>
+                  </tr>
+                  <tr>
+                    <td class="text-start ps-4 text-info fw-bold">
+                      <i class="bi bi-check2-circle me-1"></i>Total Lengan Panjang (L + P)
+                    </td>
+                    <td id="kTot_Panjang_S">0</td><td id="kTot_Panjang_M">0</td><td id="kTot_Panjang_L">0</td><td id="kTot_Panjang_XL">0</td><td id="kTot_Panjang_XXL">0</td><td id="kTot_Panjang_3XL">0</td><td id="kTot_Panjang_4XL">0</td>
+                    <td class="fw-bold table-info text-info" id="kTot_Panjang_Grand">0</td>
                   </tr>
                 </tbody>
-                <tfoot class="table-light fw-bold border-top">
+                <tfoot class="table-dark fw-bold border-top">
                   <tr>
-                    <td class="text-start ps-3 text-dark"><i class="bi bi-calculator me-1.5"></i>Total per Ukuran</td>
-                    <td id="kLen_Total_S">0</td><td id="kLen_Total_M">0</td><td id="kLen_Total_L">0</td><td id="kLen_Total_XL">0</td><td id="kLen_Total_XXL">0</td><td id="kLen_Total_3XL">0</td><td id="kLen_Total_4XL">0</td>
-                    <td class="fw-bold table-warning text-primary fs-6" id="kLen_Total_Grand">0</td>
+                    <td class="text-start ps-3 text-white">
+                      <i class="bi bi-calculator me-1.5 text-warning"></i>GRAND TOTAL KAOS
+                    </td>
+                    <td id="kGrand_S">0</td><td id="kGrand_M">0</td><td id="kGrand_L">0</td><td id="kGrand_XL">0</td><td id="kGrand_XXL">0</td><td id="kGrand_3XL">0</td><td id="kGrand_4XL">0</td>
+                    <td class="fw-bold table-warning text-dark fs-6" id="kGrand_Total">0</td>
                   </tr>
                 </tfoot>
               </table>
@@ -1476,11 +1507,18 @@
       const select = document.getElementById("selectTopbarEvent");
       if (!select) return;
 
+      if (!events || events.length === 0) {
+        select.innerHTML = '<option value="">-- Belum Ada Kegiatan --</option>';
+        activeEventId = "";
+        return;
+      }
+
       select.innerHTML = events.map(e => `
         <option value="${escapeHtml(e.idKegiatan)}" ${e.idKegiatan === activeId ? 'selected' : ''}>
           ${escapeHtml(e.namaKegiatan)} (${e.statusForm})
         </option>
       `).join("");
+      activeEventId = activeId || (events[0] ? events[0].idKegiatan : "");
     }
 
     async function handleEventSwitch(eventId) {
@@ -1508,8 +1546,15 @@
       const s = data.settings || {};
       const participants = data.participants || [];
 
-      document.getElementById("dashEventTitle").textContent = s.NAMA_KEGIATAN || "Kegiatan Aktif";
-      document.getElementById("dashEventSubtitle").textContent = s.SUB_KEGIATAN || "Bidang SMP DISDIKBUD Karanganyar";
+      if (!s.ID_KEGIATAN && (!allEventsList || allEventsList.length === 0)) {
+        document.getElementById("dashEventTitle").textContent = "Belum Ada Kegiatan";
+        document.getElementById("dashEventSubtitle").textContent = "Silakan klik tab Kelola Multi-Kegiatan untuk menambah kegiatan baru.";
+        document.getElementById("lblDetailStatus").textContent = "TUTUP";
+      } else {
+        document.getElementById("dashEventTitle").textContent = s.NAMA_KEGIATAN || "Kegiatan Aktif";
+        document.getElementById("dashEventSubtitle").textContent = s.SUB_KEGIATAN || "Bidang SMP DISDIKBUD Karanganyar";
+        document.getElementById("lblDetailStatus").textContent = s.STATUS_FORM || "BUKA";
+      }
 
       const total = participants.length;
       const hadir = participants.filter(p => String(p.statusKehadiran || "").toLowerCase() === "hadir").length;
@@ -1924,12 +1969,12 @@
       const golPNS = {};
       const golPPPK = {};
 
-      // 4. Kaos per Gender & per Model Lengan
+      // 4. Kaos Terpadu (Ukuran, Lengan Pendek/Panjang, dan Gender L/P)
       const kaosSizes = ["S", "M", "L", "XL", "XXL", "3XL", "4XL"];
-      const kL = { S: 0, M: 0, L: 0, XL: 0, XXL: 0, "3XL": 0, "4XL": 0, total: 0 };
-      const kP = { S: 0, M: 0, L: 0, XL: 0, XXL: 0, "3XL": 0, "4XL": 0, total: 0 };
-      const kPendek = { S: 0, M: 0, L: 0, XL: 0, XXL: 0, "3XL": 0, "4XL": 0, total: 0 };
-      const kPanjang = { S: 0, M: 0, L: 0, XL: 0, XXL: 0, "3XL": 0, "4XL": 0, total: 0 };
+      const kLPendek = { S: 0, M: 0, L: 0, XL: 0, XXL: 0, "3XL": 0, "4XL": 0, total: 0 };
+      const kLPanjang = { S: 0, M: 0, L: 0, XL: 0, XXL: 0, "3XL": 0, "4XL": 0, total: 0 };
+      const kPPendek = { S: 0, M: 0, L: 0, XL: 0, XXL: 0, "3XL": 0, "4XL": 0, total: 0 };
+      const kPPanjang = { S: 0, M: 0, L: 0, XL: 0, XXL: 0, "3XL": 0, "4XL": 0, total: 0 };
 
       participants.forEach(p => {
         const jk = String(p.jenisKelamin || "").toLowerCase();
@@ -1968,11 +2013,13 @@
         const isPanjang = modelLengan.includes("panjang");
 
         if (kaosSizes.includes(sz)) {
-          if (isL) { kL[sz]++; kL.total++; }
-          else if (isP) { kP[sz]++; kP.total++; }
-
-          if (isPanjang) { kPanjang[sz]++; kPanjang.total++; }
-          else { kPendek[sz]++; kPendek.total++; }
+          if (isL) {
+            if (isPanjang) { kLPanjang[sz]++; kLPanjang.total++; }
+            else { kLPendek[sz]++; kLPendek.total++; }
+          } else if (isP) {
+            if (isPanjang) { kPPanjang[sz]++; kPPanjang.total++; }
+            else { kPPendek[sz]++; kPPendek.total++; }
+          }
         }
       });
 
@@ -2038,31 +2085,68 @@
         }
       }
 
-      // Update Tabel 1: Kaos Berdasarkan Gender (L/P)
-      kaosSizes.forEach(s => {
-        const elL = document.getElementById("kL_" + s);
-        const elP = document.getElementById("kP_" + s);
-        const elT = document.getElementById("kT_" + s);
-        if (elL) elL.textContent = kL[s];
-        if (elP) elP.textContent = kP[s];
-        if (elT) elT.textContent = kL[s] + kP[s];
-      });
-      if (document.getElementById("kL_Total")) document.getElementById("kL_Total").textContent = kL.total;
-      if (document.getElementById("kP_Total")) document.getElementById("kP_Total").textContent = kP.total;
-      if (document.getElementById("kT_Total")) document.getElementById("kT_Total").textContent = kL.total + kP.total;
+      // Update Tabel Terpadu Kaos (Ukuran, Lengan, L/P)
+      let grandTotalKaos = 0;
+      let totPendekGrand = 0;
+      let totPanjangGrand = 0;
+      let subLTotal = kLPendek.total + kLPanjang.total;
+      let subPTotal = kPPendek.total + kPPanjang.total;
 
-      // Update Tabel 2: Kaos Berdasarkan Model Lengan
       kaosSizes.forEach(s => {
-        const elPendek = document.getElementById("kLen_Pendek_" + s);
-        const elPanjang = document.getElementById("kLen_Panjang_" + s);
-        const elTotal = document.getElementById("kLen_Total_" + s);
-        if (elPendek) elPendek.textContent = kPendek[s];
-        if (elPanjang) elPanjang.textContent = kPanjang[s];
-        if (elTotal) elTotal.textContent = kPendek[s] + kPanjang[s];
+        const lp = kLPendek[s];
+        const lj = kLPanjang[s];
+        const pp = kPPendek[s];
+        const pj = kPPanjang[s];
+
+        const subL = lp + lj;
+        const subP = pp + pj;
+        const totPdk = lp + pp;
+        const totPjg = lj + pj;
+        const grnd = subL + subP;
+
+        totPendekGrand += totPdk;
+        totPanjangGrand += totPjg;
+        grandTotalKaos += grnd;
+
+        // Laki-laki
+        const elLP = document.getElementById("kL_Pendek_" + s);
+        const elLJ = document.getElementById("kL_Panjang_" + s);
+        const elSubL = document.getElementById("kSub_L_" + s);
+        if (elLP) elLP.textContent = lp;
+        if (elLJ) elLJ.textContent = lj;
+        if (elSubL) elSubL.textContent = subL;
+
+        // Perempuan
+        const elPP = document.getElementById("kP_Pendek_" + s);
+        const elPJ = document.getElementById("kP_Panjang_" + s);
+        const elSubP = document.getElementById("kSub_P_" + s);
+        if (elPP) elPP.textContent = pp;
+        if (elPJ) elPJ.textContent = pj;
+        if (elSubP) elSubP.textContent = subP;
+
+        // Total Lengan Konveksi
+        const elTotPdk = document.getElementById("kTot_Pendek_" + s);
+        const elTotPjg = document.getElementById("kTot_Panjang_" + s);
+        if (elTotPdk) elTotPdk.textContent = totPdk;
+        if (elTotPjg) elTotPjg.textContent = totPjg;
+
+        // Grand Total per Ukuran
+        const elGrand = document.getElementById("kGrand_" + s);
+        if (elGrand) elGrand.textContent = grnd;
       });
-      if (document.getElementById("kLen_Pendek_Total")) document.getElementById("kLen_Pendek_Total").textContent = kPendek.total;
-      if (document.getElementById("kLen_Panjang_Total")) document.getElementById("kLen_Panjang_Total").textContent = kPanjang.total;
-      if (document.getElementById("kLen_Total_Grand")) document.getElementById("kLen_Total_Grand").textContent = kPendek.total + kPanjang.total;
+
+      // Row Totals
+      if (document.getElementById("kL_Pendek_Total")) document.getElementById("kL_Pendek_Total").textContent = kLPendek.total;
+      if (document.getElementById("kL_Panjang_Total")) document.getElementById("kL_Panjang_Total").textContent = kLPanjang.total;
+      if (document.getElementById("kSub_L_Total")) document.getElementById("kSub_L_Total").textContent = subLTotal;
+
+      if (document.getElementById("kP_Pendek_Total")) document.getElementById("kP_Pendek_Total").textContent = kPPendek.total;
+      if (document.getElementById("kP_Panjang_Total")) document.getElementById("kP_Panjang_Total").textContent = kPPanjang.total;
+      if (document.getElementById("kSub_P_Total")) document.getElementById("kSub_P_Total").textContent = subPTotal;
+
+      if (document.getElementById("kTot_Pendek_Grand")) document.getElementById("kTot_Pendek_Grand").textContent = totPendekGrand;
+      if (document.getElementById("kTot_Panjang_Grand")) document.getElementById("kTot_Panjang_Grand").textContent = totPanjangGrand;
+      if (document.getElementById("kGrand_Total")) document.getElementById("kGrand_Total").textContent = grandTotalKaos;
     }
 
     function buildComprehensiveRecapRows() {
@@ -2082,10 +2166,10 @@
       const golPPPK = {};
 
       const kaosSizes = ["S", "M", "L", "XL", "XXL", "3XL", "4XL"];
-      const kL = { S: 0, M: 0, L: 0, XL: 0, XXL: 0, "3XL": 0, "4XL": 0, total: 0 };
-      const kP = { S: 0, M: 0, L: 0, XL: 0, XXL: 0, "3XL": 0, "4XL": 0, total: 0 };
-      const kPendek = { S: 0, M: 0, L: 0, XL: 0, XXL: 0, "3XL": 0, "4XL": 0, total: 0 };
-      const kPanjang = { S: 0, M: 0, L: 0, XL: 0, XXL: 0, "3XL": 0, "4XL": 0, total: 0 };
+      const kLPendek = { S: 0, M: 0, L: 0, XL: 0, XXL: 0, "3XL": 0, "4XL": 0, total: 0 };
+      const kLPanjang = { S: 0, M: 0, L: 0, XL: 0, XXL: 0, "3XL": 0, "4XL": 0, total: 0 };
+      const kPPendek = { S: 0, M: 0, L: 0, XL: 0, XXL: 0, "3XL": 0, "4XL": 0, total: 0 };
+      const kPPanjang = { S: 0, M: 0, L: 0, XL: 0, XXL: 0, "3XL": 0, "4XL": 0, total: 0 };
 
       participants.forEach(p => {
         const jk = String(p.jenisKelamin || "").toLowerCase();
@@ -2117,11 +2201,13 @@
         const isPanjang = model.includes("panjang");
 
         if (kaosSizes.includes(sz)) {
-          if (isL) { kL[sz]++; kL.total++; }
-          else if (isP) { kP[sz]++; kP.total++; }
-
-          if (isPanjang) { kPanjang[sz]++; kPanjang.total++; }
-          else { kPendek[sz]++; kPendek.total++; }
+          if (isL) {
+            if (isPanjang) { kLPanjang[sz]++; kLPanjang.total++; }
+            else { kLPendek[sz]++; kLPendek.total++; }
+          } else if (isP) {
+            if (isPanjang) { kPPanjang[sz]++; kPPanjang.total++; }
+            else { kPPendek[sz]++; kPPendek.total++; }
+          }
         }
       });
 
@@ -2143,17 +2229,31 @@
         ["Perempuan (Putri)", totalP + " Orang"],
         ["Total Peserta", total + " Orang"],
         [""],
-        ["3A. REKAP UKURAN KAOS BERDASARKAN GENDER (L/P)", ""],
-        ["Kategori Kaos", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "TOTAL KAOS"],
-        ["Kaos Laki-laki", kL.S, kL.M, kL.L, kL.XL, kL.XXL, kL["3XL"], kL["4XL"], kL.total],
-        ["Kaos Perempuan", kP.S, kP.M, kP.L, kP.XL, kP.XXL, kP["3XL"], kP["4XL"], kP.total],
-        ["Total Kaos", kL.S + kP.S, kL.M + kP.M, kL.L + kP.L, kL.XL + kP.XL, kL.XXL + kP.XXL, kL["3XL"] + kP["3XL"], kL["4XL"] + kP["4XL"], kL.total + kP.total],
+        ["3. REKAPITULASI TERPADU LOGISTIK KAOS (GENDER, LENGAN & UKURAN)", ""],
+        ["Kategori / Model Kaos", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "TOTAL"],
+        ["[LAKI-LAKI (PUTRA)]", "", "", "", "", "", "", "", ""],
+        ["  - Lengan Pendek", kLPendek.S, kLPendek.M, kLPendek.L, kLPendek.XL, kLPendek.XXL, kLPendek["3XL"], kLPendek["4XL"], kLPendek.total],
+        ["  - Lengan Panjang", kLPanjang.S, kLPanjang.M, kLPanjang.L, kLPanjang.XL, kLPanjang.XXL, kLPanjang["3XL"], kLPanjang["4XL"], kLPanjang.total],
+        ["Subtotal Kaos Laki-laki", kLPendek.S + kLPanjang.S, kLPendek.M + kLPanjang.M, kLPendek.L + kLPanjang.L, kLPendek.XL + kLPanjang.XL, kLPendek.XXL + kLPanjang.XXL, kLPendek["3XL"] + kLPanjang["3XL"], kLPendek["4XL"] + kLPanjang["4XL"], kLPendek.total + kLPanjang.total],
         [""],
-        ["3B. REKAP UKURAN KAOS BERDASARKAN MODEL LENGAN", ""],
-        ["Model Lengan", "S", "M", "L", "XL", "XXL", "3XL", "4XL", "TOTAL KAOS"],
-        ["Lengan Pendek", kPendek.S, kPendek.M, kPendek.L, kPendek.XL, kPendek.XXL, kPendek["3XL"], kPendek["4XL"], kPendek.total],
-        ["Lengan Panjang", kPanjang.S, kPanjang.M, kPanjang.L, kPanjang.XL, kPanjang.XXL, kPanjang["3XL"], kPanjang["4XL"], kPanjang.total],
-        ["Total per Ukuran", kPendek.S + kPanjang.S, kPendek.M + kPanjang.M, kPendek.L + kPanjang.L, kPendek.XL + kPanjang.XL, kPendek.XXL + kPanjang.XXL, kPendek["3XL"] + kPanjang["3XL"], kPendek["4XL"] + kPanjang["4XL"], kPendek.total + kPanjang.total],
+        ["[PEREMPUAN (PUTRI)]", "", "", "", "", "", "", "", ""],
+        ["  - Lengan Pendek", kPPendek.S, kPPendek.M, kPPendek.L, kPPendek.XL, kPPendek.XXL, kPPendek["3XL"], kPPendek["4XL"], kPPendek.total],
+        ["  - Lengan Panjang", kPPanjang.S, kPPanjang.M, kPPanjang.L, kPPanjang.XL, kPPanjang.XXL, kPPanjang["3XL"], kPPanjang["4XL"], kPPanjang.total],
+        ["Subtotal Kaos Perempuan", kPPendek.S + kPPanjang.S, kPPendek.M + kPPanjang.M, kPPendek.L + kPPanjang.L, kPPendek.XL + kPPanjang.XL, kPPendek.XXL + kPPanjang.XXL, kPPendek["3XL"] + kPPanjang["3XL"], kPPendek["4XL"] + kPPanjang["4XL"], kPPendek.total + kPPanjang.total],
+        [""],
+        ["[TOTAL KONVEKSI]", "", "", "", "", "", "", "", ""],
+        ["  - Total Lengan Pendek (L + P)", kLPendek.S + kPPendek.S, kLPendek.M + kPPendek.M, kLPendek.L + kPPendek.L, kLPendek.XL + kPPendek.XL, kLPendek.XXL + kPPendek.XXL, kLPendek["3XL"] + kPPendek["3XL"], kLPendek["4XL"] + kPPendek["4XL"], kLPendek.total + kPPendek.total],
+        ["  - Total Lengan Panjang (L + P)", kLPanjang.S + kPPanjang.S, kLPanjang.M + kPPanjang.M, kLPanjang.L + kPPanjang.L, kLPanjang.XL + kPPanjang.XL, kLPanjang.XXL + kPPanjang.XXL, kLPanjang["3XL"] + kPPanjang["3XL"], kLPanjang["4XL"] + kPPanjang["4XL"], kLPanjang.total + kPPanjang.total],
+        ["GRAND TOTAL KAOS",
+          kLPendek.S + kLPanjang.S + kPPendek.S + kPPanjang.S,
+          kLPendek.M + kLPanjang.M + kPPendek.M + kPPanjang.M,
+          kLPendek.L + kLPanjang.L + kPPendek.L + kPPanjang.L,
+          kLPendek.XL + kLPanjang.XL + kPPendek.XL + kPPanjang.XL,
+          kLPendek.XXL + kLPanjang.XXL + kPPendek.XXL + kPPanjang.XXL,
+          kLPendek["3XL"] + kLPanjang["3XL"] + kPPendek["3XL"] + kPPanjang["3XL"],
+          kLPendek["4XL"] + kLPanjang["4XL"] + kPPendek["4XL"] + kPPanjang["4XL"],
+          kLPendek.total + kLPanjang.total + kPPendek.total + kPPanjang.total
+        ],
         [""],
         ["4. KOMPOSISI STATUS KEPEGAWAIAN", ""],
         ["Status Kepegawaian", "Laki-laki", "Perempuan", "TOTAL PESERTA"],

@@ -32,21 +32,21 @@ const DEFAULT_ADMIN_PIN = "L@wu1234%"; // Default Password Panitia
 
 // Pengaturan Default Platform Multi-Kegiatan
 const DEFAULT_APP_SETTINGS = {
-  NAMA_KEGIATAN: "WORKSHOP SATUAN PENDIDIKAN AMAN BENCANA (SPAB)",
+  NAMA_KEGIATAN: "PENDAFTARAN KEGIATAN KEDINASAN",
   SUB_KEGIATAN: "Bidang SMP - Dinas Pendidikan dan Kebudayaan Kabupaten Karanganyar",
-  STATUS_FORM: "BUKA",             // BUKA / TUTUP
+  STATUS_FORM: "TUTUP",             // BUKA / TUTUP (TUTUP jika belum ada kegiatan dibuat)
   KUOTA_PER_SEKOLAH: "1",          // 1, 2, 3, bebas
-  MODUL_KAOS: "ON",                // ON / OFF
-  MODUL_LENGAN: "ON",              // ON / OFF (Hanya jika Kaos ON)
+  MODUL_KAOS: "OFF",                // ON / OFF
+  MODUL_LENGAN: "OFF",              // ON / OFF (Hanya jika Kaos ON)
   MODUL_GENDER: "ON",              // ON / OFF
-  MODUL_KONTAK_DARURAT: "ON",      // ON / OFF
-  MODUL_KESEHATAN: "ON",           // ON / OFF
+  MODUL_KONTAK_DARURAT: "OFF",      // ON / OFF
+  MODUL_KESEHATAN: "OFF",           // ON / OFF
   MODUL_ETICKET_PRESENSI: "ON",    // ON / OFF (E-Ticket QR Code & Scanner Presensi Kamera HP)
   MODUL_POPUP_INFO: "OFF",         // ON / OFF
-  POPUP_INFO_JUDUL: "Pengumuman Penting Panitia",
+  POPUP_INFO_JUDUL: "Pengumuman",
   POPUP_INFO_PESAN: "Selamat datang di formulir pendaftaran kegiatan resmi Dinas Pendidikan dan Kebudayaan Kabupaten Karanganyar.",
-  TANGGAL_PELAKSANAAN: "12-14 November 2026",
-  LOKASI_KEGIATAN: "Kecamatan Karanganyar",
+  TANGGAL_PELAKSANAAN: "-",
+  LOKASI_KEGIATAN: "-",
   ADMIN_PIN: "L@wu1234%"
 };
 
@@ -173,50 +173,9 @@ function JALANKAN_SETUP_DATABASE_MULTI_KEGIATAN() {
     sheetKegiatan.setFrozenRows(1);
   } catch (eFmt) {}
 
-  // Periksa data kegiatan di Master_Kegiatan
+  // Periksa data kegiatan di Master_Kegiatan (Tidak melakukan auto-seed agar jika kosong tetap kosong)
   const kegiatanData = sheetKegiatan.getDataRange().getValues();
-  if (kegiatanData.length <= 1) {
-    const nowStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone() || "GMT+7", "dd/MM/yyyy HH:mm:ss");
-    
-    // Kegiatan 1: Workshop SPAB
-    sheetKegiatan.appendRow([
-      "EVT-01",
-      "WORKSHOP SATUAN PENDIDIKAN AMAN BENCANA (SPAB)",
-      "Peningkatan Kapasitas Tim Siaga Bencana Sekolah - Bidang SMP",
-      "BUKA",
-      "2",
-      "ON",
-      "ON",
-      "ON",
-      "ON",
-      "ON",
-      "ON",
-      "18-19 November 2026",
-      "Aula Ki Hajar Dewantara Disdikbud Karanganyar",
-      nowStr
-    ]);
-
-    // Kegiatan 2: Bimtek Literasi & Numerasi
-    sheetKegiatan.appendRow([
-      "EVT-02",
-      "BIMTEK PENINGKATAN KOMPETENSI LITERASI & NUMERASI SMP",
-      "Penguatan Pembelajaran Berbasis Data dan Rapor Pendidikan 2026",
-      "BUKA",
-      "2",
-      "ON",
-      "OFF",
-      "ON",
-      "ON",
-      "OFF",
-      "ON",
-      "25-26 November 2026",
-      "Aula SMP Negeri 1 Karanganyar",
-      nowStr
-    ]);
-    Logger.log("✅ Berhasil menambahkan 2 Kegiatan Awal di 'Master_Kegiatan'!");
-  } else {
-    Logger.log(`ℹ️ Sheet 'Master_Kegiatan' saat ini sudah berisi ${kegiatanData.length - 1} kegiatan.`);
-  }
+  Logger.log(`ℹ️ Sheet 'Master_Kegiatan' saat ini berisi ${Math.max(0, kegiatanData.length - 1)} kegiatan.`);
 
   // 2. Setup & Migrasi Sheet Data_Peserta (22 Kolom Komprehensif)
   const headers22 = [
@@ -444,39 +403,8 @@ function ensureDatabaseReady_() {
   if (!sheetKegiatan) {
     sheetKegiatan = ss.insertSheet(SHEET_MASTER_KEGIATAN);
     sheetKegiatan.appendRow(headersKegiatan);
-    sheetKegiatan.appendRow([
-      "EVT-01",
-      DEFAULT_APP_SETTINGS.NAMA_KEGIATAN,
-      DEFAULT_APP_SETTINGS.SUB_KEGIATAN,
-      DEFAULT_APP_SETTINGS.STATUS_FORM,
-      DEFAULT_APP_SETTINGS.KUOTA_PER_SEKOLAH,
-      DEFAULT_APP_SETTINGS.MODUL_KAOS,
-      DEFAULT_APP_SETTINGS.MODUL_LENGAN,
-      DEFAULT_APP_SETTINGS.MODUL_GENDER,
-      DEFAULT_APP_SETTINGS.MODUL_KONTAK_DARURAT,
-      DEFAULT_APP_SETTINGS.MODUL_KESEHATAN,
-      DEFAULT_APP_SETTINGS.MODUL_ETICKET_PRESENSI,
-      DEFAULT_APP_SETTINGS.TANGGAL_PELAKSANAAN,
-      DEFAULT_APP_SETTINGS.LOKASI_KEGIATAN,
-      Utilities.formatDate(new Date(), Session.getScriptTimeZone() || "GMT+7", "dd/MM/yyyy HH:mm:ss")
-    ]);
-  } else if (sheetKegiatan.getLastRow() <= 1) {
-    sheetKegiatan.appendRow([
-      "EVT-01",
-      DEFAULT_APP_SETTINGS.NAMA_KEGIATAN,
-      DEFAULT_APP_SETTINGS.SUB_KEGIATAN,
-      DEFAULT_APP_SETTINGS.STATUS_FORM,
-      DEFAULT_APP_SETTINGS.KUOTA_PER_SEKOLAH,
-      DEFAULT_APP_SETTINGS.MODUL_KAOS,
-      DEFAULT_APP_SETTINGS.MODUL_LENGAN,
-      DEFAULT_APP_SETTINGS.MODUL_GENDER,
-      DEFAULT_APP_SETTINGS.MODUL_KONTAK_DARURAT,
-      DEFAULT_APP_SETTINGS.MODUL_KESEHATAN,
-      DEFAULT_APP_SETTINGS.MODUL_ETICKET_PRESENSI,
-      DEFAULT_APP_SETTINGS.TANGGAL_PELAKSANAAN,
-      DEFAULT_APP_SETTINGS.LOKASI_KEGIATAN,
-      Utilities.formatDate(new Date(), Session.getScriptTimeZone() || "GMT+7", "dd/MM/yyyy HH:mm:ss")
-    ]);
+  } else if (sheetKegiatan.getLastRow() === 0) {
+    sheetKegiatan.appendRow(headersKegiatan);
   }
 
   // 6. Sheet Master_SMP
@@ -1213,25 +1141,10 @@ function getActiveEventsForPublic() {
     ensureDatabaseReady_();
     const ss = getSpreadsheet_();
     const sheet = ss.getSheetByName(SHEET_MASTER_KEGIATAN);
-    if (!sheet) {
-      const cfg = getAppSettings();
+    if (!sheet || sheet.getLastRow() <= 1) {
       return {
         success: true,
-        events: [{
-          idKegiatan: "EVT-01",
-          namaKegiatan: cfg.NAMA_KEGIATAN,
-          subKegiatan: cfg.SUB_KEGIATAN,
-          statusForm: cfg.STATUS_FORM,
-          kuotaPerSekolah: cfg.KUOTA_PER_SEKOLAH,
-          modulKaos: cfg.MODUL_KAOS,
-          modulLengan: cfg.MODUL_LENGAN,
-          modulGender: cfg.MODUL_GENDER,
-          modulKontakDarurat: cfg.MODUL_KONTAK_DARURAT,
-          modulKesehatan: cfg.MODUL_KESEHATAN,
-          modulEticketPresensi: cfg.MODUL_ETICKET_PRESENSI || "ON",
-          tanggalPelaksanaan: cfg.TANGGAL_PELAKSANAAN || "-",
-          lokasiKegiatan: cfg.LOKASI_KEGIATAN || "-"
-        }]
+        events: []
       };
     }
 
@@ -1502,6 +1415,15 @@ function getInitialFormData(targetEventIdOrName) {
         MODUL_ETICKET_PRESENSI: ev.modulEticketPresensi,
         TANGGAL_PELAKSANAAN: ev.tanggalPelaksanaan,
         LOKASI_KEGIATAN: ev.lokasiKegiatan
+      };
+    } else if (activeEvents.length === 0) {
+      settings = {
+        ...settings,
+        ID_KEGIATAN: "",
+        NAMA_KEGIATAN: "Belum Ada Kegiatan Aktif",
+        SUB_KEGIATAN: "Saat ini belum ada formulir pendaftaran yang dibuka oleh panitia.",
+        STATUS_FORM: "TUTUP",
+        KUOTA_PER_SEKOLAH: "0"
       };
     }
 
@@ -1829,6 +1751,17 @@ function getAdminDashboardData(pin, targetEventIdOrName) {
         MODUL_ETICKET_PRESENSI: selectedEvent.modulEticketPresensi,
         TANGGAL_PELAKSANAAN: selectedEvent.tanggalPelaksanaan,
         LOKASI_KEGIATAN: selectedEvent.lokasiKegiatan
+      };
+    } else {
+      settings = {
+        ...settings,
+        ID_KEGIATAN: "",
+        NAMA_KEGIATAN: "Belum Ada Kegiatan",
+        SUB_KEGIATAN: "Silakan buat kegiatan baru di tab Kelola Multi-Kegiatan",
+        STATUS_FORM: "TUTUP",
+        KUOTA_PER_SEKOLAH: "0",
+        MODUL_KAOS: "OFF",
+        MODUL_LENGAN: "OFF"
       };
     }
 
