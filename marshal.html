@@ -209,6 +209,71 @@
       text-align: center;
       font-weight: 700;
     }
+
+    /* Styling Modul SPJ & Dokumen Dinamis */
+    .spj-paper {
+      background: #ffffff;
+      padding: 24px 28px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+      font-family: Arial, sans-serif;
+      color: #111827;
+      border-radius: 8px;
+    }
+    .spj-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 9pt;
+    }
+    .spj-table th {
+      background-color: #f8fafc;
+      border: 1px solid #475569;
+      padding: 6px 5px;
+      text-align: center;
+      font-weight: 700;
+    }
+    .spj-table td {
+      border: 1px solid #475569;
+      padding: 5px 6px;
+    }
+    .spj-dropzone {
+      border: 2px dashed #059669;
+      background: #f0fdf4;
+      border-radius: 12px;
+      padding: 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .spj-dropzone:hover, .spj-dropzone.dragover {
+      background: #dcfce7;
+      border-color: #047857;
+      transform: scale(1.01);
+    }
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #printAreaSpj, #printAreaSpj * {
+        visibility: visible;
+      }
+      #printAreaSpj {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        box-shadow: none !important;
+        border: none !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      @page {
+        size: landscape;
+        margin: 1cm;
+      }
+    }
   </style>
 </head>
 <body>
@@ -892,91 +957,69 @@
       </div>
     </section>
 
-    <!-- ==================== TAB 7: GENERATOR DOKUMEN SPJ ==================== -->
+    <!-- ==================== TAB 7: GENERATOR DOKUMEN SPJ & PUSTAKA FORMAT ==================== -->
     <section id="tabDokumenSpj" class="tab-pane d-none">
-      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+      <div class="card card-modern p-4 mb-4 border-0 shadow-sm">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+          <div>
+            <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1 rounded-pill small fw-bold mb-1">
+              <i class="bi bi-file-earmark-spreadsheet-fill me-1"></i> Modul Mandiri Dokumen &amp; SPJ
+            </span>
+            <h4 class="fw-bold text-dark mb-1">Pustaka &amp; Generator Dokumen SPJ</h4>
+            <p class="text-muted small mb-0">
+              Kelola format dokumen dan SPJ dinas (<strong>.xlsx</strong> &amp; <strong>.docx</strong>), tersimpan aman di Google Drive dan terisi otomatis dari data peserta kegiatan aktif dengan analisis AI Gemini.
+            </p>
+          </div>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-secondary btn-sm fw-semibold" onclick="loadSpjTemplates()" title="Segarkan Data Template">
+              <i class="bi bi-arrow-clockwise me-1"></i> Segarkan
+            </button>
+            <button type="button" class="btn btn-success btn-sm fw-bold shadow-sm px-3" onclick="openModalUploadSpj()">
+              <i class="bi bi-cloud-arrow-up-fill me-1"></i> + Upload Format Baru
+            </button>
+          </div>
+        </div>
+
+        <!-- Bar Pencarian & Info Drive -->
+        <div class="row align-items-center g-2 mt-3 pt-3 border-top">
+          <div class="col-md-7 col-12">
+            <div class="input-group input-group-sm">
+              <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+              <input type="text" id="filterSpjKeyword" class="form-control border-start-0" placeholder="Cari nama format SPJ / dokumen..." onkeyup="filterSpjTemplates()">
+            </div>
+          </div>
+          <div class="col-md-5 col-12 text-md-end">
+            <a href="https://drive.google.com/drive/folders/1Rhc_GVXNtFA8wPzkgerLCztrXQeML037" target="_blank" class="btn btn-sm btn-outline-primary text-truncate" style="max-width: 100%;">
+              <i class="bi bi-folder2-open me-1"></i> Buka Folder Google Drive
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Indikator Loading Template -->
+      <div id="loadingSpjTemplates" class="text-center py-5 d-none">
+        <div class="spinner-border text-success" role="status"></div>
+        <p class="text-muted small mt-2">Memuat daftar template SPJ &amp; Doc dari database...</p>
+      </div>
+
+      <!-- Grid Daftar Template SPJ -->
+      <div class="row g-3" id="gridSpjTemplates">
+        <!-- Template cards di-generate via JavaScript -->
+      </div>
+
+      <!-- Empty State jika tidak ada template -->
+      <div id="emptySpjTemplates" class="card card-modern text-center py-5 px-3 border-dashed d-none">
+        <div class="mb-3">
+          <i class="bi bi-file-earmark-plus text-muted" style="font-size: 3rem;"></i>
+        </div>
+        <h5 class="fw-bold text-dark">Belum Ada Format SPJ Tersimpan</h5>
+        <p class="text-muted small mx-auto" style="max-width: 450px;">
+          Silakan unggah format dokumen dinas (.xlsx atau .docx) melalui tombol di atas. File akan otomatis tersimpan ke Google Drive Anda.
+        </p>
         <div>
-          <h3 class="h4 fw-bold text-dark mb-0">Generator Dokumen SPJ</h3>
-          <p class="text-muted small mb-0">Format Daftar Hadir Resmi, Tanda Terima Kaos, dan Administrasi SPPD</p>
-        </div>
-        <div class="d-flex gap-2">
-          <button class="btn btn-primary btn-sm rounded-pill px-3 fw-bold" onclick="printSpjDocument()">
-            <i class="bi bi-printer-fill me-1"></i> Cetak / Print SPJ
+          <button class="btn btn-success btn-sm fw-bold" onclick="openModalUploadSpj()">
+            <i class="bi bi-cloud-arrow-up-fill me-1"></i> Upload Format Pertama
           </button>
-          <button class="btn btn-success btn-sm rounded-pill px-3 fw-bold" onclick="downloadSpjExcel()">
-            <i class="bi bi-file-earmark-excel-fill me-1"></i> Unduh Excel SPJ
-          </button>
-        </div>
-      </div>
-
-      <!-- Konfigurasi Pejabat Penandatangan -->
-      <div class="card card-modern p-4 mb-4">
-        <h6 class="fw-bold text-dark mb-3"><i class="bi bi-pen-fill text-primary me-2"></i>Pejabat Penandatangan Dokumen:</h6>
-        <div class="row g-3 small">
-          <div class="col-md-4">
-            <label class="form-label fw-bold">Kuasa Pengguna Anggaran (KPA):</label>
-            <input type="text" class="form-control form-control-sm mb-1" id="inputKpaNama" value="Rehatta Rakasiwi, S.Psi.,M.Si">
-            <input type="text" class="form-control form-control-sm" id="inputKpaNip" value="198401162011011009">
-          </div>
-          <div class="col-md-4">
-            <label class="form-label fw-bold">PPTK Bidang SMP:</label>
-            <input type="text" class="form-control form-control-sm mb-1" id="inputPptkNama" value="Agus Pruwitanto, S.Sos">
-            <input type="text" class="form-control form-control-sm" id="inputPptkNip" value="197408191999031005">
-          </div>
-          <div class="col-md-4">
-            <label class="form-label fw-bold">Bendahara Pengeluaran Pembantu:</label>
-            <input type="text" class="form-control form-control-sm mb-1" id="inputBendaharaNama" value="Dwi Suprasetiarini, S.M">
-            <input type="text" class="form-control form-control-sm" id="inputBendaharaNip" value="197610022010012002">
-          </div>
-        </div>
-      </div>
-
-      <!-- Preview SPJ Document -->
-      <div class="card card-modern p-4 p-md-5 bg-white shadow-sm" id="printableSpjArea">
-        <div class="text-center mb-4">
-          <h5 class="fw-bold text-dark mb-0 text-uppercase">DAFTAR HADIR PESERTA &amp; TANDA TERIMA</h5>
-          <h6 class="fw-bold text-primary mb-1 text-uppercase" id="spjPreviewEventName">NAMA KEGIATAN</h6>
-          <small class="text-muted" id="spjPreviewEventSchedule">Kabupaten Karanganyar - Tahun Anggaran 2026</small>
-        </div>
-
-        <div class="table-responsive">
-          <table class="table table-bordered table-sm align-middle mb-4" style="font-size: 0.82rem;">
-            <thead class="table-light text-center fw-bold">
-              <tr>
-                <th style="width: 40px;">NO</th>
-                <th>NAMA LENGKAP &amp; GELAR</th>
-                <th>NIP / GOLONGAN</th>
-                <th>ASAL SEKOLAH</th>
-                <th style="width: 80px;">UKURAN</th>
-                <th style="width: 140px;">TANDA TANGAN</th>
-              </tr>
-            </thead>
-            <tbody id="tbodySpjPreview">
-              <!-- Populated via JS -->
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Lembar Tanda Tangan Pejabat -->
-        <div class="row text-center mt-5 pt-3" style="font-size: 0.82rem;">
-          <div class="col-4">
-            <div>Mengetahui,<br><strong>Kuasa Pengguna Anggaran</strong></div>
-            <div style="height: 60px;"></div>
-            <strong id="signKpaNama" class="text-decoration-underline">Rehatta Rakasiwi, S.Psi.,M.Si</strong>
-            <div id="signKpaNip">NIP. 198401162011011009</div>
-          </div>
-          <div class="col-4">
-            <div>Karanganyar,<br><strong>PPTK Bidang SMP</strong></div>
-            <div style="height: 60px;"></div>
-            <strong id="signPptkNama" class="text-decoration-underline">Agus Pruwitanto, S.Sos</strong>
-            <div id="signPptkNip">NIP. 197408191999031005</div>
-          </div>
-          <div class="col-4">
-            <div>Lunas Dibayar,<br><strong>Bendahara Pengeluaran</strong></div>
-            <div style="height: 60px;"></div>
-            <strong id="signBdhNama" class="text-decoration-underline">Dwi Suprasetiarini, S.M</strong>
-            <div id="signBdhNip">NIP. 197610022010012002</div>
-          </div>
         </div>
       </div>
     </section>
@@ -1160,6 +1203,446 @@
             </div>
           </form>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL UPLOAD TEMPLATE SPJ & DOC ==================== -->
+  <div class="modal fade" id="modalUploadSpj" tabindex="-1" aria-labelledby="modalUploadSpjLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content card-modern border-0 shadow">
+        <div class="modal-header bg-success text-white border-0 py-3">
+          <h5 class="modal-title fw-bold" id="modalUploadSpjLabel">
+            <i class="bi bi-cloud-arrow-up-fill me-2"></i>Upload Format SPJ &amp; Doc Baru
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4">
+          <form id="formUploadSpj" onsubmit="event.preventDefault(); submitUploadSpj();">
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-dark">Nama Dokumen / Format SPJ <span class="text-danger">*</span></label>
+              <input type="text" id="inputSpjDocName" class="form-control" placeholder="Contoh: Daftar Penerimaan Uang Saku & Transport" required>
+              <div class="form-text small">Beri nama yang jelas agar mudah dipilih untuk berbagai kegiatan.</div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-bold text-dark">Pilih File Template (.XLSX atau .DOCX) <span class="text-danger">*</span></label>
+              <div class="spj-dropzone" id="dropzoneSpj" onclick="document.getElementById('fileInputSpj').click()">
+                <i class="bi bi-file-earmark-arrow-up text-success" style="font-size: 2.2rem;"></i>
+                <div class="fw-bold text-dark mt-1" id="labelSpjFileName">Klik atau Tarik File ke Sini</div>
+                <div class="text-muted small mt-1">Hanya menerima format <strong>.xlsx</strong> (Excel) atau <strong>.docx</strong> (Word)</div>
+              </div>
+              <input type="file" id="fileInputSpj" class="d-none" accept=".xlsx, .docx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.openxmlformats-officedocument.wordprocessingml.document" onchange="handleFileSelectSpj(this.files)">
+            </div>
+
+            <div class="alert alert-light border small text-muted d-flex align-items-center gap-2 mb-3">
+              <i class="bi bi-google text-primary fs-5"></i>
+              <div>File otomatis tersimpan rapi ke folder Google Drive resmi Bidang SMP Disdikbud.</div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 pt-2 border-top">
+              <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+              <button type="submit" id="btnSubmitUploadSpj" class="btn btn-success btn-sm fw-bold px-3">
+                <i class="bi bi-upload me-1"></i> Simpan Template
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL GENERATOR & PRATINJAU DOKUMEN SPJ ==================== -->
+  <div class="modal fade" id="modalGenerateSpj" tabindex="-1" aria-labelledby="modalGenerateSpjLabel" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen-lg-down modal-xl modal-dialog-scrollable">
+      <div class="modal-content card-modern border-0 shadow">
+        
+        <!-- Header Modal Dinamis -->
+        <div class="modal-header bg-dark text-white border-0 py-3">
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-success" id="badgeModalSpjTipe">XLSX</span>
+            <h5 class="modal-title fw-bold mb-0" id="modalGenerateSpjTitle">Format Dokumen SPJ</h5>
+          </div>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body p-4 bg-light">
+
+          <!-- ==================== TAMPILAN 1: LIHAT FORMAT DOKUMEN ==================== -->
+          <div id="boxSpjViewFormat">
+            <div class="card p-3 mb-4 border-0 shadow-sm bg-white">
+              <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                <div>
+                  <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="badge bg-success" id="formatViewBadgeTipe">XLSX</span>
+                    <h5 class="fw-bold text-dark mb-0" id="formatViewDocTitle">Daftar Penerimaan Uang Saku &amp; Transport</h5>
+                  </div>
+                  <p class="text-muted small mb-0" id="formatViewFileName">
+                    <i class="bi bi-paperclip me-1"></i>Template_Standar.xlsx
+                  </p>
+                </div>
+                <div>
+                  <button type="button" class="btn btn-success fw-bold px-4 py-2 shadow-sm" onclick="switchToSpjProcess()">
+                    <i class="bi bi-play-circle-fill me-1"></i> Buat Dokumen
+                  </button>
+                </div>
+              </div>
+              <div class="alert alert-light border-start border-4 border-success mt-3 mb-0 py-2 px-3 small text-muted">
+                <i class="bi bi-info-circle-fill text-success me-1"></i>
+                Di bawah ini adalah <strong>pratinjau struktur format lembar dinas</strong>. Untuk mengisi nama-nama peserta kegiatan aktif dan menghitung pajak PPh 21 secara otomatis, klik tombol <strong>Buat Dokumen</strong> di atas.
+              </div>
+            </div>
+
+            <!-- Pratinjau Kertas Format Dokumen (A4 Landscape) -->
+            <div class="spj-paper mx-auto border bg-white p-4 shadow-sm">
+              <div class="text-center mb-4">
+                <h5 class="fw-bold mb-1 text-uppercase text-dark" id="previewFormatDocHeader">DAFTAR PENERIMAAN UANG SAKU &amp; TRANSPORT</h5>
+                <h6 class="fw-bold mb-0 text-uppercase text-secondary" id="previewFormatDocSubHeader">KEGIATAN BIDANG SMP DISDIKBUD KARANGANYAR</h6>
+                <div class="small text-muted mt-1 fst-italic">[ TAMPILAN STRUKTUR FORMAT DOKUMEN RESMI ]</div>
+              </div>
+
+              <div class="table-responsive">
+                <table class="spj-table align-middle">
+                  <thead>
+                    <tr>
+                      <th style="width: 35px;">NO</th>
+                      <th>NAMA LENGKAP &amp; GELAR</th>
+                      <th style="width: 55px;">GOL</th>
+                      <th>JABATAN</th>
+                      <th>UNIT KERJA / SEKOLAH</th>
+                      <th style="width: 45px;">JML</th>
+                      <th style="width: 55px;">WAKTU</th>
+                      <th style="width: 90px;">TARIF / JASA</th>
+                      <th style="width: 95px;">JUMLAH BRUTO</th>
+                      <th style="width: 80px;">PPH 21</th>
+                      <th style="width: 100px;">PENERIMAAN</th>
+                      <th style="width: 140px;">TANDA TANGAN</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr class="text-muted">
+                      <td class="text-center">1</td>
+                      <td class="fw-semibold text-dark">[Contoh: Nama Peserta &amp; Gelar]</td>
+                      <td class="text-center">IV/a</td>
+                      <td>Guru Madya</td>
+                      <td>[Nama Satuan Pendidikan / SMP]</td>
+                      <td class="text-center">1</td>
+                      <td class="text-center">hari</td>
+                      <td class="text-end">Rp 200.000</td>
+                      <td class="text-end">Rp 200.000</td>
+                      <td class="text-end text-danger">15% (Rp 30.000)</td>
+                      <td class="text-end fw-bold text-success">Rp 170.000</td>
+                      <td style="font-size: 8pt;">1. .....................</td>
+                    </tr>
+                    <tr class="text-muted">
+                      <td class="text-center">2</td>
+                      <td class="fw-semibold text-dark">[Contoh: Nama Peserta &amp; Gelar]</td>
+                      <td class="text-center">III/b</td>
+                      <td>Guru Muda</td>
+                      <td>[Nama Satuan Pendidikan / SMP]</td>
+                      <td class="text-center">1</td>
+                      <td class="text-center">hari</td>
+                      <td class="text-end">Rp 200.000</td>
+                      <td class="text-end">Rp 200.000</td>
+                      <td class="text-end text-danger">5% (Rp 10.000)</td>
+                      <td class="text-end fw-bold text-success">Rp 190.000</td>
+                      <td style="font-size: 8pt; text-align: right;">2. .....................</td>
+                    </tr>
+                    <tr class="bg-light">
+                      <td colspan="12" class="text-center py-2 text-muted fst-italic small">
+                        ... Kolom dan baris peserta akan terisi penuh secara otomatis dari database pendaftar kegiatan saat mengklik tombol Buat Dokumen ...
+                      </td>
+                    </tr>
+                  </tbody>
+                  <tfoot>
+                    <tr class="fw-bold bg-light">
+                      <td colspan="8" class="text-center">Jumlah Total Format</td>
+                      <td class="text-end">Total Bruto</td>
+                      <td class="text-end text-danger">Total Pajak</td>
+                      <td class="text-end text-success">Total Diterima</td>
+                      <td></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+
+              <!-- Format Tanda Tangan 3 Pejabat -->
+              <div class="row text-center mt-5 pt-3" style="font-size: 9.5pt;">
+                <div class="col-12 text-end mb-3 pe-4 text-muted fst-italic">
+                  <span>Karanganyar, [Tanggal Dokumen SPJ]</span>
+                </div>
+                <div class="col-4">
+                  <p class="mb-1 fw-bold">Setuju Dibayar,</p>
+                  <p class="mb-0 text-muted small" style="line-height: 1.2;">Kepala Bidang SMP<br>selaku Kuasa Pengguna Anggaran</p>
+                  <div style="height: 55px;"></div>
+                  <p class="fw-bold mb-0 text-decoration-underline">Rehatta Rakasiwi, S.Psi.,M.Si</p>
+                  <p class="small text-muted mb-0">NIP 198401162011011009</p>
+                </div>
+                <div class="col-4">
+                  <p class="mb-1 fw-bold">Mengetahui,</p>
+                  <p class="mb-0 text-muted small" style="line-height: 1.2;">Pejabat Pelaksana Teknis Kegiatan<br>(PPTK)</p>
+                  <div style="height: 55px;"></div>
+                  <p class="fw-bold mb-0 text-decoration-underline">Agus Pruwitanto, S.Sos</p>
+                  <p class="small text-muted mb-0">NIP 197408191999031005</p>
+                </div>
+                <div class="col-4">
+                  <p class="mb-1 fw-bold">Yang Membayarkan,</p>
+                  <p class="mb-0 text-muted small" style="line-height: 1.2;">Bendahara Pengeluaran Pembantu<br>&nbsp;</p>
+                  <div style="height: 55px;"></div>
+                  <p class="fw-bold mb-0 text-decoration-underline">Dwi Suprasetiarini, S.M</p>
+                  <p class="small text-muted mb-0">NIP 197610022010012002</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="text-center py-4 mt-3 bg-white border rounded shadow-sm">
+              <h6 class="fw-bold text-dark mb-1">Siap Mencetak Lembar SPJ untuk Kegiatan Ini?</h6>
+              <p class="text-muted small mb-3">Klik tombol di bawah ini untuk mengisi nominal anggaran &amp; memuat seluruh nama peserta terdaftar.</p>
+              <button type="button" class="btn btn-success btn-lg fw-bold px-5 py-2 rounded-pill shadow" onclick="switchToSpjProcess()">
+                <i class="bi bi-play-circle-fill me-2"></i> Buat Dokumen
+              </button>
+            </div>
+          </div>
+
+          <!-- ==================== TAMPILAN 2: PROSES PENGISIAN & PEMBUATAN DOKUMEN ==================== -->
+          <div id="boxSpjViewProcess" class="d-none">
+
+            <!-- Tombol Kembali ke Format & Judul Proses -->
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+              <button type="button" class="btn btn-outline-secondary btn-sm fw-semibold" onclick="switchToSpjFormatView()">
+                <i class="bi bi-arrow-left me-1"></i> Kembali ke Format Dokumen
+              </button>
+              <span class="badge bg-light text-muted border">
+                Kegiatan Aktif: <strong id="lblSpjEventActive" class="text-dark">-</strong>
+              </span>
+            </div>
+
+            <!-- Card Variabel & Parameter Keuangan -->
+            <div class="card p-3 mb-4 border shadow-sm bg-white" id="boxSpjParameters">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="fw-bold text-dark small"><i class="bi bi-sliders me-1 text-primary"></i> Parameter Anggaran &amp; Pejabat Penandatangan</span>
+                <span class="small text-muted">Diisi oleh Panitia</span>
+              </div>
+
+              <!-- Sakelar Pemotongan Pajak PPh 21 (Standar APBD) -->
+              <div class="d-flex flex-wrap align-items-center justify-content-between p-2 bg-light border rounded mb-3">
+                <div class="form-check form-switch mb-0">
+                  <input class="form-check-input cursor-pointer" type="checkbox" role="switch" id="switchSpjPajakActive" checked onchange="recalculateAndRenderSpjPreview()">
+                  <label class="form-check-label small fw-bold text-dark cursor-pointer" for="switchSpjPajakActive">
+                    <i class="bi bi-percent text-danger me-1"></i> Terapkan Pemotongan Pajak PPh 21 (Gol IV: 15%, Gol III: 5%, Gol I-II / PPPK / Non-ASN: 0%)
+                  </label>
+                </div>
+                <span class="badge bg-white text-secondary border small">Standar APBD</span>
+              </div>
+
+              <div class="row g-2 mb-3">
+                <div class="col-md-4 col-sm-6 col-12">
+                  <label class="form-label small fw-semibold mb-1">Uang Saku / Jasa per Hari (Rp)</label>
+                  <div class="input-group input-group-sm">
+                    <span class="input-group-text">Rp</span>
+                    <input type="number" id="inputSpjNominal" class="form-control" value="200000" min="0" step="5000">
+                  </div>
+                </div>
+                <div class="col-md-2 col-sm-6 col-6">
+                  <label class="form-label small fw-semibold mb-1">Jumlah Hari</label>
+                  <input type="number" id="inputSpjHari" class="form-control form-control-sm" value="1" min="1" max="30">
+                </div>
+                <div class="col-md-2 col-sm-6 col-6">
+                  <label class="form-label small fw-semibold mb-1">Satuan</label>
+                  <input type="text" id="inputSpjSatuan" class="form-control form-control-sm" value="hari">
+                </div>
+                <div class="col-md-4 col-sm-6 col-12">
+                  <label class="form-label small fw-semibold mb-1">Tanggal Dokumen SPJ</label>
+                  <input type="text" id="inputSpjTanggal" class="form-control form-control-sm" placeholder="Karanganyar, ...">
+                </div>
+              </div>
+
+              <!-- Filter Peserta SPJ & Seleksi Baris -->
+              <div class="row g-2 align-items-center p-2 mb-3 bg-light border rounded">
+                <div class="col-md-4 col-sm-6 col-12">
+                  <label class="form-label small fw-semibold mb-1 text-secondary"><i class="bi bi-geo-alt-fill text-danger me-1"></i>Filter Kecamatan</label>
+                  <select id="filterSpjKecamatan" class="form-select form-select-sm" onchange="applySpjParticipantFilter()">
+                    <option value="">-- Semua Kecamatan (17 Kecamatan) --</option>
+                    <option value="Karanganyar">Karanganyar</option>
+                    <option value="Tasikmadu">Tasikmadu</option>
+                    <option value="Jaten">Jaten</option>
+                    <option value="Kebakkramat">Kebakkramat</option>
+                    <option value="Gondangrejo">Gondangrejo</option>
+                    <option value="Colomadu">Colomadu</option>
+                    <option value="Mojogedang">Mojogedang</option>
+                    <option value="Kerjo">Kerjo</option>
+                    <option value="Jenawi">Jenawi</option>
+                    <option value="Karangpandan">Karangpandan</option>
+                    <option value="Ngargoyoso">Ngargoyoso</option>
+                    <option value="Tawangmangu">Tawangmangu</option>
+                    <option value="Matesih">Matesih</option>
+                    <option value="Jumapolo">Jumapolo</option>
+                    <option value="Jumantono">Jumantono</option>
+                    <option value="Jatipuro">Jatipuro</option>
+                    <option value="Jatiyoso">Jatiyoso</option>
+                  </select>
+                </div>
+                <div class="col-md-4 col-sm-6 col-12">
+                  <label class="form-label small fw-semibold mb-1 text-secondary"><i class="bi bi-person-badge-fill text-primary me-1"></i>Filter Status Kepegawaian</label>
+                  <select id="filterSpjStatusPeg" class="form-select form-select-sm" onchange="applySpjParticipantFilter()">
+                    <option value="">-- Semua Status (PNS, PPPK, Non-ASN) --</option>
+                    <option value="PNS">PNS Saja</option>
+                    <option value="PPPK">PPPK Saja</option>
+                    <option value="NON-ASN">Non-ASN (Honorer / GTT / Swasta)</option>
+                  </select>
+                </div>
+                <div class="col-md-4 col-12 d-flex flex-column justify-content-end">
+                  <label class="form-label small fw-semibold mb-1 text-secondary"><i class="bi bi-check2-square text-success me-1"></i>Seleksi Peserta SPJ</label>
+                  <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-outline-success btn-sm fw-bold flex-grow-1" onclick="toggleSelectAllSpj(true)">
+                      Pilih Semua
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm flex-grow-1" onclick="toggleSelectAllSpj(false)">
+                      Batal Semua
+                    </button>
+                    <span class="badge bg-dark text-white px-2 py-2" id="badgeSpjSelectedCount">0 Terpilih</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Pejabat Penandatangan Kolapsibel -->
+              <div class="border rounded-2 p-2 bg-light mb-2">
+                <div class="d-flex justify-content-between align-items-center cursor-pointer" onclick="togglePejabatSpjFields()">
+                  <span class="small fw-bold text-dark"><i class="bi bi-pen me-1"></i> Data Pejabat Penandatangan (KPA, PPTK, Bendahara)</span>
+                  <i class="bi bi-chevron-down small" id="iconChevronPejabat"></i>
+                </div>
+                <div class="row g-2 mt-1 d-none" id="boxPejabatInputs">
+                  <div class="col-md-4 col-12">
+                    <label class="small text-muted fw-semibold">1. Kepala Bidang SMP (KPA)</label>
+                    <input type="text" id="inputKpaNama" class="form-control form-control-sm mb-1" value="Rehatta Rakasiwi, S.Psi.,M.Si" placeholder="Nama Kabid">
+                    <input type="text" id="inputKpaNip" class="form-control form-control-sm" value="198401162011011009" placeholder="NIP Kabid">
+                  </div>
+                  <div class="col-md-4 col-12">
+                    <label class="small text-muted fw-semibold">2. Pejabat Pelaksana Teknis (PPTK)</label>
+                    <input type="text" id="inputPptkNama" class="form-control form-control-sm mb-1" value="Agus Pruwitanto, S.Sos" placeholder="Nama PPTK">
+                    <input type="text" id="inputPptkNip" class="form-control form-control-sm" value="197408191999031005" placeholder="NIP PPTK">
+                  </div>
+                  <div class="col-md-4 col-12">
+                    <label class="small text-muted fw-semibold">3. Bendahara Pembantu</label>
+                    <input type="text" id="inputBendaharaNama" class="form-control form-control-sm mb-1" value="Dwi Suprasetiarini, S.M" placeholder="Nama Bendahara">
+                    <input type="text" id="inputBendaharaNip" class="form-control form-control-sm" value="197610022010012002" placeholder="NIP Bendahara">
+                  </div>
+                </div>
+              </div>
+
+              <div class="text-end mt-2">
+                <button type="button" class="btn btn-primary btn-sm fw-bold px-3" onclick="recalculateAndRenderSpjPreview()">
+                  <i class="bi bi-calculator me-1"></i> Terapkan &amp; Perbarui Pratinjau
+                </button>
+              </div>
+            </div>
+
+            <!-- Pratinjau Lembar Dokumen SPJ Terisi Riil (Kertas A4 Landscape) -->
+            <div class="spj-paper mx-auto border" id="printAreaSpj">
+              <div class="text-center mb-4">
+                <h5 class="fw-bold mb-1 text-uppercase" id="previewSpjDocHeader">DAFTAR PENERIMAAN UANG SAKU</h5>
+                <h6 class="fw-bold mb-0 text-uppercase text-secondary" id="previewSpjDocSubHeader">KEGIATAN BIDANG SMP TAHUN 2026</h6>
+              </div>
+
+              <div class="table-responsive">
+                <table class="spj-table align-middle" id="tablePreviewSpj">
+                  <thead>
+                    <tr>
+                      <th style="width: 30px;" class="no-print text-center">
+                        <input type="checkbox" id="checkSpjSelectHeader" class="form-check-input" checked onchange="toggleSelectAllSpj(this.checked)" title="Pilih Semua">
+                      </th>
+                      <th style="width: 35px;">NO</th>
+                      <th>NAMA LENGKAP &amp; GELAR</th>
+                      <th style="width: 50px;">GOL</th>
+                      <th>JABATAN</th>
+                      <th>UNIT KERJA / SEKOLAH</th>
+                      <th style="width: 45px;">JML</th>
+                      <th style="width: 50px;">WAKTU</th>
+                      <th style="width: 85px;">JASA</th>
+                      <th style="width: 90px;">JUMLAH</th>
+                      <th style="width: 85px;">PPH 21</th>
+                      <th style="width: 95px;">PENERIMAAN</th>
+                      <th style="width: 140px;">TANDA TANGAN</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tbodyPreviewSpj">
+                    <!-- Baris data di-generate via JavaScript -->
+                  </tbody>
+                  <tfoot>
+                    <tr class="fw-bold bg-light">
+                      <td class="no-print"></td>
+                      <td colspan="8" class="text-center">Jumlah Total Terpilih</td>
+                      <td class="text-end" id="tdSpjTotalKotor">Rp 0</td>
+                      <td class="text-end text-danger" id="tdSpjTotalPajak">Rp 0</td>
+                      <td class="text-end text-success" id="tdSpjTotalBersih">Rp 0</td>
+                      <td></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+
+              <!-- Tanda Tangan 3 Pejabat -->
+              <div class="row text-center mt-5 pt-3 signature-block" style="font-size: 9.5pt;">
+                <div class="col-12 text-end mb-3 pe-4">
+                  <span id="lblPreviewSpjTanggal">Karanganyar, ...</span>
+                </div>
+                <div class="col-4">
+                  <p class="mb-1 fw-bold">Setuju Dibayar,</p>
+                  <p class="mb-0 text-muted small" style="line-height: 1.2;">Kepala Bidang SMP<br>selaku Kuasa Pengguna Anggaran</p>
+                  <div style="height: 60px;"></div>
+                  <p class="fw-bold mb-0 text-decoration-underline" id="lblPreviewKpaNama">Rehatta Rakasiwi, S.Psi.,M.Si</p>
+                  <p class="small text-muted mb-0" id="lblPreviewKpaNip">NIP 198401162011011009</p>
+                </div>
+                <div class="col-4">
+                  <p class="mb-1 fw-bold">Mengetahui,</p>
+                  <p class="mb-0 text-muted small" style="line-height: 1.2;">Pejabat Pelaksana Teknis Kegiatan<br>(PPTK)</p>
+                  <div style="height: 60px;"></div>
+                  <p class="fw-bold mb-0 text-decoration-underline" id="lblPreviewPptkNama">Agus Pruwitanto, S.Sos</p>
+                  <p class="small text-muted mb-0" id="lblPreviewPptkNip">NIP 197408191999031005</p>
+                </div>
+                <div class="col-4">
+                  <p class="mb-1 fw-bold">Yang Membayarkan,</p>
+                  <p class="mb-0 text-muted small" style="line-height: 1.2;">Bendahara Pengeluaran Pembantu<br>&nbsp;</p>
+                  <div style="height: 60px;"></div>
+                  <p class="fw-bold mb-0 text-decoration-underline" id="lblPreviewBendaharaNama">Dwi Suprasetiarini, S.M</p>
+                  <p class="small text-muted mb-0" id="lblPreviewBendaharaNip">NIP 197610022010012002</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- Footer Modal Dinamis -->
+        <div class="modal-footer border-0 bg-white">
+          <!-- Footer Mode Format -->
+          <div id="footerSpjFormat" class="w-100 d-flex justify-content-between align-items-center">
+            <button type="button" class="btn btn-secondary btn-sm px-4" data-bs-dismiss="modal">Tutup</button>
+            <button type="button" class="btn btn-success btn-sm fw-bold px-4 shadow-sm" onclick="switchToSpjProcess()">
+              <i class="bi bi-play-circle-fill me-1"></i> Buat Dokumen
+            </button>
+          </div>
+
+          <!-- Footer Mode Proses -->
+          <div id="footerSpjProcess" class="w-100 d-none d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <button type="button" class="btn btn-outline-secondary btn-sm fw-semibold" onclick="switchToSpjFormatView()">
+              <i class="bi bi-arrow-left me-1"></i> Kembali ke Format
+            </button>
+            <div class="d-flex flex-wrap gap-2">
+              <button type="button" class="btn btn-outline-dark btn-sm fw-semibold" onclick="printSpjDocument()">
+                <i class="bi bi-printer-fill me-1"></i> Cetak / Simpan PDF
+              </button>
+              <button type="button" id="btnDownloadSpjWord" class="btn btn-outline-primary btn-sm fw-bold d-none" onclick="downloadSpjWord()">
+                <i class="bi bi-file-earmark-word-fill me-1"></i> Download Word (.DOCX)
+              </button>
+              <button type="button" id="btnDownloadSpjExcel" class="btn btn-success btn-sm fw-bold px-3 shadow-sm" onclick="downloadSpjExcel()">
+                <i class="bi bi-file-earmark-excel-fill me-1"></i> Download Excel (.XLSX)
+              </button>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -1462,6 +1945,9 @@
 
       if (tabId === "tabPresensiScanner") {
         detectAvailableCameras();
+      }
+      if (tabId === "tabDokumenSpj") {
+        loadSpjTemplates();
       }
     }
 
@@ -2457,39 +2943,1024 @@
     }
 
     /**
-     * TAB 7: DOKUMEN SPJ GENERATOR
+     * =========================================================================
+     * TAB 7: MODUL PUSTAKA TEMPLATE & GENERATOR SPJ DINAMIS (AI GEMINI)
+     * =========================================================================
      */
-    function renderSpjPreview(data) {
-      const s = data.settings || {};
-      const participants = data.participants || [];
+    let spjTemplates = [];
+    let currentSelectedSpjTpl = null;
+    let activeSpjData = null;
+    let selectedSpjParticipantIds = new Set();
+    let overridePajakMap = {};
+    let selectedSpjFileBase64 = null;
+    let selectedSpjFileName = "";
 
-      document.getElementById("spjPreviewEventName").textContent = s.NAMA_KEGIATAN || "KEGIATAN BIDANG SMP";
-      document.getElementById("spjPreviewEventSchedule").textContent = `${s.LOKASI_KEGIATAN || 'Karanganyar'} | ${s.TANGGAL_PELAKSANAAN || '2026'}`;
+    async function loadSpjTemplates() {
+      const loading = document.getElementById("loadingSpjTemplates");
+      const grid = document.getElementById("gridSpjTemplates");
+      const empty = document.getElementById("emptySpjTemplates");
 
-      const tbody = document.getElementById("tbodySpjPreview");
+      if (loading) loading.classList.remove("d-none");
+      if (grid) grid.innerHTML = "";
+      if (empty) empty.classList.add("d-none");
+
+      try {
+        const resp = await callGasApi("getSpjTemplateList", { pin: currentAdminPin });
+        if (loading) loading.classList.add("d-none");
+
+        if (resp && resp.success) {
+          spjTemplates = resp.templates || [];
+          renderSpjTemplates(spjTemplates);
+        } else {
+          Swal.fire("Gagal Memuat Template", (resp ? resp.message : "Terjadi kesalahan"), "error");
+        }
+      } catch (err) {
+        if (loading) loading.classList.add("d-none");
+        console.warn("Gagal panggil getSpjTemplateList, gunakan fallback lokal:", err);
+        // Fallback default template jika baru pertama kali atau offline
+        spjTemplates = [
+          {
+            id: "TPL-SPJ-01",
+            namaDokumen: "Daftar Penerimaan Uang Saku & Transport",
+            tipeFile: "XLSX",
+            fileId: "DEFAULT",
+            namaFileAsli: "Daftar_Penerimaan_Uang_Saku_Standar.xlsx",
+            ukuranFile: "Bawaan",
+            tanggalUpload: "06/11/2026 21:00",
+            metadata: {
+              jenis: "Keuangan (Uang Saku/Transport/Honor)",
+              hasNominal: true,
+              defaultNominal: 200000,
+              defaultHari: 1
+            }
+          }
+        ];
+        renderSpjTemplates(spjTemplates);
+      }
+    }
+
+    function renderSpjTemplates(templates) {
+      const grid = document.getElementById("gridSpjTemplates");
+      const empty = document.getElementById("emptySpjTemplates");
+      if (!grid) return;
+
+      grid.innerHTML = "";
+
+      if (!templates || templates.length === 0) {
+        if (empty) empty.classList.remove("d-none");
+        return;
+      }
+
+      if (empty) empty.classList.add("d-none");
+
+      templates.forEach(tpl => {
+        const isXlsx = tpl.tipeFile === "XLSX";
+        const badgeColor = isXlsx ? "bg-success" : "bg-primary";
+        const iconClass = isXlsx ? "bi-file-earmark-excel-fill text-success" : "bi-file-earmark-word-fill text-primary";
+        const isDefault = tpl.fileId === "DEFAULT";
+
+        let tglFormatted = "-";
+        if (tpl.tanggalUpload) {
+          try {
+            const d = new Date(tpl.tanggalUpload);
+            if (!isNaN(d.getTime())) {
+              const dd = String(d.getDate()).padStart(2, "0");
+              const mm = String(d.getMonth() + 1).padStart(2, "0");
+              const yyyy = d.getFullYear();
+              tglFormatted = `${dd}/${mm}/${yyyy}`;
+            } else {
+              tglFormatted = String(tpl.tanggalUpload).split(" GMT")[0].slice(0, 10);
+            }
+          } catch (e) {
+            tglFormatted = String(tpl.tanggalUpload).slice(0, 10);
+          }
+        }
+
+        const col = document.createElement("div");
+        col.className = "col-lg-4 col-md-6 col-12";
+        col.innerHTML = `
+          <div class="card card-modern h-100 p-3 border shadow-sm d-flex flex-column justify-content-between">
+            <div>
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="badge ${badgeColor} px-2 py-1 rounded small fw-bold">${tpl.tipeFile}</span>
+                <span class="text-muted small" style="font-size: 0.78rem;"><i class="bi bi-clock me-1"></i>${tglFormatted}</span>
+              </div>
+              <div class="d-flex align-items-start gap-2 mb-2">
+                <i class="bi ${iconClass} fs-3"></i>
+                <div>
+                  <h6 class="fw-bold text-dark mb-1 text-truncate-2" title="${escapeHtml(tpl.namaDokumen)}">${escapeHtml(tpl.namaDokumen)}</h6>
+                  <p class="text-muted small mb-0 text-truncate" style="font-size: 0.78rem;" title="${escapeHtml(tpl.namaFileAsli)}">
+                    <i class="bi bi-paperclip me-1"></i>${escapeHtml(tpl.namaFileAsli)}
+                  </p>
+                </div>
+              </div>
+              <div class="bg-light p-2 rounded small text-muted mb-3" style="font-size: 0.76rem;">
+                <i class="bi bi-info-circle me-1 text-primary"></i>${tpl.metadata && tpl.metadata.jenis ? escapeHtml(tpl.metadata.jenis) : 'Format Dokumen Resmi'}
+              </div>
+            </div>
+
+            <div class="d-flex gap-2 pt-2 border-top">
+              <button class="btn btn-primary btn-sm fw-bold flex-grow-1 shadow-sm" onclick="openModalViewSpjFormat('${tpl.id}')">
+                <i class="bi bi-eye-fill me-1"></i> Lihat Dokumen
+              </button>
+              ${!isDefault ? `
+                <button class="btn btn-outline-danger btn-sm" onclick="confirmDeleteSpjTemplate('${tpl.id}', '${escapeHtml(tpl.namaDokumen)}')" title="Hapus Template">
+                  <i class="bi bi-trash"></i>
+                </button>
+              ` : `
+                <button class="btn btn-outline-secondary btn-sm disabled" title="Template Bawaan Sistem">
+                  <i class="bi bi-lock-fill"></i>
+                </button>
+              `}
+            </div>
+          </div>
+        `;
+        grid.appendChild(col);
+      });
+    }
+
+    function filterSpjTemplates() {
+      const kw = (document.getElementById("filterSpjKeyword").value || "").toLowerCase().trim();
+      if (!kw) {
+        renderSpjTemplates(spjTemplates);
+        return;
+      }
+      const filtered = spjTemplates.filter(t => 
+        (t.namaDokumen && t.namaDokumen.toLowerCase().includes(kw)) ||
+        (t.namaFileAsli && t.namaFileAsli.toLowerCase().includes(kw)) ||
+        (t.tipeFile && t.tipeFile.toLowerCase().includes(kw))
+      );
+      renderSpjTemplates(filtered);
+    }
+
+    function openModalUploadSpj() {
+      selectedSpjFileBase64 = null;
+      selectedSpjFileName = "";
+      const docNameInp = document.getElementById("inputSpjDocName");
+      const labelFile = document.getElementById("labelSpjFileName");
+      const fileInput = document.getElementById("fileInputSpj");
+
+      if (docNameInp) docNameInp.value = "";
+      if (labelFile) labelFile.innerText = "Klik atau Tarik File ke Sini";
+      if (fileInput) fileInput.value = "";
+
+      const modalEl = document.getElementById("modalUploadSpj");
+      if (modalEl) {
+        const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+        modal.show();
+      }
+    }
+
+    function handleFileSelectSpj(files) {
+      if (!files || files.length === 0) return;
+      const file = files[0];
+      const ext = file.name.split('.').pop().toLowerCase();
+
+      if (ext !== "xlsx" && ext !== "docx") {
+        Swal.fire("Format Ditolak", "Sistem HANYA menerima file berekstensi .xlsx (Excel) atau .docx (Word)!", "warning");
+        return;
+      }
+
+      selectedSpjFileName = file.name;
+      const labelFile = document.getElementById("labelSpjFileName");
+      if (labelFile) {
+        labelFile.innerHTML = `<span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i>${escapeHtml(file.name)}</span> (${Math.round(file.size / 1024)} KB)`;
+      }
+
+      const docNameInp = document.getElementById("inputSpjDocName");
+      if (docNameInp && !docNameInp.value.trim()) {
+        const autoName = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
+        docNameInp.value = autoName.charAt(0).toUpperCase() + autoName.slice(1);
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const result = e.target.result;
+        const base64 = result.split(',')[1];
+        selectedSpjFileBase64 = base64;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function submitUploadSpj() {
+      if (!currentAdminPin) {
+        Swal.fire("Akses Ditolak", "Silakan login panitia terlebih dahulu.", "warning");
+        return;
+      }
+
+      const docNameInp = document.getElementById("inputSpjDocName");
+      const docName = docNameInp ? docNameInp.value.trim() : "";
+
+      if (!docName) {
+        Swal.fire("Perhatian", "Nama dokumen wajib diisi!", "warning");
+        return;
+      }
+
+      if (!selectedSpjFileBase64) {
+        Swal.fire("Perhatian", "Silakan pilih file template (.xlsx atau .docx) terlebih dahulu!", "warning");
+        return;
+      }
+
+      const btnSubmit = document.getElementById("btnSubmitUploadSpj");
+      if (btnSubmit) {
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Mengunggah ke Drive &amp; Dianalisis AI...';
+      }
+
+      const payload = {
+        namaDokumen: docName,
+        fileName: selectedSpjFileName,
+        base64Data: selectedSpjFileBase64
+      };
+
+      try {
+        const resp = await callGasApi("uploadSpjTemplate", { fileData: payload, pin: currentAdminPin });
+        if (btnSubmit) {
+          btnSubmit.disabled = false;
+          btnSubmit.innerHTML = '<i class="bi bi-upload me-1"></i> Simpan Template';
+        }
+        if (resp && resp.success) {
+          const modalEl = document.getElementById("modalUploadSpj");
+          if (modalEl) {
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+          }
+          Swal.fire("Berhasil!", resp.message, "success");
+          loadSpjTemplates();
+        } else {
+          Swal.fire("Gagal Upload", (resp ? resp.message : "Terjadi kesalahan"), "error");
+        }
+      } catch (err) {
+        if (btnSubmit) {
+          btnSubmit.disabled = false;
+          btnSubmit.innerHTML = '<i class="bi bi-upload me-1"></i> Simpan Template';
+        }
+        Swal.fire("Error Server", err.message || err.toString(), "error");
+      }
+    }
+
+    async function confirmDeleteSpjTemplate(tplId, docName) {
+      if (!currentAdminPin) return;
+
+      const result = await Swal.fire({
+        title: "Hapus Template?",
+        html: `Apakah Anda yakin ingin menghapus template <strong>"${escapeHtml(docName)}"</strong> dari daftar dan Google Drive?`,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#dc2626",
+        cancelButtonColor: "#64748b",
+        confirmButtonText: "Ya, Hapus!",
+        cancelButtonText: "Batal"
+      });
+
+      if (result.isConfirmed) {
+        Swal.fire({ title: "Menghapus Template...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        try {
+          const resp = await callGasApi("deleteSpjTemplate", { templateId: tplId, pin: currentAdminPin });
+          Swal.close();
+          if (resp && resp.success) {
+            Swal.fire("Terhapus!", resp.message, "success");
+            loadSpjTemplates();
+          } else {
+            Swal.fire("Gagal Hapus", (resp ? resp.message : "Terjadi kesalahan"), "error");
+          }
+        } catch (err) {
+          Swal.close();
+          Swal.fire("Error Server", err.message || err.toString(), "error");
+        }
+      }
+    }
+
+    function togglePejabatSpjFields() {
+      const box = document.getElementById("boxPejabatInputs");
+      const icon = document.getElementById("iconChevronPejabat");
+      if (box) {
+        if (box.classList.contains("d-none")) {
+          box.classList.remove("d-none");
+          if (icon) icon.className = "bi bi-chevron-up small";
+        } else {
+          box.classList.add("d-none");
+          if (icon) icon.className = "bi bi-chevron-down small";
+        }
+      }
+    }
+
+    function openModalViewSpjFormat(tplId) {
+      if (!currentAdminPin) {
+        Swal.fire("Perhatian", "Silakan login panitia terlebih dahulu.", "warning");
+        return;
+      }
+
+      currentSelectedSpjTpl = spjTemplates.find(t => t.id === tplId) || null;
+      const docTitle = currentSelectedSpjTpl ? currentSelectedSpjTpl.namaDokumen : "Daftar Penerimaan Uang Saku & Transport";
+      const fileType = currentSelectedSpjTpl ? currentSelectedSpjTpl.tipeFile : "XLSX";
+      const fileName = currentSelectedSpjTpl ? currentSelectedSpjTpl.namaFileAsli : "Template_Standar.xlsx";
+
+      const titleEl = document.getElementById("modalGenerateSpjTitle");
+      const badgeTipe = document.getElementById("badgeModalSpjTipe");
+      const formatBadgeTipe = document.getElementById("formatViewBadgeTipe");
+      const formatTitleEl = document.getElementById("formatViewDocTitle");
+      const formatFileEl = document.getElementById("formatViewFileName");
+      const eventActiveEl = document.getElementById("lblSpjEventActive");
+
+      const currentEventName = currentDashboardData?.settings?.NAMA_KEGIATAN || "KEGIATAN BIDANG SMP";
+
+      if (titleEl) titleEl.innerText = "Format Dokumen: " + docTitle;
+      if (badgeTipe) {
+        badgeTipe.innerText = fileType;
+        badgeTipe.className = fileType === "XLSX" ? "badge bg-success" : "badge bg-primary";
+      }
+      if (formatBadgeTipe) {
+        formatBadgeTipe.innerText = fileType;
+        formatBadgeTipe.className = fileType === "XLSX" ? "badge bg-success" : "badge bg-primary";
+      }
+      if (formatTitleEl) formatTitleEl.innerText = docTitle;
+      if (formatFileEl) formatFileEl.innerHTML = '<i class="bi bi-paperclip me-1"></i>' + escapeHtml(fileName);
+      if (eventActiveEl) eventActiveEl.innerText = currentEventName;
+
+      // Set header format view
+      const prevFormatHeader = document.getElementById("previewFormatDocHeader");
+      const prevFormatSubHeader = document.getElementById("previewFormatDocSubHeader");
+      if (prevFormatHeader) prevFormatHeader.innerText = (docTitle || "DAFTAR PENERIMAAN UANG SAKU").toUpperCase();
+      if (prevFormatSubHeader) prevFormatSubHeader.innerText = currentEventName.toUpperCase();
+
+      // Set header proses view
+      const prevDocHeader = document.getElementById("previewSpjDocHeader");
+      const prevDocSubHeader = document.getElementById("previewSpjDocSubHeader");
+      if (prevDocHeader) prevDocHeader.innerText = (docTitle || "DAFTAR PENERIMAAN UANG SAKU").toUpperCase();
+      if (prevDocSubHeader) prevDocSubHeader.innerText = currentEventName.toUpperCase();
+
+      switchToSpjFormatView();
+
+      const modalEl = document.getElementById("modalGenerateSpj");
+      if (modalEl) {
+        const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+        modal.show();
+      }
+    }
+
+    function switchToSpjFormatView() {
+      const boxFormat = document.getElementById("boxSpjViewFormat");
+      const boxProcess = document.getElementById("boxSpjViewProcess");
+      const footerFormat = document.getElementById("footerSpjFormat");
+      const footerProcess = document.getElementById("footerSpjProcess");
+      const titleEl = document.getElementById("modalGenerateSpjTitle");
+
+      if (boxFormat) boxFormat.classList.remove("d-none");
+      if (boxProcess) boxProcess.classList.add("d-none");
+      if (footerFormat) footerFormat.classList.remove("d-none");
+      if (footerProcess) footerProcess.classList.add("d-none");
+
+      if (titleEl && currentSelectedSpjTpl) {
+        titleEl.innerText = "Format Dokumen: " + currentSelectedSpjTpl.namaDokumen;
+      }
+    }
+
+    function switchToSpjProcess() {
+      const boxFormat = document.getElementById("boxSpjViewFormat");
+      const boxProcess = document.getElementById("boxSpjViewProcess");
+      const footerFormat = document.getElementById("footerSpjFormat");
+      const footerProcess = document.getElementById("footerSpjProcess");
+      const titleEl = document.getElementById("modalGenerateSpjTitle");
+      const btnWord = document.getElementById("btnDownloadSpjWord");
+
+      if (boxFormat) boxFormat.classList.add("d-none");
+      if (boxProcess) boxProcess.classList.remove("d-none");
+      if (footerFormat) footerFormat.classList.add("d-none");
+      if (footerProcess) footerProcess.classList.remove("d-none");
+
+      if (titleEl && currentSelectedSpjTpl) {
+        titleEl.innerText = "Buat Dokumen SPJ: " + currentSelectedSpjTpl.namaDokumen;
+      }
+
+      if (btnWord) {
+        if (currentSelectedSpjTpl && currentSelectedSpjTpl.tipeFile === "DOCX") {
+          btnWord.classList.remove("d-none");
+        } else {
+          btnWord.classList.add("d-none");
+        }
+      }
+
+      recalculateAndRenderSpjPreview();
+    }
+
+    async function recalculateAndRenderSpjPreview() {
+      if (!currentAdminPin) return;
+
+      const nominal = parseFloat(document.getElementById("inputSpjNominal").value) || 200000;
+      const hari = parseInt(document.getElementById("inputSpjHari").value, 10) || 1;
+      const satuan = document.getElementById("inputSpjSatuan").value || "hari";
+      const tanggal = document.getElementById("inputSpjTanggal").value || "";
+      const isPajakActive = document.getElementById("switchSpjPajakActive") ? document.getElementById("switchSpjPajakActive").checked : true;
+
+      const kpaNama = document.getElementById("inputKpaNama").value || "Rehatta Rakasiwi, S.Psi.,M.Si";
+      const kpaNip = document.getElementById("inputKpaNip").value || "198401162011011009";
+      const pptkNama = document.getElementById("inputPptkNama").value || "Agus Pruwitanto, S.Sos";
+      const pptkNip = document.getElementById("inputPptkNip").value || "197408191999031005";
+      const bdhNama = document.getElementById("inputBendaharaNama").value || "Dwi Suprasetiarini, S.M";
+      const bdhNip = document.getElementById("inputBendaharaNip").value || "197610022010012002";
+
+      const params = {
+        nominalPerHari: nominal,
+        jumlahHari: hari,
+        satuanWaktu: satuan,
+        tanggalSpj: tanggal,
+        isPajakActive: isPajakActive,
+        overridePajak: overridePajakMap,
+        kpaNama: kpaNama,
+        kpaNip: kpaNip,
+        pptkNama: pptkNama,
+        pptkNip: pptkNip,
+        bendaharaNama: bdhNama,
+        bendaharaNip: bdhNip
+      };
+
+      const tbody = document.getElementById("tbodyPreviewSpj");
+      if (tbody) tbody.innerHTML = '<tr><td colspan="13" class="text-center py-4"><span class="spinner-border spinner-border-sm me-2"></span>Menghitung data &amp; pajak PPh 21...</td></tr>';
+
+      try {
+        const resp = await callGasApi("getSpjGeneratorData", { params, pin: currentAdminPin });
+        if (resp && resp.success) {
+          activeSpjData = resp;
+          if (selectedSpjParticipantIds.size === 0 && resp.participants) {
+            resp.participants.forEach(p => selectedSpjParticipantIds.add(p.regId));
+          }
+          applySpjParticipantFilter();
+        } else {
+          if (tbody) tbody.innerHTML = `<tr><td colspan="13" class="text-center text-danger py-4">${resp ? escapeHtml(resp.message) : "Gagal memuat data"}</td></tr>`;
+        }
+      } catch (err) {
+        console.warn("Gagal panggil getSpjGeneratorData:", err);
+        // Simulasi lokal menggunakan data participants yang ada
+        const participants = (currentDashboardData && currentDashboardData.participants) ? currentDashboardData.participants : [];
+        if (participants.length === 0) {
+          if (tbody) tbody.innerHTML = '<tr><td colspan="13" class="text-center text-muted py-4">Belum ada peserta terdaftar untuk kegiatan ini.</td></tr>';
+          return;
+        }
+
+        let totBruto = 0, totPajak = 0, totNetto = 0;
+        const calcList = participants.map((pt, idx) => {
+          const bruto = nominal * hari;
+          const statusLower = String(pt.statusKepegawaian || pt.statusPeg || "").toLowerCase();
+          const golUpper = String(pt.golongan || "").toUpperCase();
+
+          let tarif = 0;
+          let tarifStr = "0%";
+          if (isPajakActive) {
+            if (overridePajakMap[pt.idRegistrasi || pt.regId] !== undefined) {
+              tarif = overridePajakMap[pt.idRegistrasi || pt.regId];
+              tarifStr = Math.round(tarif * 100) + "%";
+            } else if (statusLower.includes("pns")) {
+              if (golUpper.startsWith("IV")) {
+                tarif = 0.15;
+                tarifStr = "15%";
+              } else if (golUpper.startsWith("III")) {
+                tarif = 0.05;
+                tarifStr = "5%";
+              }
+            }
+          }
+
+          const pph21 = Math.round(bruto * tarif);
+          const netto = bruto - pph21;
+          totBruto += bruto;
+          totPajak += pph21;
+          totNetto += netto;
+
+          return {
+            no: idx + 1,
+            regId: pt.idRegistrasi || pt.regId || `REG-${idx + 1}`,
+            nama: pt.namaLengkap || pt.nama || "-",
+            golongan: pt.golongan || "-",
+            jabatan: pt.jabatan || "Guru",
+            unitKerja: pt.namaSekolah || pt.sekolah || pt.unitKerja || "-",
+            kecamatan: pt.kecamatan || "-",
+            statusPeg: pt.statusKepegawaian || pt.statusPeg || "PNS",
+            nip: pt.nip || "-",
+            jumlahHari: hari,
+            satuanWaktu: satuan,
+            tarifSatuan: nominal,
+            bruto: bruto,
+            tarifPajakStr: tarifStr,
+            tarifPajakVal: tarif,
+            pph21: pph21,
+            netto: netto
+          };
+        });
+
+        activeSpjData = {
+          success: true,
+          eventName: currentDashboardData?.settings?.NAMA_KEGIATAN || "KEGIATAN BIDANG SMP",
+          subEventName: currentDashboardData?.settings?.SUB_KEGIATAN || "Bidang SMP DISDIKBUD Karanganyar",
+          tanggalSpj: tanggal || "Karanganyar",
+          pejabat: {
+            kpa: { nama: kpaNama, nip: kpaNip },
+            pptk: { nama: pptkNama, nip: pptkNip },
+            bendahara: { nama: bdhNama, nip: bdhNip }
+          },
+          totals: {
+            totalBruto: totBruto,
+            totalPph21: totPajak,
+            totalNetto: totNetto
+          },
+          participants: calcList
+        };
+
+        if (selectedSpjParticipantIds.size === 0) {
+          calcList.forEach(p => selectedSpjParticipantIds.add(p.regId));
+        }
+        applySpjParticipantFilter();
+      }
+    }
+
+    function applySpjParticipantFilter() {
+      if (!activeSpjData || !activeSpjData.participants) return;
+
+      const fKecamatan = (document.getElementById("filterSpjKecamatan") ? document.getElementById("filterSpjKecamatan").value : "").toLowerCase().trim();
+      const fStatus = (document.getElementById("filterSpjStatusPeg") ? document.getElementById("filterSpjStatusPeg").value : "").toUpperCase().trim();
+
+      const filtered = activeSpjData.participants.filter(p => {
+        if (fKecamatan) {
+          const kec = String(p.kecamatan || "").toLowerCase().trim();
+          if (!kec.includes(fKecamatan)) return false;
+        }
+        if (fStatus) {
+          const st = String(p.statusPeg || "").toUpperCase().trim();
+          if (fStatus === "PNS" && !st.includes("PNS")) return false;
+          if (fStatus === "PPPK" && !st.includes("PPPK")) return false;
+          if (fStatus === "NON-ASN" && (st.includes("PNS") || st.includes("PPPK"))) return false;
+        }
+        return true;
+      });
+
+      renderSpjTableContent(filtered);
+    }
+
+    function toggleSelectAllSpj(checked) {
+      if (!activeSpjData || !activeSpjData.participants) return;
+      
+      const fKecamatan = (document.getElementById("filterSpjKecamatan") ? document.getElementById("filterSpjKecamatan").value : "").toLowerCase().trim();
+      const fStatus = (document.getElementById("filterSpjStatusPeg") ? document.getElementById("filterSpjStatusPeg").value : "").toUpperCase().trim();
+
+      activeSpjData.participants.forEach(p => {
+        let isVisible = true;
+        if (fKecamatan && !String(p.kecamatan || "").toLowerCase().includes(fKecamatan)) isVisible = false;
+        if (fStatus) {
+          const st = String(p.statusPeg || "").toUpperCase().trim();
+          if (fStatus === "PNS" && !st.includes("PNS")) isVisible = false;
+          if (fStatus === "PPPK" && !st.includes("PPPK")) isVisible = false;
+          if (fStatus === "NON-ASN" && (st.includes("PNS") || st.includes("PPPK"))) isVisible = false;
+        }
+
+        if (isVisible) {
+          if (checked) {
+            selectedSpjParticipantIds.add(p.regId);
+          } else {
+            selectedSpjParticipantIds.delete(p.regId);
+          }
+        }
+      });
+
+      applySpjParticipantFilter();
+    }
+
+    function toggleParticipantSelection(regId) {
+      if (selectedSpjParticipantIds.has(regId)) {
+        selectedSpjParticipantIds.delete(regId);
+      } else {
+        selectedSpjParticipantIds.add(regId);
+      }
+      applySpjParticipantFilter();
+    }
+
+    function cycleTaxRate(regId) {
+      const current = overridePajakMap[regId] !== undefined ? overridePajakMap[regId] : null;
+      let nextRate = 0.05;
+      if (current === 0.05) nextRate = 0.15;
+      else if (current === 0.15) nextRate = 0;
+      else if (current === 0) nextRate = 0.05;
+      else nextRate = 0.05;
+
+      overridePajakMap[regId] = nextRate;
+      recalculateAndRenderSpjPreview();
+    }
+
+    function renderSpjTableContent(participantList) {
+      const tbody = document.getElementById("tbodyPreviewSpj");
       if (!tbody) return;
 
-      tbody.innerHTML = participants.map((p, i) => `
-        <tr>
-          <td class="text-center">${i + 1}</td>
-          <td class="fw-bold">${escapeHtml(p.namaLengkap || p.nama)}</td>
-          <td>${escapeHtml(p.nip || '-')}<br><small class="text-muted">${escapeHtml(p.golongan || '-')}</small></td>
-          <td>${escapeHtml(p.namaSekolah || p.sekolah)}</td>
-          <td class="text-center fw-bold">${escapeHtml(p.ukuranKaos || '-')}</td>
-          <td style="height: 38px;">${i + 1}. ....................</td>
-        </tr>
-      `).join("");
+      tbody.innerHTML = "";
+
+      if (!participantList || participantList.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="13" class="text-center py-4 text-muted">Tidak ada peserta yang cocok dengan filter.</td></tr>';
+        document.getElementById("tdSpjTotalKotor").innerText = "Rp 0";
+        document.getElementById("tdSpjTotalPajak").innerText = "Rp 0";
+        document.getElementById("tdSpjTotalBersih").innerText = "Rp 0";
+        document.getElementById("badgeSpjSelectedCount").innerText = "0 Terpilih";
+        return;
+      }
+
+      let runningNo = 1;
+      let totBruto = 0;
+      let totPajak = 0;
+      let totNetto = 0;
+      let selectedCount = 0;
+
+      participantList.forEach((p) => {
+        const isSelected = selectedSpjParticipantIds.has(p.regId);
+        let sigCellHtml = '<span class="text-muted small fst-italic">-</span>';
+        let rowClass = "";
+
+        if (isSelected) {
+          selectedCount++;
+          totBruto += p.bruto;
+          totPajak += p.pph21;
+          totNetto += p.netto;
+
+          // Pola Zig-Zag Dinas: ganjil rata kiri, genap rata kanan
+          const isOdd = (runningNo % 2 !== 0);
+          sigCellHtml = isOdd 
+            ? `<div class="text-start ps-2 fw-semibold">${runningNo}. .......................</div>`
+            : `<div class="text-end pe-2 fw-semibold">${runningNo}. .......................</div>`;
+        } else {
+          rowClass = "opacity-50 bg-light";
+        }
+
+        const tr = document.createElement("tr");
+        if (rowClass) tr.className = rowClass;
+        tr.innerHTML = `
+          <td class="no-print text-center">
+            <input type="checkbox" class="form-check-input cursor-pointer" ${isSelected ? 'checked' : ''} onchange="toggleParticipantSelection('${p.regId}')">
+          </td>
+          <td class="text-center fw-bold">${isSelected ? runningNo : '-'}</td>
+          <td class="fw-bold">
+            ${escapeHtml(p.nama)}
+            ${p.nip && p.nip !== '-' ? `<div class="text-muted small fw-normal" style="font-size: 0.72rem;">NIP. ${escapeHtml(p.nip)}</div>` : ''}
+          </td>
+          <td class="text-center">${escapeHtml(p.golongan || '-')}</td>
+          <td>${escapeHtml(p.jabatan || 'Guru')}</td>
+          <td>
+            ${escapeHtml(p.unitKerja || '-')}
+            ${p.kecamatan && p.kecamatan !== '-' ? `<span class="badge bg-light text-secondary border small ms-1">${escapeHtml(p.kecamatan)}</span>` : ''}
+          </td>
+          <td class="text-center">${p.jumlahHari}</td>
+          <td class="text-center">${escapeHtml(p.satuanWaktu)}</td>
+          <td class="text-end">Rp ${p.tarifSatuan.toLocaleString('id-ID')}</td>
+          <td class="text-end fw-semibold">Rp ${p.bruto.toLocaleString('id-ID')}</td>
+          <td class="text-end text-danger cursor-pointer" title="Klik untuk override tarif pajak" onclick="cycleTaxRate('${p.regId}')">
+            <span class="badge ${p.pph21 > 0 ? 'bg-danger-subtle text-danger border border-danger-subtle' : 'bg-light text-muted border'} me-1">${p.tarifPajakStr}</span>
+            Rp ${p.pph21.toLocaleString('id-ID')}
+          </td>
+          <td class="text-end fw-bold text-success">Rp ${p.netto.toLocaleString('id-ID')}</td>
+          <td style="height: 48px; vertical-align: middle;">${sigCellHtml}</td>
+        `;
+        tbody.appendChild(tr);
+
+        if (isSelected) runningNo++;
+      });
+
+      // Update Total
+      document.getElementById("tdSpjTotalKotor").innerText = "Rp " + totBruto.toLocaleString('id-ID');
+      document.getElementById("tdSpjTotalPajak").innerText = "Rp " + totPajak.toLocaleString('id-ID');
+      document.getElementById("tdSpjTotalBersih").innerText = "Rp " + totNetto.toLocaleString('id-ID');
+
+      // Update Counter
+      const badgeCount = document.getElementById("badgeSpjSelectedCount");
+      if (badgeCount) {
+        badgeCount.innerText = `${selectedCount} / ${participantList.length} Terpilih`;
+      }
+
+      // Update Header Checkbox
+      const chkHeader = document.getElementById("checkSpjSelectHeader");
+      if (chkHeader) {
+        chkHeader.checked = (selectedCount === participantList.length && participantList.length > 0);
+      }
+
+      // Update Tanggal & Pejabat
+      if (activeSpjData && activeSpjData.tanggalSpj) {
+        const lblTgl = document.getElementById("lblPreviewSpjTanggal");
+        if (lblTgl) lblTgl.innerText = activeSpjData.tanggalSpj;
+      }
+      if (activeSpjData && activeSpjData.pejabat) {
+        if (activeSpjData.pejabat.kpa) {
+          const kpaNama = document.getElementById("lblPreviewKpaNama");
+          const kpaNip = document.getElementById("lblPreviewKpaNip");
+          if (kpaNama) kpaNama.innerText = activeSpjData.pejabat.kpa.nama || "-";
+          if (kpaNip) kpaNip.innerText = "NIP " + (activeSpjData.pejabat.kpa.nip || "-");
+        }
+        if (activeSpjData.pejabat.pptk) {
+          const pptkNama = document.getElementById("lblPreviewPptkNama");
+          const pptkNip = document.getElementById("lblPreviewPptkNip");
+          if (pptkNama) pptkNama.innerText = activeSpjData.pejabat.pptk.nama || "-";
+          if (pptkNip) pptkNip.innerText = "NIP " + (activeSpjData.pejabat.pptk.nip || "-");
+        }
+        if (activeSpjData.pejabat.bendahara) {
+          const bdhNama = document.getElementById("lblPreviewBendaharaNama");
+          const bdhNip = document.getElementById("lblPreviewBendaharaNip");
+          if (bdhNama) bdhNama.innerText = activeSpjData.pejabat.bendahara.nama || "-";
+          if (bdhNip) bdhNip.innerText = "NIP " + (activeSpjData.pejabat.bendahara.nip || "-");
+        }
+      }
+    }
+
+    function downloadSpjExcel() {
+      if (!activeSpjData || !activeSpjData.participants) {
+        Swal.fire("Peringatan", "Belum ada data untuk diunduh.", "warning");
+        return;
+      }
+
+      const selectedList = activeSpjData.participants.filter(p => selectedSpjParticipantIds.has(p.regId));
+      if (selectedList.length === 0) {
+        Swal.fire("Peringatan", "Silakan pilih minimal 1 peserta untuk diekspor ke SPJ Excel.", "warning");
+        return;
+      }
+
+      const d = activeSpjData;
+      const eventName = (d.eventName || currentDashboardData?.settings?.NAMA_KEGIATAN || "KEGIATAN BIDANG SMP").toUpperCase();
+      const subName = (d.subEventName || currentDashboardData?.settings?.SUB_KEGIATAN || "BIDANG SMP DISDIKBUD KARANGANYAR").toUpperCase();
+
+      const wsData = [
+        ["", "DAFTAR PENERIMAAN UANG SAKU & TRANSPORT PESERTA", "", "", "", "", "", "", "", "", "", "", "", ""],
+        ["", eventName, "", "", "", "", "", "", "", "", "", "", "", ""],
+        ["", subName, "", "", "", "", "", "", "", "", "", "", "", ""],
+        [],
+        ["", "NO", "NAMA LENGKAP & GELAR", "NIP", "GOL", "JABATAN", "UNIT KERJA / SEKOLAH", "KECAMATAN", "JML", "SATUAN", "TARIF (RP)", "JUMLAH (RP)", "PPH 21 (RP)", "PENERIMAAN (RP)", "TANDA TANGAN"]
+      ];
+
+      let totalBruto = 0;
+      let totalPajak = 0;
+      let totalNetto = 0;
+
+      selectedList.forEach((p, i) => {
+        const rowNo = i + 1;
+        totalBruto += p.bruto;
+        totalPajak += p.pph21;
+        totalNetto += p.netto;
+
+        // Pola Zigzag Tanda Tangan: ganjil kiri, genap geser kanan
+        const isOdd = (rowNo % 2 !== 0);
+        const ttdExcel = isOdd ? (rowNo + ". .......................") : ("                 " + rowNo + ". .......................");
+
+        wsData.push([
+          "",
+          rowNo,
+          p.nama,
+          p.nip ? "'" + p.nip : "-",
+          p.golongan || "-",
+          p.jabatan || "Guru",
+          p.unitKerja || "-",
+          p.kecamatan || "-",
+          p.jumlahHari,
+          p.satuanWaktu,
+          p.tarifSatuan,
+          p.bruto,
+          p.pph21,
+          p.netto,
+          ttdExcel
+        ]);
+      });
+
+      // Baris Total
+      wsData.push([
+        "",
+        "",
+        "JUMLAH TOTAL",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        totalBruto,
+        totalPajak,
+        totalNetto,
+        ""
+      ]);
+
+      // Tanda Tangan 3 Pejabat di Bagian Bawah
+      wsData.push([]);
+      wsData.push(["", "", "", "", "", "", "", "", "", "", "", "", d.tanggalSpj || "Karanganyar", ""]);
+      wsData.push(["", "", "Setuju Dibayar,", "", "", "Mengetahui,", "", "", "", "", "", "Yang Membayarkan,", "", ""]);
+      wsData.push(["", "", "Kepala Bidang SMP", "", "", "Pejabat Pelaksana Teknis Kegiatan", "", "", "", "", "", "Bendahara Pengeluaran Pembantu,", "", ""]);
+      wsData.push(["", "", "selaku Kuasa Pengguna Anggaran", "", "", "(PPTK)", "", "", "", "", "", "", "", ""]);
+      wsData.push([]);
+      wsData.push([]);
+      wsData.push([]);
+      wsData.push([
+        "",
+        "",
+        d.pejabat?.kpa?.nama || "-",
+        "",
+        "",
+        d.pejabat?.pptk?.nama || "-",
+        "",
+        "",
+        "",
+        "",
+        "",
+        d.pejabat?.bendahara?.nama || "-",
+        "",
+        ""
+      ]);
+      wsData.push([
+        "",
+        "",
+        "NIP. " + (d.pejabat?.kpa?.nip || "-"),
+        "",
+        "",
+        "NIP. " + (d.pejabat?.pptk?.nip || "-"),
+        "",
+        "",
+        "",
+        "",
+        "",
+        "NIP. " + (d.pejabat?.bendahara?.nip || "-"),
+        "",
+        ""
+      ]);
+
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+      ws['!cols'] = [
+        { wch: 3 },
+        { wch: 5 },
+        { wch: 32 },
+        { wch: 20 },
+        { wch: 8 },
+        { wch: 20 },
+        { wch: 30 },
+        { wch: 16 },
+        { wch: 6 },
+        { wch: 8 },
+        { wch: 14 },
+        { wch: 14 },
+        { wch: 12 },
+        { wch: 15 },
+        { wch: 24 }
+      ];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "SPJ_Uang_Saku");
+
+      const cleanFilename = `SPJ_${(eventName || 'Kegiatan').replace(/\s+/g, '_')}.xlsx`;
+      XLSX.writeFile(wb, cleanFilename);
+
+      Swal.fire({
+        icon: "success",
+        title: "Download Excel Berhasil!",
+        text: `File "${cleanFilename}" (${selectedList.length} peserta) berhasil diunduh.`,
+        timer: 2500,
+        showConfirmButton: false
+      });
+    }
+
+    function downloadSpjWord() {
+      if (!activeSpjData || !activeSpjData.participants) {
+        Swal.fire("Peringatan", "Belum ada data untuk diunduh.", "warning");
+        return;
+      }
+
+      const selectedList = activeSpjData.participants.filter(p => selectedSpjParticipantIds.has(p.regId));
+      if (selectedList.length === 0) {
+        Swal.fire("Peringatan", "Silakan pilih minimal 1 peserta untuk diekspor ke dokumen Word.", "warning");
+        return;
+      }
+
+      const d = activeSpjData;
+      const eventName = (d.eventName || currentDashboardData?.settings?.NAMA_KEGIATAN || "KEGIATAN BIDANG SMP").toUpperCase();
+      const subName = (d.subEventName || currentDashboardData?.settings?.SUB_KEGIATAN || "BIDANG SMP DISDIKBUD KARANGANYAR").toUpperCase();
+
+      let rowsHtml = "";
+      let totBruto = 0, totPajak = 0, totNetto = 0;
+
+      selectedList.forEach((p, idx) => {
+        const no = idx + 1;
+        totBruto += p.bruto;
+        totPajak += p.pph21;
+        totNetto += p.netto;
+
+        const isOdd = (no % 2 !== 0);
+        const ttdWord = isOdd ? `${no}. ........................` : `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${no}. ........................`;
+
+        rowsHtml += `
+          <tr>
+            <td style="text-align: center;">${no}</td>
+            <td><strong>${escapeHtml(p.nama)}</strong><br><small>NIP. ${escapeHtml(p.nip || '-')}</small></td>
+            <td style="text-align: center;">${escapeHtml(p.golongan || '-')}</td>
+            <td>${escapeHtml(p.jabatan || 'Guru')}</td>
+            <td>${escapeHtml(p.unitKerja || '-')}</td>
+            <td style="text-align: center;">${p.jumlahHari}</td>
+            <td style="text-align: right;">Rp ${p.tarifSatuan.toLocaleString('id-ID')}</td>
+            <td style="text-align: right;">Rp ${p.bruto.toLocaleString('id-ID')}</td>
+            <td style="text-align: right;">${p.tarifPajakStr}<br>Rp ${p.pph21.toLocaleString('id-ID')}</td>
+            <td style="text-align: right; font-weight: bold;">Rp ${p.netto.toLocaleString('id-ID')}</td>
+            <td style="height: 40px; vertical-align: middle;">${ttdWord}</td>
+          </tr>
+        `;
+      });
+
+      const wordHtml = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head>
+          <meta charset='utf-8'>
+          <title>SPJ Dokumen</title>
+          <style>
+            @page Section1 {
+              size: 841.9pt 595.3pt; /* A4 Landscape */
+              mso-page-orientation: landscape;
+              margin: 1.0in 0.8in 1.0in 0.8in;
+            }
+            div.Section1 { page: Section1; }
+            body { font-family: Arial, sans-serif; font-size: 9.5pt; color: #000; }
+            h3, h4 { text-align: center; margin: 2px; text-transform: uppercase; }
+            table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 9pt; }
+            th, td { border: 1px solid #000; padding: 5px; }
+            th { background-color: #eee; font-weight: bold; text-align: center; }
+            .sig-table { width: 100%; border: none; margin-top: 35px; }
+            .sig-table td { border: none; text-align: center; }
+          </style>
+        </head>
+        <body>
+          <div class="Section1">
+            <h3>DAFTAR PENERIMAAN UANG SAKU &amp; TRANSPORT PESERTA</h3>
+            <h4>${eventName}</h4>
+            <div style="text-align: center; margin-bottom: 15px; font-size: 8.5pt;">${subName}</div>
+
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 30px;">NO</th>
+                  <th>NAMA LENGKAP &amp; NIP</th>
+                  <th style="width: 45px;">GOL</th>
+                  <th>JABATAN</th>
+                  <th>UNIT KERJA / SEKOLAH</th>
+                  <th style="width: 40px;">JML</th>
+                  <th style="width: 80px;">TARIF</th>
+                  <th style="width: 85px;">BRUTO</th>
+                  <th style="width: 80px;">PPH 21</th>
+                  <th style="width: 90px;">PENERIMAAN</th>
+                  <th style="width: 140px;">TANDA TANGAN</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rowsHtml}
+              </tbody>
+              <tfoot>
+                <tr style="font-weight: bold; background-color: #eee;">
+                  <td colspan="7" style="text-align: center;">JUMLAH TOTAL</td>
+                  <td style="text-align: right;">Rp ${totBruto.toLocaleString('id-ID')}</td>
+                  <td style="text-align: right;">Rp ${totPajak.toLocaleString('id-ID')}</td>
+                  <td style="text-align: right;">Rp ${totNetto.toLocaleString('id-ID')}</td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+
+            <table class="sig-table">
+              <tr>
+                <td colspan="3" style="text-align: right; padding-right: 30px;">${d.tanggalSpj || 'Karanganyar'}</td>
+              </tr>
+              <tr>
+                <td style="width: 33%;">Setuju Dibayar,<br><strong>Kepala Bidang SMP</strong><br>selaku Kuasa Pengguna Anggaran<br><br><br><br><strong><u>${d.pejabat?.kpa?.nama || '-'}</u></strong><br>NIP. ${d.pejabat?.kpa?.nip || '-'}</td>
+                <td style="width: 33%;">Mengetahui,<br><strong>Pejabat Pelaksana Teknis Kegiatan</strong><br>(PPTK)<br><br><br><br><strong><u>${d.pejabat?.pptk?.nama || '-'}</u></strong><br>NIP. ${d.pejabat?.pptk?.nip || '-'}</td>
+                <td style="width: 33%;">Yang Membayarkan,<br><strong>Bendahara Pengeluaran Pembantu</strong><br>&nbsp;<br><br><br><br><strong><u>${d.pejabat?.bendahara?.nama || '-'}</u></strong><br>NIP. ${d.pejabat?.bendahara?.nip || '-'}</td>
+              </tr>
+            </table>
+          </div>
+        </body>
+        </html>
+      `;
+
+      const blob = new Blob(['\ufeff', wordHtml], {
+        type: 'application/msword'
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const cleanFilename = `SPJ_${(eventName || 'Kegiatan').replace(/\s+/g, '_')}.doc`;
+      a.download = cleanFilename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      Swal.fire({
+        icon: "success",
+        title: "Download Word Berhasil!",
+        text: `File "${cleanFilename}" (${selectedList.length} peserta) berhasil diunduh.`,
+        timer: 2500,
+        showConfirmButton: false
+      });
     }
 
     function printSpjDocument() {
       window.print();
     }
 
-    function downloadSpjExcel() {
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.table_to_sheet(document.getElementById("printableSpjArea").querySelector("table"));
-      XLSX.utils.book_append_sheet(wb, ws, "Daftar Hadir SPJ");
-      XLSX.writeFile(wb, `Daftar-Hadir-SPJ-${activeEventId || "Kegiatan"}.xlsx`);
+    function renderSpjPreview(data) {
+      // Stub kompatibilitas pemanggilan awal
     }
 
     /**

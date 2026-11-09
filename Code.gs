@@ -2735,6 +2735,7 @@ function getSpjGeneratorData(params, pin) {
 
 /**
  * Analisis Cerdas Gemini: mendeteksi jenis dan kebutuhan variabel template
+ * Menggunakan Gemini API (Script Properties) dengan fallback otomatis ke sistem pencocokan aturan
  */
 function analyzeSpjWithGemini_(templateName, fileType, fileName) {
   const cleanName = String(templateName || "").toLowerCase();
@@ -2749,6 +2750,52 @@ function analyzeSpjWithGemini_(templateName, fileType, fileName) {
   const isAttendance = cleanName.includes("hadir") || cleanName.includes("presensi") || cleanName.includes("absen");
   const isSppd = cleanName.includes("sppd") || cleanName.includes("perjalanan") || cleanName.includes("tugas");
 
+  // Percobaan analisis via Gemini API langsung jika API Key tersedia
+  try {
+    const apiKey = getGeminiApiKey_();
+    if (apiKey) {
+      const endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + apiKey;
+      const prompt = `Anda adalah asisten administrasi dinas pendidikan Kabupaten Karanganyar. Analisis nama dan struktur dokumen berikut:
+- Nama Dokumen: "${templateName}"
+- Tipe File: "${fileType}"
+- Nama File: "${fileName}"
+
+Tentukan apakah dokumen ini membutuhkan perhitungan nominal uang (Uang Saku/Transport/Honorarium dengan PPh 21) atau dokumen kehadiran/administrasi umum.
+Keluarkan HANYA JSON tanpa markdown:
+{
+  "jenis": "Uang Saku / Transport" atau "Daftar Hadir / Presensi" atau "Dokumen Kegiatan",
+  "hasNominal": true/false,
+  "hasHari": true/false,
+  "defaultNominal": 200000 atau 0,
+  "defaultHari": 1,
+  "detectedColumns": ["No", "Nama Lengkap & Gelar", "NIP", "Golongan", ...],
+  "signatureCount": 3 atau 2
+}`;
+      const payload = {
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.1 }
+      };
+      const response = UrlFetchApp.fetch(endpoint, {
+        method: "post",
+        contentType: "application/json",
+        payload: JSON.stringify(payload),
+        muteHttpExceptions: true
+      });
+      if (response.getResponseCode() === 200) {
+        const json = JSON.parse(response.getContentText());
+        let rawText = json.candidates[0].content.parts[0].text.trim();
+        rawText = rawText.replace(/```json/gi, "").replace(/```/g, "").trim();
+        const parsed = JSON.parse(rawText);
+        if (parsed && parsed.jenis) {
+          return parsed;
+        }
+      }
+    }
+  } catch (errAi) {
+    Logger.log("Fallback analisis lokal: " + errAi.toString());
+  }
+
+  // Fallback Rule Engine
   return {
     jenis: isFinance ? "Keuangan (Uang Saku/Transport/Honor)" : (isAttendance ? "Daftar Hadir / Presensi" : (isSppd ? "Surat Tugas / SPPD" : "Dokumen Kegiatan")),
     hasNominal: isFinance,
