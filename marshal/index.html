@@ -4121,12 +4121,10 @@
     }
 
     async function recalculateAndRenderSpjPreview() {
-      if (!currentAdminPin) return;
-
-      const nominal = parseFloat(document.getElementById("inputSpjNominal").value) || 200000;
-      const hari = parseInt(document.getElementById("inputSpjHari").value, 10) || 1;
-      const satuan = document.getElementById("inputSpjSatuan").value || "hari";
-      const tanggal = document.getElementById("inputSpjTanggal").value || "";
+      const nominal = parseFloat(document.getElementById("inputSpjNominal")?.value) || 200000;
+      const hari = parseInt(document.getElementById("inputSpjHari")?.value, 10) || 1;
+      const satuan = document.getElementById("inputSpjSatuan")?.value || "hari";
+      const tanggal = document.getElementById("inputSpjTanggal")?.value || "";
       const isPajakActive = document.getElementById("switchSpjPajakActive") ? document.getElementById("switchSpjPajakActive").checked : true;
 
       const rateGol4 = (parseFloat(document.getElementById("inputTarifPajakGol4")?.value) || 0) / 100;
@@ -4143,134 +4141,115 @@
         nonAsn: rateNonAsn
       };
 
-      const kpaNama = document.getElementById("inputKpaNama").value || "Rehatta Rakasiwi, S.Psi.,M.Si";
-      const kpaNip = document.getElementById("inputKpaNip").value || "198401162011011009";
-      const pptkNama = document.getElementById("inputPptkNama").value || "Agus Pruwitanto, S.Sos";
-      const pptkNip = document.getElementById("inputPptkNip").value || "197408191999031005";
-      const bdhNama = document.getElementById("inputBendaharaNama").value || "Dwi Suprasetiarini, S.M";
-      const bdhNip = document.getElementById("inputBendaharaNip").value || "197610022010012002";
+      const kpaNama = document.getElementById("inputKpaNama")?.value || "Rehatta Rakasiwi, S.Psi.,M.Si";
+      const kpaNip = document.getElementById("inputKpaNip")?.value || "198401162011011009";
+      const pptkNama = document.getElementById("inputPptkNama")?.value || "Agus Pruwitanto, S.Sos";
+      const pptkNip = document.getElementById("inputPptkNip")?.value || "197408191999031005";
+      const bdhNama = document.getElementById("inputBendaharaNama")?.value || "Dwi Suprasetiarini, S.M";
+      const bdhNip = document.getElementById("inputBendaharaNip")?.value || "197610022010012002";
 
-      const params = {
-        nominalPerHari: nominal,
-        jumlahHari: hari,
-        satuanWaktu: satuan,
-        tanggalSpj: tanggal,
-        isPajakActive: isPajakActive,
-        tarifPajakCustom: tarifPajakCustom,
-        overridePajak: overridePajakMap,
-        kpaNama: kpaNama,
-        kpaNip: kpaNip,
-        pptkNama: pptkNama,
-        pptkNip: pptkNip,
-        bendaharaNama: bdhNama,
-        bendaharaNip: bdhNip
-      };
+      const s = currentDashboardData?.settings || {};
+      const activeEventName = s.NAMA_KEGIATAN && s.NAMA_KEGIATAN !== "Belum Ada Kegiatan" ? s.NAMA_KEGIATAN : (activeEventId || "Kegiatan Aktif");
+      const subEventName = s.SUB_KEGIATAN || "Bidang SMP DISDIKBUD Karanganyar";
+
+      // Selalu gunakan daftar peserta dari currentDashboardData untuk kegiatan yang aktif
+      const participants = (currentDashboardData && Array.isArray(currentDashboardData.participants)) ? currentDashboardData.participants : [];
 
       const tbody = document.getElementById("tbodyPreviewSpj");
-      if (tbody) tbody.innerHTML = '<tr><td colspan="13" class="text-center py-4"><span class="spinner-border spinner-border-sm me-2"></span>Menghitung data &amp; pajak PPh 21...</td></tr>';
 
-      try {
-        const resp = await callGasApi("getSpjGeneratorData", { params, pin: currentAdminPin });
-        if (resp && resp.success) {
-          activeSpjData = resp;
-          if (selectedSpjParticipantIds.size === 0 && resp.participants) {
-            resp.participants.forEach(p => selectedSpjParticipantIds.add(p.regId));
-          }
-          applySpjParticipantFilter();
-        } else {
-          if (tbody) tbody.innerHTML = `<tr><td colspan="13" class="text-center text-danger py-4">${resp ? escapeHtml(resp.message) : "Gagal memuat data"}</td></tr>`;
+      if (participants.length === 0) {
+        if (tbody) {
+          tbody.innerHTML = `<tr><td colspan="13" class="text-center text-muted py-4"><i class="bi bi-info-circle me-1"></i> Belum ada peserta yang terdaftar pada kegiatan "<strong>${escapeHtml(activeEventName)}</strong>". Silakan pastikan pendaftar sudah ada.</td></tr>`;
         }
-      } catch (err) {
-        console.warn("Gagal panggil getSpjGeneratorData:", err);
-        // Simulasi lokal menggunakan data participants yang ada
-        const participants = (currentDashboardData && currentDashboardData.participants) ? currentDashboardData.participants : [];
-        if (participants.length === 0) {
-          if (tbody) tbody.innerHTML = '<tr><td colspan="13" class="text-center text-muted py-4">Belum ada peserta terdaftar untuk kegiatan ini.</td></tr>';
-          return;
-        }
-
-        let totBruto = 0, totPajak = 0, totNetto = 0;
-        const calcList = participants.map((pt, idx) => {
-          const bruto = nominal * hari;
-          const statusLower = String(pt.statusKepegawaian || pt.statusPeg || "").toLowerCase();
-          const golUpper = String(pt.golongan || "").toUpperCase();
-
-          let tarif = 0;
-          let tarifStr = "0%";
-          if (isPajakActive) {
-            if (overridePajakMap[pt.idRegistrasi || pt.regId] !== undefined) {
-              tarif = overridePajakMap[pt.idRegistrasi || pt.regId];
-              tarifStr = Math.round(tarif * 100) + "%";
-            } else if (statusLower.includes("pns")) {
-              if (golUpper.startsWith("IV") || golUpper.includes("GOLONGAN IV")) {
-                tarif = rateGol4;
-                tarifStr = (rateGol4 * 100) + "%";
-              } else if (golUpper.startsWith("III") || golUpper.includes("GOLONGAN III")) {
-                tarif = rateGol3;
-                tarifStr = (rateGol3 * 100) + "%";
-              } else {
-                tarif = rateGol12;
-                tarifStr = (rateGol12 * 100) + "%";
-              }
-            } else if (statusLower.includes("pppk")) {
-              tarif = ratePppk;
-              tarifStr = (ratePppk * 100) + "%";
-            } else {
-              tarif = rateNonAsn;
-              tarifStr = (rateNonAsn * 100) + "%";
-            }
-          }
-
-          const pph21 = Math.round(bruto * tarif);
-          const netto = bruto - pph21;
-          totBruto += bruto;
-          totPajak += pph21;
-          totNetto += netto;
-
-          return {
-            no: idx + 1,
-            regId: pt.idRegistrasi || pt.regId || `REG-${idx + 1}`,
-            nama: pt.namaLengkap || pt.nama || "-",
-            golongan: pt.golongan || "-",
-            jabatan: pt.jabatan || "Guru",
-            unitKerja: pt.namaSekolah || pt.sekolah || pt.unitKerja || "-",
-            kecamatan: pt.kecamatan || "-",
-            statusPeg: pt.statusKepegawaian || pt.statusPeg || "PNS",
-            nip: pt.nip || "-",
-            jumlahHari: hari,
-            satuanWaktu: satuan,
-            tarifSatuan: nominal,
-            bruto: bruto,
-            tarifPajakStr: tarifStr,
-            tarifPajakVal: tarif,
-            pph21: pph21,
-            netto: netto
-          };
-        });
-
-        activeSpjData = {
-          success: true,
-          eventName: currentDashboardData?.settings?.NAMA_KEGIATAN || "KEGIATAN BIDANG SMP",
-          subEventName: currentDashboardData?.settings?.SUB_KEGIATAN || "Bidang SMP DISDIKBUD Karanganyar",
-          tanggalSpj: tanggal || "Karanganyar",
-          pejabat: {
-            kpa: { nama: kpaNama, nip: kpaNip },
-            pptk: { nama: pptkNama, nip: pptkNip },
-            bendahara: { nama: bdhNama, nip: bdhNip }
-          },
-          totals: {
-            totalBruto: totBruto,
-            totalPph21: totPajak,
-            totalNetto: totNetto
-          },
-          participants: calcList
-        };
-
-        if (selectedSpjParticipantIds.size === 0) {
-          calcList.forEach(p => selectedSpjParticipantIds.add(p.regId));
-        }
-        applySpjParticipantFilter();
+        document.getElementById("tdSpjTotalKotor").innerText = "Rp 0";
+        document.getElementById("tdSpjTotalPajak").innerText = "Rp 0";
+        document.getElementById("tdSpjTotalBersih").innerText = "Rp 0";
+        document.getElementById("badgeSpjSelectedCount").innerText = "0 Terpilih";
+        activeSpjData = null;
+        return;
       }
+
+      let totBruto = 0, totPajak = 0, totNetto = 0;
+      const calcList = participants.map((pt, idx) => {
+        const bruto = nominal * hari;
+        const statusLower = String(pt.statusKepegawaian || pt.statusPeg || "").toLowerCase();
+        const golUpper = String(pt.golongan || "").toUpperCase();
+
+        let tarif = 0;
+        let tarifStr = "0%";
+        if (isPajakActive) {
+          if (overridePajakMap[pt.idRegistrasi || pt.regId] !== undefined) {
+            tarif = overridePajakMap[pt.idRegistrasi || pt.regId];
+            tarifStr = Math.round(tarif * 100) + "%";
+          } else if (statusLower.includes("pns")) {
+            if (golUpper.startsWith("IV") || golUpper.includes("GOLONGAN IV")) {
+              tarif = rateGol4;
+              tarifStr = (rateGol4 * 100) + "%";
+            } else if (golUpper.startsWith("III") || golUpper.includes("GOLONGAN III")) {
+              tarif = rateGol3;
+              tarifStr = (rateGol3 * 100) + "%";
+            } else {
+              tarif = rateGol12;
+              tarifStr = (rateGol12 * 100) + "%";
+            }
+          } else if (statusLower.includes("pppk")) {
+            tarif = ratePppk;
+            tarifStr = (ratePppk * 100) + "%";
+          } else {
+            tarif = rateNonAsn;
+            tarifStr = (rateNonAsn * 100) + "%";
+          }
+        }
+
+        const pph21 = Math.round(bruto * tarif);
+        const netto = bruto - pph21;
+        totBruto += bruto;
+        totPajak += pph21;
+        totNetto += netto;
+
+        return {
+          no: idx + 1,
+          regId: pt.idRegistrasi || pt.regId || `REG-${idx + 1}`,
+          nama: pt.namaLengkap || pt.nama || "-",
+          golongan: pt.golongan || "-",
+          jabatan: pt.jabatan || "Guru",
+          unitKerja: pt.namaSekolah || pt.sekolah || pt.unitKerja || "-",
+          kecamatan: pt.kecamatan || "-",
+          statusPeg: pt.statusKepegawaian || pt.statusPeg || "PNS",
+          nip: pt.nip || "-",
+          jumlahHari: hari,
+          satuanWaktu: satuan,
+          tarifSatuan: nominal,
+          bruto: bruto,
+          tarifPajakStr: tarifStr,
+          tarifPajakVal: tarif,
+          pph21: pph21,
+          netto: netto
+        };
+      });
+
+      activeSpjData = {
+        success: true,
+        eventName: activeEventName,
+        subEventName: subEventName,
+        tanggalSpj: tanggal || "Karanganyar",
+        pejabat: {
+          kpa: { nama: kpaNama, nip: kpaNip },
+          pptk: { nama: pptkNama, nip: pptkNip },
+          bendahara: { nama: bdhNama, nip: bdhNip }
+        },
+        totals: {
+          totalBruto: totBruto,
+          totalPph21: totPajak,
+          totalNetto: totNetto
+        },
+        participants: calcList
+      };
+
+      if (selectedSpjParticipantIds.size === 0) {
+        calcList.forEach(p => selectedSpjParticipantIds.add(p.regId));
+      }
+      applySpjParticipantFilter();
     }
 
     function applySpjParticipantFilter() {
@@ -5040,6 +5019,7 @@
         navigator.serviceWorker.register('../sw.js')
           .then((reg) => {
             console.log('[PWA] Service Worker aktif di Portal Marshal:', reg.scope);
+            reg.update();
           })
           .catch((err) => {
             console.warn('[PWA] Gagal meregistrasi Service Worker:', err);

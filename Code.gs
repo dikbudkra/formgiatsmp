@@ -2731,7 +2731,10 @@ function getSpjGeneratorData(params, pin) {
     const sheetPeserta = ss.getSheetByName(SHEET_PESERTA);
     const data = sheetPeserta ? sheetPeserta.getDataRange().getValues() : [];
 
-    const activeKegiatan = String(settings.NAMA_KEGIATAN || "").trim().toLowerCase();
+    // Prioritaskan nama kegiatan yang dikirim dari klien/parameter (Multi-Event Engine)
+    const p = params || {};
+    const targetEventName = p.targetEventIdOrName || p.eventName || p.eventId || settings.NAMA_KEGIATAN || "";
+    const activeKegiatan = String(targetEventName).trim().toLowerCase();
     const participants = [];
 
     if (data.length > 1) {
@@ -2769,7 +2772,7 @@ function getSpjGeneratorData(params, pin) {
     if (participants.length === 0) {
       return {
         success: false,
-        message: `Belum ada peserta yang terdaftar pada kegiatan "${settings.NAMA_KEGIATAN}". Silakan pastikan pendaftar sudah ada.`
+        message: `Belum ada peserta yang terdaftar pada kegiatan "${targetEventName || settings.NAMA_KEGIATAN}". Silakan pastikan pendaftar sudah ada.`
       };
     }
 
@@ -2855,7 +2858,7 @@ function getSpjGeneratorData(params, pin) {
 
     return {
       success: true,
-      eventName: settings.NAMA_KEGIATAN,
+      eventName: targetEventName || settings.NAMA_KEGIATAN,
       subEventName: settings.SUB_KEGIATAN || "Bidang SMP - Dinas Pendidikan dan Kebudayaan Kabupaten Karanganyar",
       tanggalSpj: p.tanggalSpj || defaultTanggal,
       params: {
