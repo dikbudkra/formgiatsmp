@@ -359,11 +359,7 @@
           </div>
         </div>
 
-        <div class="d-flex align-items-center gap-2">
-          <button id="btnPwaInstall" class="btn btn-warning btn-sm rounded-pill px-3 py-1.5 fw-bold d-none align-items-center gap-1.5 shadow-sm" onclick="triggerPwaInstall()" title="Install Aplikasi ke HP / Komputer">
-            <i class="bi bi-download"></i>
-            <span>Install App</span>
-          </button>
+        <div>
           <a href="./marshal.html" class="btn btn-outline-light btn-sm rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-sm">
             <i class="bi bi-shield-lock-fill text-warning"></i>
             <span>Portal Panitia</span>
@@ -1747,43 +1743,7 @@
         .replace(/'/g, "&#039;");
     }
 
-    // Registrasi PWA Service Worker & Install Prompt
-    let deferredPrompt;
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      const btn = document.getElementById('btnPwaInstall');
-      if (btn) {
-        btn.classList.remove('d-none');
-        btn.classList.add('d-inline-flex');
-      }
-    });
-
-    function triggerPwaInstall() {
-      if (!deferredPrompt) return;
-      deferredPrompt.prompt();
-      deferredPrompt.userChoice.then((choice) => {
-        if (choice.outcome === 'accepted') {
-          console.log('[PWA] Pengguna memasang aplikasi');
-        }
-        deferredPrompt = null;
-        const btn = document.getElementById('btnPwaInstall');
-        if (btn) {
-          btn.classList.add('d-none');
-          btn.classList.remove('d-inline-flex');
-        }
-      });
-    }
-
-    window.addEventListener('appinstalled', () => {
-      console.log('[PWA] Aplikasi berhasil diinstal!');
-      const btn = document.getElementById('btnPwaInstall');
-      if (btn) {
-        btn.classList.add('d-none');
-        btn.classList.remove('d-inline-flex');
-      }
-    });
-
+    // Registrasi PWA Service Worker (Instalasi dapat dilakukan manual via menu browser)
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')

@@ -443,11 +443,6 @@
         </select>
       </div>
 
-      <button id="btnPwaInstallMarshal" class="btn btn-warning btn-sm rounded-pill px-2.5 py-1 d-none align-items-center gap-1 shadow-sm" onclick="triggerPwaInstall()" title="Install Aplikasi Portal Panitia">
-        <i class="bi bi-download"></i>
-        <span class="small fw-bold">Install</span>
-      </button>
-
       <a href="../index.html" target="_blank" class="btn btn-outline-secondary btn-sm rounded-pill px-2.5 py-1 d-none d-md-inline-flex align-items-center gap-1" title="Buka Form Publik">
         <i class="bi bi-box-arrow-up-right"></i>
         <span class="small">Form Publik</span>
@@ -4575,43 +4570,7 @@
         .replace(/'/g, "&#039;");
     }
 
-    // Registrasi PWA Service Worker & Install Prompt
-    let deferredPromptMarshal;
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPromptMarshal = e;
-      const btn = document.getElementById('btnPwaInstallMarshal');
-      if (btn) {
-        btn.classList.remove('d-none');
-        btn.classList.add('d-inline-flex');
-      }
-    });
-
-    function triggerPwaInstall() {
-      if (!deferredPromptMarshal) return;
-      deferredPromptMarshal.prompt();
-      deferredPromptMarshal.userChoice.then((choice) => {
-        if (choice.outcome === 'accepted') {
-          console.log('[PWA] Panitia memasang aplikasi Portal Marshal');
-        }
-        deferredPromptMarshal = null;
-        const btn = document.getElementById('btnPwaInstallMarshal');
-        if (btn) {
-          btn.classList.add('d-none');
-          btn.classList.remove('d-inline-flex');
-        }
-      });
-    }
-
-    window.addEventListener('appinstalled', () => {
-      console.log('[PWA] Portal Marshal berhasil diinstal!');
-      const btn = document.getElementById('btnPwaInstallMarshal');
-      if (btn) {
-        btn.classList.add('d-none');
-        btn.classList.remove('d-inline-flex');
-      }
-    });
-
+    // Registrasi PWA Service Worker (Instalasi dapat dilakukan manual via menu browser)
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('../sw.js')
