@@ -557,28 +557,9 @@
             </div>
 
             <div class="col-md-6 d-none" id="boxGolongan">
-              <label class="form-label" for="selectGolongan">Pangkat / Golongan Ruang <span class="text-danger">*</span></label>
+              <label class="form-label" for="selectGolongan" id="labelGolongan">Pangkat / Golongan Ruang <span class="text-danger">*</span></label>
               <select class="form-select" id="selectGolongan" name="golongan" onchange="handleGolonganChange(this.value)">
                 <option value="">-- Pilih Golongan Ruang --</option>
-                <optgroup label="Golongan IV (Pembina)">
-                  <option value="IV/e|Pembina Utama">IV/e - Pembina Utama</option>
-                  <option value="IV/d|Pembina Utama Madya">IV/d - Pembina Utama Madya</option>
-                  <option value="IV/c|Pembina Utama Muda">IV/c - Pembina Utama Muda</option>
-                  <option value="IV/b|Pembina Tingkat I">IV/b - Pembina Tingkat I</option>
-                  <option value="IV/a|Pembina">IV/a - Pembina</option>
-                </optgroup>
-                <optgroup label="Golongan III (Penata)">
-                  <option value="III/d|Penata Tingkat I">III/d - Penata Tingkat I</option>
-                  <option value="III/c|Penata">III/c - Penata</option>
-                  <option value="III/b|Penata Muda Tingkat I">III/b - Penata Muda Tingkat I</option>
-                  <option value="III/a|Penata Muda">III/a - Penata Muda</option>
-                </optgroup>
-                <optgroup label="Golongan II (Pengatur)">
-                  <option value="II/d|Pengatur Tingkat I">II/d - Pengatur Tingkat I</option>
-                  <option value="II/c|Pengatur">II/c - Pengatur</option>
-                  <option value="II/b|Pengatur Muda Tingkat I">II/b - Pengatur Muda Tingkat I</option>
-                  <option value="II/a|Pengatur Muda">II/a - Pengatur Muda</option>
-                </optgroup>
               </select>
               <input type="hidden" id="inputPangkat" name="pangkat" value="">
             </div>
@@ -1219,27 +1200,139 @@
     }
 
     /**
+     * Matriks Pilihan Golongan & Pangkat (PNS & PPPK)
+     */
+    const DAFTAR_GOLONGAN_PNS = [
+      {
+        kategori: "Golongan IV (Pembina)",
+        items: [
+          { val: "IV/e|Pembina Utama", label: "IV/e - Pembina Utama" },
+          { val: "IV/d|Pembina Utama Madya", label: "IV/d - Pembina Utama Madya" },
+          { val: "IV/c|Pembina Utama Muda", label: "IV/c - Pembina Utama Muda" },
+          { val: "IV/b|Pembina Tingkat I", label: "IV/b - Pembina Tingkat I" },
+          { val: "IV/a|Pembina", label: "IV/a - Pembina" }
+        ]
+      },
+      {
+        kategori: "Golongan III (Penata)",
+        items: [
+          { val: "III/d|Penata Tingkat I", label: "III/d - Penata Tingkat I" },
+          { val: "III/c|Penata", label: "III/c - Penata" },
+          { val: "III/b|Penata Muda Tingkat I", label: "III/b - Penata Muda Tingkat I" },
+          { val: "III/a|Penata Muda", label: "III/a - Penata Muda" }
+        ]
+      },
+      {
+        kategori: "Golongan II (Pengatur)",
+        items: [
+          { val: "II/d|Pengatur Tingkat I", label: "II/d - Pengatur Tingkat I" },
+          { val: "II/c|Pengatur", label: "II/c - Pengatur" },
+          { val: "II/b|Pengatur Muda Tingkat I", label: "II/b - Pengatur Muda Tingkat I" },
+          { val: "II/a|Pengatur Muda", label: "II/a - Pengatur Muda" }
+        ]
+      },
+      {
+        kategori: "Golongan I (Juru)",
+        items: [
+          { val: "I/d|Juru Tingkat I", label: "I/d - Juru Tingkat I" },
+          { val: "I/c|Juru", label: "I/c - Juru" },
+          { val: "I/b|Juru Muda Tingkat I", label: "I/b - Juru Muda Tingkat I" },
+          { val: "I/a|Juru Muda", label: "I/a - Juru Muda" }
+        ]
+      }
+    ];
+
+    const DAFTAR_GOLONGAN_PPPK = [
+      {
+        kategori: "Jenjang Ahli (PPPK)",
+        items: [
+          { val: "Golongan IX|Ahli Pertama", label: "Golongan IX - Ahli Pertama" },
+          { val: "Golongan X|Ahli Pertama", label: "Golongan X - Ahli Pertama" },
+          { val: "Golongan XI|Ahli Muda", label: "Golongan XI - Ahli Muda" },
+          { val: "Golongan XIV|Ahli Madya", label: "Golongan XIV - Ahli Madya" }
+        ]
+      },
+      {
+        kategori: "Jenjang Terampil & Pelaksana (PPPK)",
+        items: [
+          { val: "Golongan VII|Terampil", label: "Golongan VII - Terampil" },
+          { val: "Golongan VIII|Terampil", label: "Golongan VIII - Terampil" },
+          { val: "Golongan VI|Terampil", label: "Golongan VI - Terampil" },
+          { val: "Golongan V|Pelaksana", label: "Golongan V - Pelaksana" }
+        ]
+      },
+      {
+        kategori: "Golongan PPPK Lainnya",
+        items: [
+          { val: "Golongan I|PPPK", label: "Golongan I" },
+          { val: "Golongan II|PPPK", label: "Golongan II" },
+          { val: "Golongan III|PPPK", label: "Golongan III" },
+          { val: "Golongan IV|PPPK", label: "Golongan IV" },
+          { val: "Golongan XII|PPPK", label: "Golongan XII" },
+          { val: "Golongan XIII|PPPK", label: "Golongan XIII" },
+          { val: "Golongan XV|PPPK", label: "Golongan XV" },
+          { val: "Golongan XVI|PPPK", label: "Golongan XVI" },
+          { val: "Golongan XVII|PPPK", label: "Golongan XVII" }
+        ]
+      }
+    ];
+
+    function renderGolonganOptions(status) {
+      const select = document.getElementById("selectGolongan");
+      const label = document.getElementById("labelGolongan");
+      if (!select) return;
+
+      select.innerHTML = "";
+
+      if (status === "PNS") {
+        if (label) label.innerHTML = 'Pangkat / Golongan Ruang (PNS) <span class="text-danger">*</span>';
+        select.innerHTML = '<option value="">-- Pilih Golongan PNS --</option>';
+        DAFTAR_GOLONGAN_PNS.forEach(grp => {
+          const optgroup = document.createElement("optgroup");
+          optgroup.label = grp.kategori;
+          grp.items.forEach(it => {
+            const opt = document.createElement("option");
+            opt.value = it.val;
+            opt.textContent = it.label;
+            optgroup.appendChild(opt);
+          });
+          select.appendChild(optgroup);
+        });
+      } else if (status === "PPPK") {
+        if (label) label.innerHTML = 'Golongan / Jenjang (PPPK) <span class="text-danger">*</span>';
+        select.innerHTML = '<option value="">-- Pilih Golongan PPPK --</option>';
+        DAFTAR_GOLONGAN_PPPK.forEach(grp => {
+          const optgroup = document.createElement("optgroup");
+          optgroup.label = grp.kategori;
+          grp.items.forEach(it => {
+            const opt = document.createElement("option");
+            opt.value = it.val;
+            opt.textContent = it.label;
+            optgroup.appendChild(opt);
+          });
+          select.appendChild(optgroup);
+        });
+      }
+    }
+
+    /**
      * Handler Pilihan Status Kepegawaian (PNS / PPPK / Non-ASN)
-     * Golongan PPPK langsung hilang ketika diklik
      */
     function handleStatusPegawaiChange(status) {
       const boxNip = document.getElementById("boxNip");
       const boxGolongan = document.getElementById("boxGolongan");
       const inputNip = document.getElementById("inputNip");
       const selectGolongan = document.getElementById("selectGolongan");
+      const inputPangkat = document.getElementById("inputPangkat");
 
-      if (status === "PNS") {
+      if (status === "PNS" || status === "PPPK") {
         boxNip.classList.remove("d-none");
         boxGolongan.classList.remove("d-none");
         inputNip.required = true;
         selectGolongan.required = true;
-      } else if (status === "PPPK") {
-        boxNip.classList.remove("d-none");
-        boxGolongan.classList.add("d-none"); // Golongan PPPK langsung hilang
-        inputNip.required = true;
-        selectGolongan.required = false;
-        selectGolongan.value = "";
-        document.getElementById("inputPangkat").value = "-";
+        
+        renderGolonganOptions(status);
+        if (inputPangkat) inputPangkat.value = "";
       } else {
         boxNip.classList.add("d-none");
         boxGolongan.classList.add("d-none");
@@ -1247,7 +1340,7 @@
         selectGolongan.required = false;
         inputNip.value = "";
         selectGolongan.value = "";
-        document.getElementById("inputPangkat").value = "";
+        if (inputPangkat) inputPangkat.value = "";
       }
     }
 
