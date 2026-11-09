@@ -1545,73 +1545,13 @@
               <div class="text-center mb-4">
                 <h5 class="fw-bold mb-1 text-uppercase text-dark" id="previewFormatDocHeader">DAFTAR PENERIMAAN UANG SAKU &amp; TRANSPORT</h5>
                 <h6 class="fw-bold mb-0 text-uppercase text-secondary" id="previewFormatDocSubHeader">KEGIATAN BIDANG SMP DISDIKBUD KARANGANYAR</h6>
-                <div class="small text-muted mt-1 fst-italic">[ TAMPILAN STRUKTUR FORMAT DOKUMEN RESMI ]</div>
+                <div class="small text-muted mt-1 fst-italic" id="lblFormatDocNotice">[ TAMPILAN STRUKTUR FORMAT DOKUMEN ]</div>
               </div>
 
-              <div class="table-responsive">
-                <table class="spj-table align-middle">
-                  <thead>
-                    <tr>
-                      <th style="width: 35px;">NO</th>
-                      <th>NAMA LENGKAP &amp; GELAR</th>
-                      <th style="width: 55px;">GOL</th>
-                      <th>JABATAN</th>
-                      <th>UNIT KERJA / SEKOLAH</th>
-                      <th style="width: 45px;">JML</th>
-                      <th style="width: 55px;">WAKTU</th>
-                      <th style="width: 90px;">TARIF / JASA</th>
-                      <th style="width: 95px;">JUMLAH BRUTO</th>
-                      <th style="width: 80px;">PPH 21</th>
-                      <th style="width: 100px;">PENERIMAAN</th>
-                      <th style="width: 140px;">TANDA TANGAN</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr class="text-muted">
-                      <td class="text-center">1</td>
-                      <td class="fw-semibold text-dark">[Contoh: Nama Peserta &amp; Gelar]</td>
-                      <td class="text-center">IV/a</td>
-                      <td>Guru Madya</td>
-                      <td>[Nama Satuan Pendidikan / SMP]</td>
-                      <td class="text-center">1</td>
-                      <td class="text-center">hari</td>
-                      <td class="text-end">Rp 200.000</td>
-                      <td class="text-end">Rp 200.000</td>
-                      <td class="text-end text-danger">15% (Rp 30.000)</td>
-                      <td class="text-end fw-bold text-success">Rp 170.000</td>
-                      <td style="font-size: 8pt;">1. .....................</td>
-                    </tr>
-                    <tr class="text-muted">
-                      <td class="text-center">2</td>
-                      <td class="fw-semibold text-dark">[Contoh: Nama Peserta &amp; Gelar]</td>
-                      <td class="text-center">III/b</td>
-                      <td>Guru Muda</td>
-                      <td>[Nama Satuan Pendidikan / SMP]</td>
-                      <td class="text-center">1</td>
-                      <td class="text-center">hari</td>
-                      <td class="text-end">Rp 200.000</td>
-                      <td class="text-end">Rp 200.000</td>
-                      <td class="text-end text-danger">5% (Rp 10.000)</td>
-                      <td class="text-end fw-bold text-success">Rp 190.000</td>
-                      <td style="font-size: 8pt; text-align: right;">2. .....................</td>
-                    </tr>
-                    <tr class="bg-light">
-                      <td colspan="12" class="text-center py-2 text-muted fst-italic small">
-                        ... Kolom dan baris peserta akan terisi penuh secara otomatis dari database pendaftar kegiatan saat mengklik tombol Buat Dokumen ...
-                      </td>
-                    </tr>
-                  </tbody>
-                  <tfoot>
-                    <tr class="fw-bold bg-light">
-                      <td colspan="8" class="text-center">Jumlah Total Format</td>
-                      <td class="text-end">Total Bruto</td>
-                      <td class="text-end text-danger">Total Pajak</td>
-                      <td class="text-end text-success">Total Diterima</td>
-                      <td></td>
-                    </tr>
-                  </tfoot>
-                </table>
+              <div class="table-responsive" id="containerFormatRealPreview">
+                <!-- Tabel akan di-render secara dinamis dari file Excel asli -->
               </div>
+            </div>
 
               <!-- Format Tanda Tangan 3 Pejabat -->
               <div class="row text-center mt-5 pt-3" style="font-size: 9.5pt;">
@@ -1662,6 +1602,15 @@
               <span class="badge bg-light text-muted border">
                 Kegiatan Aktif: <strong id="lblSpjEventActive" class="text-dark">-</strong>
               </span>
+            </div>
+
+            <!-- Banner Mode Khusus: Daftar Hadir / Presensi Kegiatan (Non-Finansial) -->
+            <div id="alertSpjAttendanceNotice" class="alert alert-success border-0 shadow-sm d-flex align-items-center gap-2 mb-3 d-none">
+              <i class="bi bi-person-check-fill fs-3 text-success"></i>
+              <div>
+                <strong class="d-block text-dark">Mode Format Dokumen: Presensi / Daftar Hadir</strong>
+                <span class="small text-muted">Dokumen ini merupakan format presensi murni (tanpa kolom uang saku dan tanpa potongan pajak PPh 21). Kolom nama, NIP, pangkat/golongan, jabatan, satuan pendidikan, dan tanda tangan peserta akan otomatis disuntikkan ke dalam file Excel asli Anda.</span>
+              </div>
             </div>
 
             <!-- Card Variabel & Parameter Keuangan -->
@@ -1817,7 +1766,7 @@
 
               <div class="table-responsive">
                 <table class="spj-table align-middle" id="tablePreviewSpj">
-                  <thead>
+                  <thead id="theadPreviewSpj">
                     <tr>
                       <th style="width: 30px;" class="no-print text-center">
                         <input type="checkbox" id="checkSpjSelectHeader" class="form-check-input" checked onchange="toggleSelectAllSpj(this.checked)" title="Pilih Semua">
@@ -1839,7 +1788,7 @@
                   <tbody id="tbodyPreviewSpj">
                     <!-- Baris data di-generate via JavaScript -->
                   </tbody>
-                  <tfoot>
+                  <tfoot id="tfootPreviewSpj">
                     <tr class="fw-bold bg-light">
                       <td class="no-print"></td>
                       <td colspan="8" class="text-center">Jumlah Total Terpilih</td>
@@ -4171,6 +4120,169 @@
       }
     }
 
+    /**
+     * Cek apakah template berupa dokumen non-finansial (seperti Daftar Hadir / Presensi / ATK)
+     */
+    function isTemplateNonFinance(tpl) {
+      if (!tpl) return false;
+      if (tpl.metadata && tpl.metadata.hasNominal === false) return true;
+      const name = ((tpl.namaDokumen || "") + " " + (tpl.namaFileAsli || "")).toLowerCase();
+      return name.includes("hadir") || 
+             name.includes("presensi") || 
+             name.includes("absen") || 
+             name.includes("kehadiran") || 
+             name.includes("tanda terima barang") || 
+             name.includes("snack") || 
+             name.includes("konsumsi") || 
+             name.includes("atk");
+    }
+
+    /**
+     * Membaca file template asli (.xlsx) dan merender tabel lembar kerja aslinya
+     */
+    async function renderRealTemplateFormatPreview(tpl) {
+      const container = document.getElementById("containerFormatRealPreview");
+      if (!container) return;
+      const noticeEl = document.getElementById("lblFormatDocNotice");
+
+      container.innerHTML = `
+        <div class="text-center py-4">
+          <div class="spinner-border text-success spinner-border-sm" role="status"></div>
+          <div class="small text-muted mt-2">Membaca struktur file Excel asli "<strong>${escapeHtml(tpl.namaDokumen)}</strong>"...</div>
+        </div>
+      `;
+
+      try {
+        let base64 = templateBinaryCache[tpl.id] || null;
+        if (!base64 && tpl.fileId && tpl.fileId !== "DEFAULT") {
+          const resp = await callGasApi("getSpjTemplateFile", { fileId: tpl.fileId, pin: currentAdminPin });
+          if (resp && resp.success && resp.base64Data) {
+            base64 = resp.base64Data;
+            templateBinaryCache[tpl.id] = base64;
+          }
+        }
+
+        if (base64 && tpl.tipeFile === "XLSX") {
+          const wb = XLSX.read(base64, { type: "base64" });
+          const sheetName = wb.SheetNames[0];
+          const ws = wb.Sheets[sheetName];
+          if (ws) {
+            const rawHtml = XLSX.utils.sheet_to_html(ws, { id: "tableRealTemplateSheet", editable: false });
+            container.innerHTML = `
+              <div class="p-2 bg-white rounded border">
+                <div class="small text-muted mb-2 fst-italic d-flex justify-content-between align-items-center">
+                  <span><i class="bi bi-file-earmark-spreadsheet-fill text-success me-1"></i> Lembar: <strong>${escapeHtml(sheetName)}</strong> (Format Asli Excel Dinas)</span>
+                  <span class="badge bg-light text-dark border">Dibaca Dari File Asli</span>
+                </div>
+                <div class="table-responsive">
+                  ${rawHtml}
+                </div>
+              </div>
+            `;
+            const tbl = document.getElementById("tableRealTemplateSheet");
+            if (tbl) {
+              tbl.className = "table table-bordered table-sm spj-table align-middle w-100 mb-0";
+              tbl.style.fontSize = "8.5pt";
+            }
+            if (noticeEl) {
+              noticeEl.innerHTML = `<i class="bi bi-file-earmark-check-fill text-success me-1"></i> [ FORMAT ASLI FILE EXCEL: ${escapeHtml(tpl.namaFileAsli || tpl.namaDokumen)} ]`;
+            }
+            return;
+          }
+        }
+
+        renderDefaultMockFormatPreview(tpl);
+      } catch (err) {
+        console.error("Gagal membaca preview template Excel:", err);
+        renderDefaultMockFormatPreview(tpl);
+      }
+    }
+
+    function renderDefaultMockFormatPreview(tpl) {
+      const container = document.getElementById("containerFormatRealPreview");
+      if (!container) return;
+      const isNonFin = isTemplateNonFinance(tpl);
+      if (isNonFin) {
+        container.innerHTML = `
+          <table class="spj-table align-middle w-100">
+            <thead>
+              <tr>
+                <th style="width: 35px;">NO</th>
+                <th>NAMA LENGKAP &amp; GELAR</th>
+                <th style="width: 140px;">NIP</th>
+                <th style="width: 55px;">GOL</th>
+                <th>JABATAN</th>
+                <th>ASAL SEKOLAH / SATUAN PENDIDIKAN</th>
+                <th style="width: 150px;">TANDA TANGAN</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="text-muted">
+                <td class="text-center">1</td>
+                <td class="fw-semibold text-dark">[Contoh: Nama Peserta &amp; Gelar]</td>
+                <td class="text-center">198501012010011001</td>
+                <td class="text-center">IV/a</td>
+                <td>Guru Madya</td>
+                <td>SMP Negeri 1 Karanganyar</td>
+                <td style="font-size: 8pt;">1. .....................</td>
+              </tr>
+              <tr class="text-muted">
+                <td class="text-center">2</td>
+                <td class="fw-semibold text-dark">[Contoh: Nama Peserta &amp; Gelar]</td>
+                <td class="text-center">199002022015022002</td>
+                <td class="text-center">III/b</td>
+                <td>Guru Muda</td>
+                <td>SMP Negeri 2 Karanganyar</td>
+                <td style="font-size: 8pt; text-align: right;">2. .....................</td>
+              </tr>
+              <tr class="bg-light">
+                <td colspan="7" class="text-center py-2 text-muted fst-italic small">
+                  ... Kolom dan baris peserta akan terisi penuh secara otomatis dari database pendaftar kegiatan saat mengklik tombol Buat Dokumen ...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        `;
+      } else {
+        container.innerHTML = `
+          <table class="spj-table align-middle w-100">
+            <thead>
+              <tr>
+                <th style="width: 35px;">NO</th>
+                <th>NAMA LENGKAP &amp; GELAR</th>
+                <th style="width: 55px;">GOL</th>
+                <th>JABATAN</th>
+                <th>UNIT KERJA / SEKOLAH</th>
+                <th style="width: 45px;">JML</th>
+                <th style="width: 50px;">WAKTU</th>
+                <th style="width: 85px;">JASA</th>
+                <th style="width: 90px;">JUMLAH</th>
+                <th style="width: 85px;">PPH 21</th>
+                <th style="width: 95px;">PENERIMAAN</th>
+                <th style="width: 140px;">TANDA TANGAN</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="text-muted">
+                <td class="text-center">1</td>
+                <td class="fw-semibold text-dark">[Contoh: Nama Peserta &amp; Gelar]</td>
+                <td class="text-center">IV/a</td>
+                <td>Guru Madya</td>
+                <td>SMP Negeri 1 Karanganyar</td>
+                <td class="text-center">1</td>
+                <td class="text-center">hari</td>
+                <td class="text-end">Rp 200.000</td>
+                <td class="text-end">Rp 200.000</td>
+                <td class="text-end text-danger">15% (Rp 30.000)</td>
+                <td class="text-end fw-bold text-success">Rp 170.000</td>
+                <td style="font-size: 8pt;">1. .....................</td>
+              </tr>
+            </tbody>
+          </table>
+        `;
+      }
+    }
+
     function openModalViewSpjFormat(tplId) {
       if (!currentAdminPin) {
         Swal.fire("Perhatian", "Silakan login panitia terlebih dahulu.", "warning");
@@ -4216,6 +4328,7 @@
       if (prevDocHeader) prevDocHeader.innerText = (docTitle || "DAFTAR PENERIMAAN UANG SAKU").toUpperCase();
       if (prevDocSubHeader) prevDocSubHeader.innerText = currentEventName.toUpperCase();
 
+      renderRealTemplateFormatPreview(currentSelectedSpjTpl);
       switchToSpjFormatView();
 
       const modalEl = document.getElementById("modalGenerateSpj");
@@ -4249,6 +4362,7 @@
       const footerProcess = document.getElementById("footerSpjProcess");
       const titleEl = document.getElementById("modalGenerateSpjTitle");
       const btnWord = document.getElementById("btnDownloadSpjWord");
+      const btnExcel = document.getElementById("btnDownloadSpjExcel");
 
       if (boxFormat) boxFormat.classList.add("d-none");
       if (boxProcess) boxProcess.classList.remove("d-none");
@@ -4264,6 +4378,59 @@
           btnWord.classList.remove("d-none");
         } else {
           btnWord.classList.add("d-none");
+        }
+      }
+
+      // Deteksi apakah format presensi murni (Daftar Hadir)
+      const isNonFin = isTemplateNonFinance(currentSelectedSpjTpl);
+      const boxParam = document.getElementById("boxSpjParameters");
+      const alertNotice = document.getElementById("alertSpjAttendanceNotice");
+      const thead = document.getElementById("theadPreviewSpj");
+
+      if (isNonFin) {
+        if (boxParam) boxParam.classList.add("d-none");
+        if (alertNotice) alertNotice.classList.remove("d-none");
+        if (btnExcel) btnExcel.innerHTML = '<i class="bi bi-file-earmark-excel-fill me-1"></i> Download File Daftar Hadir (.xlsx)';
+        if (thead) {
+          thead.innerHTML = `
+            <tr>
+              <th style="width: 30px;" class="no-print text-center">
+                <input type="checkbox" id="checkSpjSelectHeader" class="form-check-input" checked onchange="toggleSelectAllSpj(this.checked)" title="Pilih Semua">
+              </th>
+              <th style="width: 35px;">NO</th>
+              <th>NAMA LENGKAP &amp; GELAR</th>
+              <th style="width: 140px;">NIP</th>
+              <th style="width: 55px;">GOL</th>
+              <th>JABATAN</th>
+              <th>UNIT KERJA / ASAL SEKOLAH</th>
+              <th style="width: 150px;">TANDA TANGAN</th>
+            </tr>
+          `;
+        }
+      } else {
+        if (boxParam) boxParam.classList.remove("d-none");
+        if (alertNotice) alertNotice.classList.add("d-none");
+        if (btnExcel) btnExcel.innerHTML = '<i class="bi bi-file-earmark-excel-fill me-1"></i> Download Dokumen SPJ (.xlsx)';
+        if (thead) {
+          thead.innerHTML = `
+            <tr>
+              <th style="width: 30px;" class="no-print text-center">
+                <input type="checkbox" id="checkSpjSelectHeader" class="form-check-input" checked onchange="toggleSelectAllSpj(this.checked)" title="Pilih Semua">
+              </th>
+              <th style="width: 35px;">NO</th>
+              <th>NAMA LENGKAP &amp; GELAR</th>
+              <th style="width: 50px;">GOL</th>
+              <th>JABATAN</th>
+              <th>UNIT KERJA / SEKOLAH</th>
+              <th style="width: 45px;">JML</th>
+              <th style="width: 50px;">WAKTU</th>
+              <th style="width: 85px;">JASA</th>
+              <th style="width: 90px;">JUMLAH</th>
+              <th style="width: 85px;">PPH 21</th>
+              <th style="width: 95px;">PENERIMAAN</th>
+              <th style="width: 140px;">TANDA TANGAN</th>
+            </tr>
+          `;
         }
       }
 
@@ -4498,13 +4665,19 @@
       if (!tbody) return;
 
       tbody.innerHTML = "";
+      const isNonFin = isTemplateNonFinance(currentSelectedSpjTpl);
 
       if (!participantList || participantList.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="13" class="text-center py-4 text-muted">Tidak ada peserta yang cocok dengan filter.</td></tr>';
-        document.getElementById("tdSpjTotalKotor").innerText = "Rp 0";
-        document.getElementById("tdSpjTotalPajak").innerText = "Rp 0";
-        document.getElementById("tdSpjTotalBersih").innerText = "Rp 0";
-        document.getElementById("badgeSpjSelectedCount").innerText = "0 Terpilih";
+        const colSpan = isNonFin ? 8 : 13;
+        tbody.innerHTML = `<tr><td colspan="${colSpan}" class="text-center py-4 text-muted">Tidak ada peserta yang cocok dengan filter.</td></tr>`;
+        const elKotor = document.getElementById("tdSpjTotalKotor");
+        const elPajak = document.getElementById("tdSpjTotalPajak");
+        const elBersih = document.getElementById("tdSpjTotalBersih");
+        if (elKotor) elKotor.innerText = "Rp 0";
+        if (elPajak) elPajak.innerText = "Rp 0";
+        if (elBersih) elBersih.innerText = "Rp 0";
+        const badgeCount = document.getElementById("badgeSpjSelectedCount");
+        if (badgeCount) badgeCount.innerText = "0 Terpilih";
         return;
       }
 
@@ -4536,41 +4709,80 @@
 
         const tr = document.createElement("tr");
         if (rowClass) tr.className = rowClass;
-        tr.innerHTML = `
-          <td class="no-print text-center">
-            <input type="checkbox" class="form-check-input cursor-pointer" ${isSelected ? 'checked' : ''} onchange="toggleParticipantSelection('${p.regId}')">
-          </td>
-          <td class="text-center fw-bold">${isSelected ? runningNo : '-'}</td>
-          <td class="fw-bold">
-            ${escapeHtml(p.nama)}
-            ${p.nip && p.nip !== '-' ? `<div class="text-muted small fw-normal" style="font-size: 0.72rem;">NIP. ${escapeHtml(p.nip)}</div>` : ''}
-          </td>
-          <td class="text-center">${escapeHtml(p.golongan || '-')}</td>
-          <td>${escapeHtml(p.jabatan || 'Guru')}</td>
-          <td>
-            ${escapeHtml(p.unitKerja || '-')}
-            ${p.kecamatan && p.kecamatan !== '-' ? `<span class="badge bg-light text-secondary border small ms-1">${escapeHtml(p.kecamatan)}</span>` : ''}
-          </td>
-          <td class="text-center">${p.jumlahHari}</td>
-          <td class="text-center">${escapeHtml(p.satuanWaktu)}</td>
-          <td class="text-end">Rp ${p.tarifSatuan.toLocaleString('id-ID')}</td>
-          <td class="text-end fw-semibold">Rp ${p.bruto.toLocaleString('id-ID')}</td>
-          <td class="text-end text-danger cursor-pointer" title="Klik untuk override tarif pajak" onclick="cycleTaxRate('${p.regId}')">
-            <span class="badge ${p.pph21 > 0 ? 'bg-danger-subtle text-danger border border-danger-subtle' : 'bg-light text-muted border'} me-1">${p.tarifPajakStr}</span>
-            Rp ${p.pph21.toLocaleString('id-ID')}
-          </td>
-          <td class="text-end fw-bold text-success">Rp ${p.netto.toLocaleString('id-ID')}</td>
-          <td style="height: 48px; vertical-align: middle;">${sigCellHtml}</td>
-        `;
+
+        if (isNonFin) {
+          // Format Khusus Presensi / Daftar Hadir (Tanpa kolom uang & pajak)
+          tr.innerHTML = `
+            <td class="no-print text-center">
+              <input type="checkbox" class="form-check-input cursor-pointer" ${isSelected ? 'checked' : ''} onchange="toggleParticipantSelection('${p.regId}')">
+            </td>
+            <td class="text-center fw-bold">${isSelected ? runningNo : '-'}</td>
+            <td class="fw-bold">
+              ${escapeHtml(p.nama)}
+            </td>
+            <td class="text-center">${p.nip && p.nip !== '-' ? escapeHtml(p.nip) : '-'}</td>
+            <td class="text-center">${escapeHtml(p.golongan || '-')}</td>
+            <td>${escapeHtml(p.jabatan || 'Guru')}</td>
+            <td>${escapeHtml(p.unitKerja || '-')}</td>
+            <td style="height: 48px; vertical-align: middle;">${sigCellHtml}</td>
+          `;
+        } else {
+          // Format Keuangan (Uang Saku & Transport)
+          tr.innerHTML = `
+            <td class="no-print text-center">
+              <input type="checkbox" class="form-check-input cursor-pointer" ${isSelected ? 'checked' : ''} onchange="toggleParticipantSelection('${p.regId}')">
+            </td>
+            <td class="text-center fw-bold">${isSelected ? runningNo : '-'}</td>
+            <td class="fw-bold">
+              ${escapeHtml(p.nama)}
+              ${p.nip && p.nip !== '-' ? `<div class="text-muted small fw-normal" style="font-size: 0.72rem;">NIP. ${escapeHtml(p.nip)}</div>` : ''}
+            </td>
+            <td class="text-center">${escapeHtml(p.golongan || '-')}</td>
+            <td>${escapeHtml(p.jabatan || 'Guru')}</td>
+            <td>
+              ${escapeHtml(p.unitKerja || '-')}
+            </td>
+            <td class="text-center">${p.jumlahHari}</td>
+            <td class="text-center">${escapeHtml(p.satuanWaktu)}</td>
+            <td class="text-end">Rp ${p.tarifSatuan.toLocaleString('id-ID')}</td>
+            <td class="text-end fw-semibold">Rp ${p.bruto.toLocaleString('id-ID')}</td>
+            <td class="text-end text-danger cursor-pointer" title="Klik untuk override tarif pajak" onclick="cycleTaxRate('${p.regId}')">
+              <span class="badge ${p.pph21 > 0 ? 'bg-danger-subtle text-danger border border-danger-subtle' : 'bg-light text-muted border'} me-1">${p.tarifPajakStr}</span>
+              Rp ${p.pph21.toLocaleString('id-ID')}
+            </td>
+            <td class="text-end fw-bold text-success">Rp ${p.netto.toLocaleString('id-ID')}</td>
+            <td style="height: 48px; vertical-align: middle;">${sigCellHtml}</td>
+          `;
+        }
         tbody.appendChild(tr);
 
         if (isSelected) runningNo++;
       });
 
-      // Update Total
-      document.getElementById("tdSpjTotalKotor").innerText = "Rp " + totBruto.toLocaleString('id-ID');
-      document.getElementById("tdSpjTotalPajak").innerText = "Rp " + totPajak.toLocaleString('id-ID');
-      document.getElementById("tdSpjTotalBersih").innerText = "Rp " + totNetto.toLocaleString('id-ID');
+      // Update Total Footer
+      const tfoot = document.getElementById("tfootPreviewSpj");
+      if (tfoot) {
+        if (isNonFin) {
+          tfoot.innerHTML = `
+            <tr class="fw-bold bg-light">
+              <td class="no-print"></td>
+              <td colspan="6" class="text-center">Jumlah Peserta Hadir Terpilih</td>
+              <td class="text-center text-success">${selectedCount} Orang</td>
+            </tr>
+          `;
+        } else {
+          tfoot.innerHTML = `
+            <tr class="fw-bold bg-light">
+              <td class="no-print"></td>
+              <td colspan="8" class="text-center">Jumlah Total Terpilih</td>
+              <td class="text-end" id="tdSpjTotalKotor">Rp ${totBruto.toLocaleString('id-ID')}</td>
+              <td class="text-end text-danger" id="tdSpjTotalPajak">Rp ${totPajak.toLocaleString('id-ID')}</td>
+              <td class="text-end text-success" id="tdSpjTotalBersih">Rp ${totNetto.toLocaleString('id-ID')}</td>
+              <td></td>
+            </tr>
+          `;
+        }
+      }
 
       // Update Counter
       const badgeCount = document.getElementById("badgeSpjSelectedCount");
@@ -4746,49 +4958,53 @@
         setCell(colMap.ttd, ttdVal, "s", null, "left");
       });
 
-      // Tulis Baris Total
+      // Tulis Baris Total Keuangan HANYA jika dokumen memiliki kolom keuangan
+      const hasFinancialColumns = (colMap.bruto !== -1 || colMap.tarif !== -1 || colMap.pph !== -1 || colMap.netto !== -1);
       const totalR = startDataRow + selectedList.length;
-      const totalBorder = {
-        top: { style: "thin", color: { rgb: "000000" } },
-        bottom: { style: "double", color: { rgb: "000000" } },
-        left: { style: "thin", color: { rgb: "000000" } },
-        right: { style: "thin", color: { rgb: "000000" } }
-      };
 
-      const maxColIdx = Math.max(range.e.c, colMap.ttd !== -1 ? colMap.ttd : 13);
-      for (let C = range.s.c; C <= maxColIdx; ++C) {
-        const cellAddr = XLSX.utils.encode_cell({ r: totalR, c: C });
-        ws[cellAddr] = {
+      if (hasFinancialColumns) {
+        const totalBorder = {
+          top: { style: "thin", color: { rgb: "000000" } },
+          bottom: { style: "double", color: { rgb: "000000" } },
+          left: { style: "thin", color: { rgb: "000000" } },
+          right: { style: "thin", color: { rgb: "000000" } }
+        };
+
+        const maxColIdx = Math.max(range.e.c, colMap.ttd !== -1 ? colMap.ttd : 13);
+        for (let C = range.s.c; C <= maxColIdx; ++C) {
+          const cellAddr = XLSX.utils.encode_cell({ r: totalR, c: C });
+          ws[cellAddr] = {
+            t: "s",
+            v: "",
+            s: { font: { bold: true, sz: 10 }, fill: { fgColor: { rgb: "F1F5F9" } }, border: totalBorder, alignment: { vertical: "center" } }
+          };
+        }
+
+        const totalLabelCol = colMap.nama !== -1 ? colMap.nama : 2;
+        ws[XLSX.utils.encode_cell({ r: totalR, c: totalLabelCol })] = {
           t: "s",
-          v: "",
-          s: { font: { bold: true, sz: 10 }, fill: { fgColor: { rgb: "F1F5F9" } }, border: totalBorder, alignment: { vertical: "center" } }
+          v: "JUMLAH TOTAL",
+          s: { font: { bold: true, sz: 10 }, alignment: { horizontal: "center", vertical: "center" }, border: totalBorder }
         };
-      }
 
-      const totalLabelCol = colMap.nama !== -1 ? colMap.nama : 2;
-      ws[XLSX.utils.encode_cell({ r: totalR, c: totalLabelCol })] = {
-        t: "s",
-        v: "JUMLAH TOTAL",
-        s: { font: { bold: true, sz: 10 }, alignment: { horizontal: "center", vertical: "center" }, border: totalBorder }
-      };
-
-      if (colMap.bruto !== -1) {
-        ws[XLSX.utils.encode_cell({ r: totalR, c: colMap.bruto })] = {
-          t: "n", v: totalBruto, z: "#,##0",
-          s: { font: { bold: true, sz: 10 }, alignment: { horizontal: "right", vertical: "center" }, border: totalBorder }
-        };
-      }
-      if (colMap.pph !== -1) {
-        ws[XLSX.utils.encode_cell({ r: totalR, c: colMap.pph })] = {
-          t: "n", v: totalPajak, z: "#,##0",
-          s: { font: { bold: true, sz: 10 }, alignment: { horizontal: "right", vertical: "center" }, border: totalBorder }
-        };
-      }
-      if (colMap.netto !== -1) {
-        ws[XLSX.utils.encode_cell({ r: totalR, c: colMap.netto })] = {
-          t: "n", v: totalNetto, z: "#,##0",
-          s: { font: { bold: true, sz: 10 }, alignment: { horizontal: "right", vertical: "center" }, border: totalBorder }
-        };
+        if (colMap.bruto !== -1) {
+          ws[XLSX.utils.encode_cell({ r: totalR, c: colMap.bruto })] = {
+            t: "n", v: totalBruto, z: "#,##0",
+            s: { font: { bold: true, sz: 10 }, alignment: { horizontal: "right", vertical: "center" }, border: totalBorder }
+          };
+        }
+        if (colMap.pph !== -1) {
+          ws[XLSX.utils.encode_cell({ r: totalR, c: colMap.pph })] = {
+            t: "n", v: totalPajak, z: "#,##0",
+            s: { font: { bold: true, sz: 10 }, alignment: { horizontal: "right", vertical: "center" }, border: totalBorder }
+          };
+        }
+        if (colMap.netto !== -1) {
+          ws[XLSX.utils.encode_cell({ r: totalR, c: colMap.netto })] = {
+            t: "n", v: totalNetto, z: "#,##0",
+            s: { font: { bold: true, sz: 10 }, alignment: { horizontal: "right", vertical: "center" }, border: totalBorder }
+          };
+        }
       }
 
       // Perbarui cakupan area lembar kerja
