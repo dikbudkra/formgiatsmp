@@ -590,7 +590,7 @@ function handleApiRequest_(action, payload) {
       return getSpjGeneratorData(payload.params || payload, payload.pin);
 
     case "askGemini":
-      return askGeminiAboutActiveEvent(payload.question || payload.prompt, payload.pin);
+      return askGeminiAboutActiveEvent(payload.question || payload.prompt, payload.pin, payload.targetEventIdOrName || payload.eventId);
 
     case "testGemini":
       return testGeminiConnection();
@@ -2306,7 +2306,7 @@ function getGeminiApiKey_() {
  * Tanya Jawab Data Kegiatan Aktif dengan Gemini API
  * Dibatasi secara mutlak (strict grounding) hanya menjawab berdasarkan data kegiatan aktif.
  */
-function askGeminiAboutActiveEvent(question, pin) {
+function askGeminiAboutActiveEvent(question, pin, targetEventIdOrName) {
   if (!verifyAdminPin(pin)) {
     return { success: false, message: "Akses ditolak: PIN Panitia tidak valid." };
   }
@@ -2325,7 +2325,7 @@ function askGeminiAboutActiveEvent(question, pin) {
   }
 
   try {
-    const dashData = getAdminDashboardData(pin);
+    const dashData = getAdminDashboardData(pin, targetEventIdOrName);
     if (!dashData.success) {
       return { success: false, message: "Gagal memuat data kegiatan: " + dashData.message };
     }

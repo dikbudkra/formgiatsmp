@@ -2761,8 +2761,8 @@
         const res = await callGasApi("saveEvent", { eventData, pin: currentAdminPin });
         if (res && res.success) {
           bootstrap.Modal.getInstance(document.getElementById("modalKegiatan")).hide();
-          Swal.fire({ title: "Berhasil", text: "Kegiatan berhasil disimpan!", icon: "success" });
-          loadDashboardInitial();
+          await loadDashboardInitial(false);
+          Swal.fire({ title: "Berhasil", text: "Kegiatan berhasil disimpan!", icon: "success", timer: 1800, showConfirmButton: false });
         } else {
           Swal.fire({ title: "Gagal", text: res ? res.message : "Gagal menyimpan kegiatan.", icon: "error" });
         }
@@ -2774,6 +2774,16 @@
 
     async function toggleEventStatus(eventId, curStatus) {
       const newStatus = curStatus === "BUKA" ? "TUTUP" : "BUKA";
+
+      // 1. Optimistic Update lokal seketika agar tombol power langsung berubah warna tanpa menunggu
+      if (allEventsList && allEventsList.length > 0) {
+        const ev = allEventsList.find(e => e.idKegiatan === eventId);
+        if (ev) {
+          ev.statusForm = newStatus;
+          renderManajemenKegiatan(allEventsList);
+        }
+      }
+
       Swal.fire({
         title: "Mengubah Status Formulir...",
         text: `Sedang mengubah status menjadi ${newStatus}...`,
@@ -2784,13 +2794,24 @@
       try {
         const res = await callGasApi("toggleEventStatus", { eventId, newStatus, pin: currentAdminPin });
         if (res && res.success) {
+          // Tunggu reload dashboard sampai selesai SEBELUM menutup spinner
+          await loadDashboardInitial(false);
           Swal.close();
-          loadDashboardInitial();
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: `Pendaftaran berhasil di-${newStatus === 'BUKA' ? 'BUKA' : 'TUTUP'}!`,
+            showConfirmButton: false,
+            timer: 2000
+          });
         } else {
+          await loadDashboardInitial(false);
           Swal.fire({ title: "Gagal", text: res ? res.message : "Gagal mengubah status kegiatan.", icon: "error" });
         }
       } catch (e) {
         console.error(e);
+        await loadDashboardInitial(false);
         Swal.fire({ title: "Error", text: "Terjadi kesalahan koneksi saat mengubah status.", icon: "error" });
       }
     }
@@ -2820,13 +2841,13 @@
 
         const res = await callGasApi("deleteEvent", { eventId, pin: currentAdminPin });
         if (res && res.success) {
+          await loadDashboardInitial(false);
           await Swal.fire({
             title: "Berhasil Diarsipkan!",
             text: res.message || "Kegiatan berhasil diarsipkan.",
             icon: "success",
             confirmButtonColor: "#1e3a8a"
           });
-          loadDashboardInitial();
         } else {
           Swal.fire({
             title: "Gagal",
@@ -3634,8 +3655,8 @@
         try {
           const res = await callGasApi("deleteParticipant", { regId, pin: currentAdminPin });
           if (res && res.success) {
-            Swal.fire({ title: "Terhapus", text: "Data peserta berhasil dihapus.", icon: "success" });
-            loadDashboardInitial();
+            await loadDashboardInitial(false);
+            Swal.fire({ title: "Terhapus", text: "Data peserta berhasil dihapus.", icon: "success", timer: 1800, showConfirmButton: false });
           } else {
             Swal.fire({ title: "Gagal", text: res ? res.message : "Gagal menghapus peserta.", icon: "error" });
           }
@@ -5061,16 +5082,19 @@
       html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
       html = html.replace(/__([^_]+)__/g, '<strong>$1</strong>');
 
-      // Italic *text*
-      html = html.replace(/(^|[^\*])\*([^\*]+)\*([^\*]|$)/g, '$1<em>$2</em>$3');
-
-      // Bullet lists
-      html = html.replace(/(?:^|\n)[ \t]*[*\-•][ \t]+(.+)/g, '<li class="ms-3 mb-1">$1</li>');
+      // Bullet lists (Jalankan sebelum italic agar tidak bentrok)
+      html = html.replace(/(?:^|\n)[ \t]*[*\\-•][ \t]+(.+)/g, '<li class="ms-3 mb-1"><i class="bi bi-arrow-right-short text-primary me-1"></i>$1</li>');
       // Numbered lists
-      html = html.replace(/(?:^|\n)[ \t]*(\d+)\.[ \t]+(.+)/g, '<li class="ms-3 mb-1"><span class="fw-bold">$1.</span> $2</li>');
+      html = html.replace(/(?:^|\n)[ \t]*(\d+)\.[ \t]+(.+)/g, '<li class="ms-3 mb-1"><span class="badge bg-light text-primary border me-1.5 fw-bold">$1.</span> $2</li>');
 
-      // Wrap consecutive <li> into <ul>
-      html = html.replace(/(<li[\s\S]*?<\/li>)+/g, '<ul class="ps-1 my-2 list-unstyled">$0</ul>');
+      // Bungkus tag <li> yang berurutan ke dalam <ul> dengan callback function (BUKAN $0 yang menyebabkan literal '$0' di JS)
+      html = html.replace(/(?:<li[\s\S]*?<\/li>\s*)+/g, (match) => {
+        const cleanLis = match.replace(/[\r\n]+/g, '').trim();
+        return '<ul class="ps-1 my-2 list-unstyled">' + cleanLis + '</ul>';
+      });
+
+      // Italic *text* (Hanya jika mengapit kata tanpa spasi liar)
+      html = html.replace(/(^|\s)\*([^\*\s][^\*]*[^\*\s]|[^\*\s])\*(\s|$)/g, '$1<em>$2</em>$3');
 
       // Line breaks
       html = html.replace(/\n{2,}/g, '<div class="my-2"></div>');
@@ -5128,7 +5152,7 @@
       container.scrollTop = container.scrollHeight;
 
       try {
-        const res = await callGasApi("askGemini", { question: q, pin: currentAdminPin });
+        const res = await callGasApi("askGemini", { question: q, pin: currentAdminPin, targetEventIdOrName: activeEventId });
         const loadEl = document.getElementById(loadingId);
         if (loadEl) {
           const respTime = new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) + " WIB";
