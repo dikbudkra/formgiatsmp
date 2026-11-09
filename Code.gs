@@ -2776,7 +2776,6 @@ function getSpjGeneratorData(params, pin) {
       };
     }
 
-    const p = params || {};
     const nominalPerHari = parseFloat(p.nominalPerHari) || 200000;
     const jumlahHari = parseInt(p.jumlahHari, 10) || 1;
     const satuanWaktu = p.satuanWaktu || "hari";
