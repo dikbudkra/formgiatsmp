@@ -1283,6 +1283,47 @@
             </button>
           </div>
         </div>
+
+        <!-- Pengaturan Pop-up Pengumuman Informasi Awal Formulir Publik -->
+        <div class="col-12">
+          <div class="card card-modern p-4 shadow-sm border">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+              <div class="d-flex align-items-center gap-2.5">
+                <div class="bg-primary-subtle text-primary p-2.5 rounded-3">
+                  <i class="bi bi-megaphone-fill fs-5"></i>
+                </div>
+                <div>
+                  <h5 class="fw-bold text-dark mb-0">Pop-up Pengumuman Formulir Publik</h5>
+                  <p class="text-muted small mb-0">Tampilkan pesan penting/instruksi kedinasan kepada peserta saat pertama kali membuka link formulir pendaftaran</p>
+                </div>
+              </div>
+              <div class="form-check form-switch fs-4 m-0 d-flex align-items-center gap-2">
+                <input class="form-check-input cursor-pointer" type="checkbox" id="switchPopupInfo" onchange="togglePopupDetails(this.checked)">
+                <label class="form-check-label fs-6 fw-bold" for="switchPopupInfo" id="lblSwitchPopupStatus">NONAKTIF / OFF</label>
+              </div>
+            </div>
+
+            <div id="boxSettingPopupDetails" class="p-3 bg-light rounded-3 border">
+              <div class="mb-3">
+                <label for="inputPopupJudul" class="form-label small fw-bold">Judul Pop-up Pengumuman</label>
+                <input type="text" class="form-control" id="inputPopupJudul" placeholder="Contoh: Pengumuman Penting Panitia">
+              </div>
+              <div class="mb-3">
+                <label for="inputPopupPesan" class="form-label small fw-bold">Isi Pesan Pengumuman</label>
+                <textarea class="form-control" id="inputPopupPesan" rows="3" placeholder="Tuliskan kata-kata pengumuman yang wajib dibaca peserta saat membuka link formulir..."></textarea>
+                <div class="form-text small text-muted mt-1">Pesan ini akan langsung muncul sebagai jendela dialog saat peserta membuka formulir pendaftaran (jika saklar di atas dalam posisi AKTIF).</div>
+              </div>
+              <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 pt-2 border-top">
+                <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3" onclick="previewPopupAnnouncement()">
+                  <i class="bi bi-eye-fill me-1"></i> Uji Coba Tampilan Pop-up
+                </button>
+                <button type="button" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm" id="btnSavePopupSettings" onclick="handleSavePopupSettings()">
+                  <i class="bi bi-check-circle-fill me-1"></i> Simpan Pengumuman
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -2182,6 +2223,9 @@
       if (tabId === "tabDokumenSpj") {
         loadSpjTemplates();
       }
+      if (tabId === "tabPengaturan") {
+        if (typeof populatePopupSettingsUI === "function") populatePopupSettingsUI();
+      }
     }
 
     /**
@@ -2216,6 +2260,7 @@
           renderMatriksKaos(res.participants || []);
           renderMonitoringSekolah(res);
           renderSpjPreview(res);
+          if (typeof populatePopupSettingsUI === "function") populatePopupSettingsUI();
         } else if (showLoadingModal) {
           Swal.fire({ title: "Gagal", text: res ? res.message : "Gagal memuat dashboard.", icon: "error" });
         }
@@ -5365,6 +5410,121 @@
         loadDashboardInitial();
       } catch (err) {
         Swal.fire({ title: "Gagal Setup", text: err.toString(), icon: "error" });
+      }
+    }
+
+    /**
+     * Manajemen Pop-up Pengumuman Informasi Awal Formulir Publik
+     */
+    function togglePopupDetails(isChecked) {
+      const lbl = document.getElementById("lblSwitchPopupStatus");
+      if (lbl) {
+        lbl.innerText = isChecked ? "AKTIF / ON" : "NONAKTIF / OFF";
+        lbl.className = isChecked ? "form-check-label fs-6 fw-bold text-success" : "form-check-label fs-6 fw-bold text-muted";
+      }
+      const box = document.getElementById("boxSettingPopupDetails");
+      if (box) {
+        box.style.opacity = isChecked ? "1" : "0.6";
+      }
+    }
+
+    function previewPopupAnnouncement() {
+      const judul = document.getElementById("inputPopupJudul")?.value.trim() || "Pengumuman Penting Panitia";
+      const pesan = document.getElementById("inputPopupPesan")?.value.trim() || "Selamat datang di formulir pendaftaran kegiatan Dinas Pendidikan dan Kebudayaan Kabupaten Karanganyar.";
+
+      Swal.fire({
+        title: judul,
+        text: pesan,
+        icon: "info",
+        confirmButtonText: "Saya Mengerti",
+        confirmButtonColor: "#1e3a8a"
+      });
+    }
+
+    function populatePopupSettingsUI() {
+      const s = currentDashboardData?.settings || {};
+      const sw = document.getElementById("switchPopupInfo");
+      const inJudul = document.getElementById("inputPopupJudul");
+      const inPesan = document.getElementById("inputPopupPesan");
+
+      if (sw) {
+        const isAktif = (s.MODUL_POPUP_INFO === "ON");
+        sw.checked = isAktif;
+        togglePopupDetails(isAktif);
+      }
+      if (inJudul) inJudul.value = s.POPUP_INFO_JUDUL || "Pengumuman Penting Panitia";
+      if (inPesan) inPesan.value = s.POPUP_INFO_PESAN || "Selamat datang di formulir pendaftaran kegiatan Dinas Pendidikan dan Kebudayaan Kabupaten Karanganyar.";
+    }
+
+    async function handleSavePopupSettings() {
+      if (!currentAdminPin) {
+        Swal.fire("Perhatian", "Silakan login panitia terlebih dahulu.", "warning");
+        return;
+      }
+
+      const sw = document.getElementById("switchPopupInfo");
+      const inJudul = document.getElementById("inputPopupJudul");
+      const inPesan = document.getElementById("inputPopupPesan");
+
+      const isChecked = sw ? sw.checked : false;
+      const judul = inJudul ? inJudul.value.trim() : "Pengumuman Penting Panitia";
+      const pesan = inPesan ? inPesan.value.trim() : "";
+
+      const btn = document.getElementById("btnSavePopupSettings");
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Menyimpan...';
+      }
+
+      Swal.fire({
+        title: "Menyimpan Pengumuman...",
+        text: "Memperbarui konfigurasi pop-up pengumuman di basis data...",
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+      });
+
+      try {
+        const payload = {
+          settings: {
+            MODUL_POPUP_INFO: isChecked ? "ON" : "OFF",
+            POPUP_INFO_JUDUL: judul,
+            POPUP_INFO_PESAN: pesan
+          },
+          pin: currentAdminPin
+        };
+
+        const res = await callGasApi("saveSettings", payload);
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> Simpan Pengumuman';
+        }
+
+        if (res && res.success) {
+          if (currentDashboardData && currentDashboardData.settings) {
+            currentDashboardData.settings.MODUL_POPUP_INFO = isChecked ? "ON" : "OFF";
+            currentDashboardData.settings.POPUP_INFO_JUDUL = judul;
+            currentDashboardData.settings.POPUP_INFO_PESAN = pesan;
+          }
+          await loadDashboardInitial(false);
+          populatePopupSettingsUI();
+          Swal.fire({
+            icon: "success",
+            title: "Pengumuman Berhasil Disimpan!",
+            text: isChecked 
+              ? "Pop-up Pengumuman kini AKTIF dan akan langsung tampil saat peserta membuka formulir pendaftaran."
+              : "Pop-up Pengumuman telah DINONAKTIFKAN (OFF). Peserta tidak akan melihat pop-up saat membuka formulir.",
+            timer: 2500,
+            showConfirmButton: false
+          });
+        } else {
+          Swal.fire("Gagal", (res ? res.message : "Gagal menyimpan pengumuman."), "error");
+        }
+      } catch (err) {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> Simpan Pengumuman';
+        }
+        Swal.fire("Error", "Terjadi kesalahan saat menyimpan pengaturan: " + err.message, "error");
       }
     }
 
