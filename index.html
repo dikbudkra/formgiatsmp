@@ -457,7 +457,7 @@
             </label>
             <div class="input-group">
               <span class="input-group-text bg-light text-muted"><i class="bi bi-search"></i></span>
-              <input type="text" class="form-control" id="schoolSearchInput" placeholder="Ketik nama sekolah atau NPSN (Contoh: SMPN 1 Karanganyar)..." autocomplete="off" oninput="handleSchoolSearchInput(this.value)">
+              <input type="text" class="form-control" id="schoolSearchInput" autocomplete="off" oninput="handleSchoolSearchInput(this.value)">
               <button class="btn btn-outline-secondary" type="button" onclick="toggleSchoolDropdown()" title="Tampilkan / Sembunyikan Daftar Sekolah">
                 <i class="bi bi-chevron-down"></i>
               </button>
@@ -489,7 +489,7 @@
               <label class="form-label fw-bold text-dark" for="inputNamaOpd">
                 Nama OPD / Dinas / Lembaga / Instansi Tamu <span class="text-danger">*</span>
               </label>
-              <input type="text" class="form-control" id="inputNamaOpd" placeholder="Contoh: Bappeda / Dinas Kesehatan / Setda / Diskominfo / BPBD / Kemenag" oninput="handleOpdInputChange()">
+              <input type="text" class="form-control" id="inputNamaOpd" oninput="handleOpdInputChange()">
               <div class="form-text small">Tuliskan nama instansi, dinas, atau lembaga asal tamu secara lengkap.</div>
             </div>
           </div>
@@ -528,7 +528,8 @@
             <!-- Dynamic NIP for ASN (PNS & PPPK) -->
             <div class="col-md-6 d-none" id="boxNip">
               <label class="form-label" for="inputNip">NIP (Nomor Induk Pegawai) <span class="text-danger">*</span></label>
-              <input type="text" class="form-control" id="inputNip" name="nip" placeholder="Contoh: 198501012010011001" maxlength="25">
+              <input type="text" class="form-control" id="inputNip" name="nip" maxlength="25" inputmode="numeric" oninput="this.value = this.value.replace(/\D/g, '')">
+              <div class="form-text small text-muted">Hanya angka tanpa spasi.</div>
             </div>
 
             <!-- Pilihan Golongan Khusus PNS -->
@@ -566,32 +567,14 @@
 
             <!-- Pilihan Golongan Khusus PPPK -->
             <div class="col-md-6 d-none" id="boxGolonganPppk">
-              <label class="form-label" for="selectGolonganPppk">Golongan / Jenjang (PPPK) <span class="text-danger">*</span></label>
+              <label class="form-label" for="selectGolonganPppk">Golongan (PPPK) <span class="text-danger">*</span></label>
               <select class="form-select" id="selectGolonganPppk" onchange="handleGolonganChange(this.value)">
                 <option value="">-- Pilih Golongan PPPK --</option>
-                <optgroup label="Jenjang Ahli (PPPK)">
-                  <option value="Golongan IX|Ahli Pertama">Golongan IX - Ahli Pertama</option>
-                  <option value="Golongan X|Ahli Pertama">Golongan X - Ahli Pertama</option>
-                  <option value="Golongan XI|Ahli Muda">Golongan XI - Ahli Muda</option>
-                  <option value="Golongan XIV|Ahli Madya">Golongan XIV - Ahli Madya</option>
-                </optgroup>
-                <optgroup label="Jenjang Terampil &amp; Pelaksana (PPPK)">
-                  <option value="Golongan VII|Terampil">Golongan VII - Terampil</option>
-                  <option value="Golongan VIII|Terampil">Golongan VIII - Terampil</option>
-                  <option value="Golongan VI|Terampil">Golongan VI - Terampil</option>
-                  <option value="Golongan V|Pelaksana">Golongan V - Pelaksana</option>
-                </optgroup>
-                <optgroup label="Golongan PPPK Lainnya">
-                  <option value="Golongan I|PPPK">Golongan I</option>
-                  <option value="Golongan II|PPPK">Golongan II</option>
-                  <option value="Golongan III|PPPK">Golongan III</option>
-                  <option value="Golongan IV|PPPK">Golongan IV</option>
-                  <option value="Golongan XII|PPPK">Golongan XII</option>
-                  <option value="Golongan XIII|PPPK">Golongan XIII</option>
-                  <option value="Golongan XV|PPPK">Golongan XV</option>
-                  <option value="Golongan XVI|PPPK">Golongan XVI</option>
-                  <option value="Golongan XVII|PPPK">Golongan XVII</option>
-                </optgroup>
+                <option value="Golongan V">Golongan V</option>
+                <option value="Golongan VI">Golongan VI</option>
+                <option value="Golongan VII">Golongan VII</option>
+                <option value="Golongan IX">Golongan IX</option>
+                <option value="Golongan XI">Golongan XI</option>
               </select>
             </div>
 
@@ -609,7 +592,7 @@
               <label class="form-label" for="inputNamaLengkap">
                 Nama Lengkap &amp; Gelar <span class="text-danger">*</span>
               </label>
-              <input type="text" class="form-control" id="inputNamaLengkap" name="namaLengkap" placeholder="Contoh: Drs. Budi Santoso, M.Pd." required>
+              <input type="text" class="form-control" id="inputNamaLengkap" name="namaLengkap" required>
               <div class="form-text">Tuliskan nama lengkap beserta gelar resmi untuk keperluan sertifikat &amp; administrasi SPJ.</div>
             </div>
 
@@ -684,9 +667,9 @@
               </label>
               <div class="input-group">
                 <span class="input-group-text bg-light"><i class="bi bi-whatsapp text-success"></i></span>
-                <input type="tel" class="form-control" id="inputNoWa" name="noWa" placeholder="Contoh: 081234567890" required oninput="formatWhatsAppNumber(this)">
+                <input type="tel" class="form-control" id="inputNoWa" name="noWa" placeholder="08xx" maxlength="13" inputmode="numeric" required oninput="formatPhoneNumberInput(this)">
               </div>
-              <div class="form-text">Pastikan aktif untuk menerima E-Ticket dan info penting panitia.</div>
+              <div class="form-text small text-muted">Awali 08, hanya angka, maksimal 13 digit.</div>
             </div>
 
             <!-- Modul Kontak Darurat (Dinamis ON/OFF) -->
@@ -694,11 +677,12 @@
               <div class="row g-2">
                 <div class="col-6">
                   <label class="form-label" for="inputDaruratNama">Kontak Darurat (Nama)</label>
-                  <input type="text" class="form-control" id="inputDaruratNama" name="kontakDaruratNama" placeholder="Nama kerabat/keluarga">
+                  <input type="text" class="form-control" id="inputDaruratNama" name="kontakDaruratNama">
                 </div>
                 <div class="col-6">
                   <label class="form-label" for="inputDaruratHp">No. HP Darurat</label>
-                  <input type="tel" class="form-control" id="inputDaruratHp" name="kontakDaruratHp" placeholder="08xxxxxxxxxx">
+                  <input type="tel" class="form-control" id="inputDaruratHp" name="kontakDaruratHp" placeholder="08xx" maxlength="13" inputmode="numeric" oninput="formatPhoneNumberInput(this)">
+                  <div class="form-text small text-muted" style="font-size: 0.72rem;">Awali 08, maks 13 digit.</div>
                 </div>
               </div>
             </div>
@@ -715,7 +699,7 @@
               <label class="form-label" for="inputRiwayatKesehatan">
                 Catatan Penyakit Khusus / Alergi Makanan / Kondisi Medis
               </label>
-              <textarea class="form-control" id="inputRiwayatKesehatan" name="riwayatPenyakit" rows="2" placeholder="Tuliskan jika memiliki riwayat asma, maag kronis, diabetes, hipertensi, atau alergi makanan tertentu..."></textarea>
+              <textarea class="form-control" id="inputRiwayatKesehatan" name="riwayatPenyakit" rows="2"></textarea>
             </div>
           </div>
 
@@ -1298,13 +1282,18 @@
       }
     }
 
-    function formatWhatsAppNumber(input) {
-      let val = input.value.replace(/[^0-9]/g, "");
+    function formatPhoneNumberInput(input) {
+      if (!input) return;
+      let val = input.value.replace(/\D/g, "");
       if (val.startsWith("62")) {
         val = "0" + val.substring(2);
       }
+      if (val.length > 13) {
+        val = val.substring(0, 13);
+      }
       input.value = val;
     }
+    const formatWhatsAppNumber = formatPhoneNumberInput;
 
     /**
      * Kirim Formulir Pendaftaran (Submit Form)
@@ -1336,12 +1325,25 @@
         return;
       }
 
-      // Validasi Status Kepegawaian & Golongan
+      // Validasi Status Kepegawaian, NIP & Golongan
       const statusPegawai = document.querySelector('input[name="statusKepegawaian"]:checked')?.value || "Non-ASN";
       let golonganVal = "-";
       let pangkatVal = "-";
+      const nipInput = document.getElementById("inputNip");
+      const cleanNip = nipInput ? nipInput.value.replace(/\D/g, "").trim() : "";
 
       if (statusPegawai === "PNS") {
+        if (!cleanNip) {
+          Swal.fire({
+            title: "NIP PNS Belum Diisi",
+            text: "Silakan isi NIP Anda berupa angka tanpa spasi.",
+            icon: "warning",
+            confirmButtonColor: "#1e3a8a"
+          });
+          nipInput?.focus();
+          return;
+        }
+
         const pnsVal = document.getElementById("selectGolonganPns")?.value || "";
         if (!pnsVal) {
           Swal.fire({
@@ -1356,19 +1358,58 @@
         golonganVal = pnsVal.split("|")[0];
         pangkatVal = pnsVal.split("|")[1] || "-";
       } else if (statusPegawai === "PPPK") {
+        if (!cleanNip) {
+          Swal.fire({
+            title: "NIP PPPK Belum Diisi",
+            text: "Silakan isi NIP Anda berupa angka tanpa spasi.",
+            icon: "warning",
+            confirmButtonColor: "#1e3a8a"
+          });
+          nipInput?.focus();
+          return;
+        }
+
         const pppkVal = document.getElementById("selectGolonganPppk")?.value || "";
         if (!pppkVal) {
           Swal.fire({
             title: "Golongan PPPK Belum Dipilih",
-            text: "Silakan pilih Golongan / Jenjang PPPK Anda terlebih dahulu.",
+            text: "Silakan pilih Golongan PPPK Anda terlebih dahulu.",
             icon: "warning",
             confirmButtonColor: "#1e3a8a"
           });
           document.getElementById("selectGolonganPppk")?.focus();
           return;
         }
-        golonganVal = pppkVal.split("|")[0];
-        pangkatVal = pppkVal.split("|")[1] || "-";
+        golonganVal = pppkVal;
+        pangkatVal = "-";
+      }
+
+      // Validasi Nomor WhatsApp (08xxxx, 10-13 digit)
+      const noWa = (document.getElementById("inputNoWa")?.value || "").replace(/\D/g, "").trim();
+      if (!noWa.startsWith("08") || noWa.length < 10 || noWa.length > 13) {
+        Swal.fire({
+          title: "Nomor WhatsApp Tidak Valid",
+          text: "Nomor WhatsApp harus diawali '08' dan terdiri dari 10 sampai 13 digit angka tanpa spasi.",
+          icon: "warning",
+          confirmButtonColor: "#1e3a8a"
+        });
+        document.getElementById("inputNoWa")?.focus();
+        return;
+      }
+
+      // Validasi Nomor HP Kontak Darurat (Bila diisi: 08xxxx, maks 13 digit)
+      const noDarurat = (document.getElementById("inputDaruratHp")?.value || "").replace(/\D/g, "").trim();
+      if (noDarurat) {
+        if (!noDarurat.startsWith("08") || noDarurat.length < 10 || noDarurat.length > 13) {
+          Swal.fire({
+            title: "Nomor HP Darurat Tidak Valid",
+            text: "Nomor HP Darurat harus diawali '08' dan terdiri dari 10 sampai 13 digit angka tanpa spasi.",
+            icon: "warning",
+            confirmButtonColor: "#1e3a8a"
+          });
+          document.getElementById("inputDaruratHp")?.focus();
+          return;
+        }
       }
 
       // Kumpulkan Payload Form
@@ -1382,17 +1423,17 @@
         kategoriUnit: isOpd ? "LAIN" : "SMP",
         statusKepegawaian: statusPegawai,
         jabatan: document.getElementById("inputJabatan").value.trim(),
-        nip: document.getElementById("inputNip").value.trim() || "-",
+        nip: (statusPegawai === "PNS" || statusPegawai === "PPPK") ? cleanNip : "-",
         golongan: golonganVal,
         pangkat: pangkatVal,
         namaLengkap: document.getElementById("inputNamaLengkap").value.trim(),
         jenisKelamin: document.querySelector('input[name="jenisKelamin"]:checked')?.value || "Laki-laki",
         ukuranKaos: document.querySelector('input[name="ukuranKaos"]:checked')?.value || "L",
         panjangLengan: document.querySelector('input[name="panjangLengan"]:checked')?.value || "Lengan Pendek",
-        noWa: document.getElementById("inputNoWa").value.trim(),
-        kontakDaruratNama: document.getElementById("inputDaruratNama").value.trim(),
-        kontakDaruratHp: document.getElementById("inputDaruratHp").value.trim(),
-        riwayatPenyakit: document.getElementById("inputRiwayatKesehatan").value.trim()
+        noWa: noWa,
+        kontakDaruratNama: document.getElementById("inputDaruratNama").value.trim() || "-",
+        kontakDaruratHp: noDarurat || "-",
+        riwayatPenyakit: document.getElementById("inputRiwayatKesehatan").value.trim() || "-"
       };
 
       // Tampilkan Loading SweetAlert
