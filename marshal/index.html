@@ -437,7 +437,7 @@
     <!-- Active Event Switcher in Topbar -->
     <div class="ms-auto d-flex align-items-center gap-2">
       <div class="d-flex align-items-center gap-1.5 bg-light px-2.5 py-1 rounded-pill border">
-        <i class="bi bi-calendar2-check-fill text-primary small"></i>
+        <i class="bi bi-calendar2-check-fill text-primary small" id="iconTopbarCalendar"></i>
         <select class="form-select form-select-sm border-0 bg-transparent fw-bold text-dark py-0 pe-4" id="selectTopbarEvent" onchange="handleEventSwitch(this.value)" style="box-shadow: none; font-size: 0.85rem; max-width: 260px;">
           <option value="">Memuat Kegiatan...</option>
         </select>
@@ -1878,7 +1878,7 @@
           currentAdminPin = pin;
           document.getElementById("lockscreenOverlay").style.display = "none";
           initInactivityWatcher();
-          loadDashboardInitial();
+          loadDashboardInitial(true);
         } else if (res && res.locked) {
           Swal.fire({
             title: "Akses Terkunci!",
@@ -1914,7 +1914,7 @@
           currentAdminPin = pin;
           document.getElementById("lockscreenOverlay").style.display = "none";
           initInactivityWatcher();
-          loadDashboardInitial();
+          loadDashboardInitial(true);
         } else {
           sessionStorage.removeItem("marshal_pin");
         }
@@ -2123,9 +2123,19 @@
     /**
      * Memuat Data Dashboard Awal
      */
-    async function loadDashboardInitial() {
+    async function loadDashboardInitial(showLoadingModal = false) {
+      if (showLoadingModal) {
+        Swal.fire({
+          title: "Memuat Dashboard Panitia...",
+          text: "Sedang mengambil data kegiatan dan peserta...",
+          allowOutsideClick: false,
+          didOpen: () => { Swal.showLoading(); }
+        });
+      }
+
       try {
         const res = await callGasApi("getAdminDashboard", { pin: currentAdminPin });
+        if (showLoadingModal) Swal.close();
         if (res && res.success) {
           currentDashboardData = res;
           allEventsList = res.allEvents || [];
@@ -2137,9 +2147,12 @@
           renderMatriksKaos(res.participants || []);
           renderMonitoringSekolah(res);
           renderSpjPreview(res);
+        } else if (showLoadingModal) {
+          Swal.fire({ title: "Gagal", text: res ? res.message : "Gagal memuat dashboard.", icon: "error" });
         }
       } catch (err) {
         console.error("Gagal loadDashboardInitial:", err);
+        if (showLoadingModal) Swal.fire({ title: "Error", text: "Terjadi gangguan koneksi saat memuat dashboard.", icon: "error" });
       }
     }
 
@@ -2189,8 +2202,29 @@
     async function handleEventSwitch(eventId) {
       if (!eventId) return;
       activeEventId = eventId;
+
+      const selectTopbar = document.getElementById("selectTopbarEvent");
+      const iconCal = document.getElementById("iconTopbarCalendar");
+      if (selectTopbar) {
+        selectTopbar.value = eventId;
+        selectTopbar.disabled = true;
+      }
+      if (iconCal) {
+        iconCal.className = "spinner-border spinner-border-sm text-primary";
+        iconCal.style.width = "0.85rem";
+        iconCal.style.height = "0.85rem";
+      }
+
+      Swal.fire({
+        title: "Memuat Data Kegiatan...",
+        text: "Sedang mengambil data peserta dan presensi kegiatan...",
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+      });
+
       try {
         const res = await callGasApi("getAdminDashboard", { pin: currentAdminPin, targetEventIdOrName: eventId });
+        Swal.close();
         if (res && res.success) {
           currentDashboardData = res;
           renderDashboardStats(res);
@@ -2198,9 +2232,36 @@
           renderMatriksKaos(res.participants || []);
           renderMonitoringSekolah(res);
           renderSpjPreview(res);
+
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: `Beralih ke kegiatan: ${res.settings?.NAMA_KEGIATAN || eventId}`,
+            showConfirmButton: false,
+            timer: 1800
+          });
+        } else {
+          Swal.fire({
+            title: "Gagal Memuat Kegiatan",
+            text: res ? res.message : "Tidak dapat mengambil data kegiatan.",
+            icon: "error"
+          });
         }
       } catch (e) {
         console.error("Gagal switch event:", e);
+        Swal.fire({
+          title: "Gangguan Jaringan",
+          text: "Terjadi kesalahan saat memuat data kegiatan: " + (e.message || e.toString()),
+          icon: "error"
+        });
+      } finally {
+        if (selectTopbar) selectTopbar.disabled = false;
+        if (iconCal) {
+          iconCal.className = "bi bi-calendar2-check-fill text-primary small";
+          iconCal.style.width = "";
+          iconCal.style.height = "";
+        }
       }
     }
 
@@ -2424,11 +2485,31 @@
 
     async function executeManualCheckIn() {
       const input = document.getElementById("inputManualCheckIn");
+      const btn = document.querySelector('button[onclick="executeManualCheckIn()"]');
       const val = input.value.trim();
-      if (!val) return;
+      if (!val) {
+        Swal.fire({
+          icon: "warning",
+          title: "Input Kosong",
+          text: "Silakan masukkan ID Registrasi atau NIP peserta terlebih dahulu."
+        });
+        return;
+      }
 
-      await onQrScanSuccess(val);
-      input.value = "";
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Memproses...';
+      }
+
+      try {
+        await onQrScanSuccess(val);
+        input.value = "";
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="bi bi-check2-circle me-1"></i> Presensi';
+        }
+      }
     }
 
     function addRecentScanHistory(data, already) {
@@ -3050,7 +3131,16 @@
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Rekapitulasi Lengkap");
       const cleanEventName = (activeEventId || "Kegiatan").replace(/[/\\?%*:|"<>]/g, "");
-      XLSX.writeFile(wb, `Rekapitulasi-Lengkap-${cleanEventName}-${new Date().toISOString().slice(0, 10)}.xlsx`);
+      const fileName = `Rekapitulasi-Lengkap-${cleanEventName}-${new Date().toISOString().slice(0, 10)}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: `File diunduh: ${fileName}`,
+        showConfirmButton: false,
+        timer: 2000
+      });
     }
 
     function exportKaosToExcel() {
@@ -3068,10 +3158,19 @@
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `Rekapitulasi-Lengkap-${activeEventId || "Kegiatan"}-${new Date().toISOString().slice(0, 10)}.csv`;
+      const fileName = `Rekapitulasi-Lengkap-${activeEventId || "Kegiatan"}-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.download = fileName;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: `File diunduh: ${fileName}`,
+        showConfirmButton: false,
+        timer: 2000
+      });
     }
 
     /**
@@ -3216,7 +3315,16 @@
       const ws = XLSX.utils.json_to_sheet(participants);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Peserta");
-      XLSX.writeFile(wb, `Data-Peserta-${activeEventId || "Export"}.xlsx`);
+      const fileName = `Data-Peserta-${activeEventId || "Export"}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: `File diunduh: ${fileName}`,
+        showConfirmButton: false,
+        timer: 2000
+      });
     }
 
     function exportParticipantsToCSV() {
@@ -3226,8 +3334,17 @@
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
-      link.download = `Data-Peserta-${activeEventId || "Export"}.csv`;
+      const fileName = `Data-Peserta-${activeEventId || "Export"}.csv`;
+      link.download = fileName;
       link.click();
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: `File diunduh: ${fileName}`,
+        showConfirmButton: false,
+        timer: 2000
+      });
     }
 
     /**
