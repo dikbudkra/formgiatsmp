@@ -439,8 +439,7 @@
       <div class="d-inline-flex align-items-center gap-2 px-3 py-1 bg-primary-subtle text-primary border border-primary-subtle rounded-pill shadow-xs text-truncate">
         <i class="bi bi-award-fill text-primary"></i>
         <span class="text-secondary small fw-medium d-none d-lg-inline">Kegiatan Aktif:</span>
-        <span class="fw-bold text-truncate" id="topbarActiveEventTitle" style="max-width: 420px;">Memuat Kegiatan...</span>
-        <span class="badge rounded-pill bg-success text-white" id="topbarActiveEventBadgeStatus" style="font-size: 0.68rem;">BUKA</span>
+        <span class="fw-bold text-truncate" id="topbarActiveEventTitle" style="max-width: 450px;">Memuat Kegiatan...</span>
       </div>
     </div>
 
@@ -2205,23 +2204,13 @@
     /**
      * Tampilan Judul Kegiatan Aktif di Topbar (Tempat Kosong Diatas)
      */
-    function updateTopbarActiveEventDisplay(eventName, eventStatus) {
+    function updateTopbarActiveEventDisplay(eventName) {
       const titleEl = document.getElementById("topbarActiveEventTitle");
-      const badgeEl = document.getElementById("topbarActiveEventBadgeStatus");
       const cleanName = eventName || "Belum Ada Kegiatan";
 
       if (titleEl) {
         titleEl.textContent = cleanName;
         titleEl.title = `Kegiatan Aktif: ${cleanName}`;
-      }
-      if (badgeEl) {
-        if (eventStatus) {
-          badgeEl.textContent = eventStatus;
-          badgeEl.className = `badge rounded-pill ${eventStatus === 'BUKA' ? 'bg-success text-white' : 'bg-danger text-white'}`;
-          badgeEl.style.display = "";
-        } else {
-          badgeEl.style.display = "none";
-        }
       }
     }
 
