@@ -3974,15 +3974,6 @@
               <button class="btn btn-primary btn-sm fw-bold flex-grow-1 shadow-sm" onclick="openModalViewSpjFormat('${tpl.id}')">
                 <i class="bi bi-eye-fill me-1"></i> Lihat Dokumen
               </button>
-              ${!isDefault ? `
-                <button class="btn btn-outline-danger btn-sm" onclick="confirmDeleteSpjTemplate('${tpl.id}', '${escapeHtml(tpl.namaDokumen)}')" title="Hapus Template">
-                  <i class="bi bi-trash"></i>
-                </button>
-              ` : `
-                <button class="btn btn-outline-secondary btn-sm disabled" title="Template Bawaan Sistem">
-                  <i class="bi bi-lock-fill"></i>
-                </button>
-              `}
             </div>
           </div>
         `;

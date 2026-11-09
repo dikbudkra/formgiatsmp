@@ -2619,7 +2619,8 @@ function getSpjFolder_() {
 }
 
 /**
- * Sinkronisasi otomatis file yang diupload manual ke Google Drive folder SPJ
+ * Sinkronisasi otomatis file yang ada di Google Drive folder SPJ
+ * Hanya menampilkan file yang benar-benar ada di Drive (sinkron penuh)
  */
 function syncSpjDriveFolderFiles_(sheet, existingTemplates) {
   try {
@@ -2627,18 +2628,57 @@ function syncSpjDriveFolderFiles_(sheet, existingTemplates) {
     if (!folder) return;
 
     const files = folder.getFiles();
-    const existingFileIds = new Set(existingTemplates.map(t => String(t.fileId || "").trim()));
-    const existingNames = new Set(existingTemplates.map(t => String(t.namaDokumen || "").toLowerCase().trim()));
+    const driveFilesMap = new Map();
 
     while (files.hasNext()) {
       const file = files.next();
-      const fileId = file.getId();
+      driveFilesMap.set(file.getId(), file);
+    }
+
+    const driveFileIds = new Set(driveFilesMap.keys());
+    const validTemplates = [];
+    const rowsToDelete = [];
+
+    // 1. Verifikasi template yang tercatat di sheet: jika file Drive-nya sudah dihapus/tidak ada, bersihkan dari sheet
+    const data = sheet.getDataRange().getValues();
+    for (let i = 1; i < data.length; i++) {
+      const fileId = String(data[i][3] || "").trim();
+      const tplId = String(data[i][0] || "").trim();
+      if (!tplId) continue;
+
+      if (fileId && !fileId.startsWith("SHEET:") && fileId !== "DEFAULT") {
+        if (!driveFileIds.has(fileId)) {
+          // File di Google Drive sudah dihapus manual oleh admin
+          rowsToDelete.push(i + 1);
+          deleteTemplateBinaryFromSheet_(tplId);
+          continue;
+        }
+      }
+    }
+
+    // Hapus baris dari bawah ke atas agar indeks baris tidak bergeser
+    for (let r = rowsToDelete.length - 1; r >= 0; r--) {
+      sheet.deleteRow(rowsToDelete[r]);
+    }
+
+    // Perbarui array existingTemplates agar bersih dari template yang sudah dihapus
+    for (let j = existingTemplates.length - 1; j >= 0; j--) {
+      const t = existingTemplates[j];
+      if (t.fileId && !t.fileId.startsWith("SHEET:") && t.fileId !== "DEFAULT") {
+        if (!driveFileIds.has(t.fileId)) {
+          existingTemplates.splice(j, 1);
+        }
+      }
+    }
+
+    // 2. Tambahkan file baru di Google Drive yang belum terdaftar di sheet
+    const registeredFileIds = new Set(existingTemplates.map(t => String(t.fileId || "").trim()));
+
+    driveFilesMap.forEach((file, fileId) => {
+      if (registeredFileIds.has(fileId)) return;
+
       const fileName = file.getName();
       const mime = file.getMimeType();
-
-      // Cek apakah file ini sudah terdaftar di database sheet
-      if (existingFileIds.has(fileId)) continue;
-
       let ext = fileName.split('.').pop().toLowerCase();
       let isEligible = false;
 
@@ -2652,12 +2692,10 @@ function syncSpjDriveFolderFiles_(sheet, existingTemplates) {
         isEligible = true;
       }
 
-      if (!isEligible) continue;
+      if (!isEligible) return;
 
       const baseName = fileName.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ").trim();
       const cleanDocName = baseName ? (baseName.charAt(0).toUpperCase() + baseName.slice(1)) : fileName;
-
-      if (existingNames.has(cleanDocName.toLowerCase())) continue;
 
       const now = new Date();
       const dateStr = Utilities.formatDate(file.getLastUpdated() || now, Session.getScriptTimeZone() || "GMT+7", "dd/MM/yyyy HH:mm");
@@ -2678,8 +2716,7 @@ function syncSpjDriveFolderFiles_(sheet, existingTemplates) {
       ];
 
       sheet.appendRow(newRow);
-      existingFileIds.add(fileId);
-      existingNames.add(cleanDocName.toLowerCase());
+      registeredFileIds.add(fileId);
 
       existingTemplates.push({
         id: tplId,
@@ -2692,7 +2729,7 @@ function syncSpjDriveFolderFiles_(sheet, existingTemplates) {
         metadata: analysis,
         status: "Aktif"
       });
-    }
+    });
   } catch (err) {
     Logger.log("Peringatan saat sinkronisasi Drive folder SPJ: " + err.toString());
   }
