@@ -3,7 +3,7 @@
  * PWA Offline Cache & Background Engine
  */
 
-const CACHE_NAME = 'formgiatsmp-v1.1.5';
+const CACHE_NAME = 'formgiatsmp-v1.1.6';
 
 // Daftar aset inti yang di-cache saat instalasi
 const PRECACHE_ASSETS = [
@@ -60,10 +60,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // B. Navigasi Halaman Utama (HTML): Network-First, Fallback ke Cache jika offline
+  // B. Navigasi Halaman Utama (HTML): Network-First dengan bypass HTTP cache agar update selalu instan
   if (req.mode === 'navigate' || req.destination === 'document') {
     event.respondWith(
-      fetch(req)
+      fetch(req, { cache: 'no-cache' })
         .then((networkRes) => {
           if (networkRes && networkRes.status === 200) {
             const resClone = networkRes.clone();

@@ -778,9 +778,9 @@
               </div>
 
               <!-- Bagian Kanan: QR Code Box -->
-              <div class="col-md-5 text-center">
-                <div class="p-3 bg-light rounded-4 d-inline-block border">
-                  <div id="qrcodeWrapper" class="d-flex justify-content-center p-2 bg-white rounded-3"></div>
+              <div class="col-md-5 text-center d-flex justify-content-center align-items-center">
+                <div class="p-3 bg-light rounded-4 border" style="min-width: 220px;">
+                  <div id="qrcodeWrapper" class="d-flex justify-content-center p-2 bg-white rounded-3 shadow-sm"></div>
                   <div class="font-monospace fw-bold text-dark small mt-2" id="ticketQrIdText">-</div>
                 </div>
               </div>
@@ -1530,7 +1530,75 @@
     let currentTicketQrDataUrl = "";
 
     /**
-     * Render QR Code ke dalam elemen Canvas beresolusi tinggi dan menghasilkan DataURL PNG
+     * Menggambar matriks QR Code secara langsung (piksel demi piksel) ke dalam 2D Canvas Context
+     * Tanpa bergantung pada html2canvas maupun pemuatan gambar asinkron.
+     */
+    function drawQrMatrixOnCtx(ctx, text, x, y, size) {
+      const safeText = String(text || "REG-UNKNOWN").trim();
+
+      // Latar putih bersih area QR
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(x, y, size, size);
+
+      let drawn = false;
+      try {
+        if (typeof QRCode !== "undefined") {
+          const tempDiv = document.createElement("div");
+          const qr = new QRCode(tempDiv, {
+            text: safeText,
+            width: size,
+            height: size,
+            colorDark: "#0f172a",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel ? QRCode.CorrectLevel.H : 2
+          });
+
+          if (qr && qr._oQRCode && typeof qr._oQRCode.getModuleCount === "function") {
+            const count = qr._oQRCode.getModuleCount();
+            const margin = Math.max(8, Math.floor(size * 0.05));
+            const innerSize = size - margin * 2;
+            const cellSize = innerSize / count;
+
+            ctx.fillStyle = "#0f172a";
+            for (let r = 0; r < count; r++) {
+              for (let c = 0; c < count; c++) {
+                if (qr._oQRCode.isDark(r, c)) {
+                  const rx = Math.floor(x + margin + c * cellSize);
+                  const ry = Math.floor(y + margin + r * cellSize);
+                  const rw = Math.ceil(x + margin + (c + 1) * cellSize) - rx;
+                  const rh = Math.ceil(y + margin + (r + 1) * cellSize) - ry;
+                  ctx.fillRect(rx, ry, rw, rh);
+                }
+              }
+            }
+            drawn = true;
+          } else {
+            const cv = tempDiv.querySelector("canvas");
+            if (cv && cv.width > 0) {
+              ctx.drawImage(cv, x, y, size, size);
+              drawn = true;
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Gagal merender matriks QRCode:", err);
+      }
+
+      if (!drawn) {
+        // Fallback visual deterministik jika library QRCode gagal dimuat
+        ctx.strokeStyle = "#0f172a";
+        ctx.lineWidth = 4;
+        ctx.strokeRect(x + 8, y + 8, size - 16, size - 16);
+        ctx.fillStyle = "#0f172a";
+        ctx.font = "bold 16px monospace";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(safeText, x + size / 2, y + size / 2);
+      }
+    }
+
+    /**
+     * Render QR Code ke dalam elemen Canvas beresolusi tinggi di Modal dan menghasilkan DataURL PNG
      */
     function renderTicketQr(text) {
       const qrWrapper = document.getElementById("qrcodeWrapper");
@@ -1539,53 +1607,18 @@
 
       const safeText = String(text || "REG-UNKNOWN").trim();
 
-      // Buat elemen canvas resolusi tinggi (280x280 piksel fisik, display CSS 140x140)
       const qrCanvas = document.createElement("canvas");
       qrCanvas.id = "ticketQrCanvas";
       qrCanvas.width = 280;
       qrCanvas.height = 280;
-      qrCanvas.style.width = "140px";
-      qrCanvas.style.height = "140px";
+      qrCanvas.style.width = "160px";
+      qrCanvas.style.height = "160px";
       qrCanvas.style.display = "block";
       qrCanvas.style.margin = "0 auto";
       qrWrapper.appendChild(qrCanvas);
 
-      try {
-        if (typeof QRCode !== "undefined") {
-          const tempDiv = document.createElement("div");
-          new QRCode(tempDiv, {
-            text: safeText,
-            width: 280,
-            height: 280,
-            colorDark: "#0f172a",
-            colorLight: "#ffffff",
-            correctLevel: QRCode.CorrectLevel.H
-          });
-
-          const cv = tempDiv.querySelector("canvas");
-          if (cv) {
-            const ctx = qrCanvas.getContext("2d");
-            ctx.drawImage(cv, 0, 0, 280, 280);
-            currentTicketQrDataUrl = qrCanvas.toDataURL("image/png");
-            return qrCanvas;
-          }
-        }
-      } catch (err) {
-        console.warn("Gagal menggunakan QRCode library:", err);
-      }
-
-      // Fallback jika QRCode library belum siap: Buat visual kartu kode registrasi
       const ctx = qrCanvas.getContext("2d");
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, 280, 280);
-      ctx.strokeStyle = "#0f172a";
-      ctx.lineWidth = 6;
-      ctx.strokeRect(10, 10, 260, 260);
-      ctx.fillStyle = "#0f172a";
-      ctx.font = "bold 20px monospace";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(safeText, 140, 140);
+      drawQrMatrixOnCtx(ctx, safeText, 0, 0, 280);
 
       currentTicketQrDataUrl = qrCanvas.toDataURL("image/png");
       return qrCanvas;
@@ -1619,78 +1652,268 @@
     }
 
     /**
-     * Unduh Gambar Tiket (JPG) dan Dokumen (PDF) Sekaligus via HTML2Canvas & jsPDF
+     * Helper menggambar kotak bersudut melengkung pada Canvas 2D
+     */
+    function drawRoundRectPath(ctx, x, y, w, h, r) {
+      const radius = Math.min(r, w / 2, h / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.arcTo(x + w, y, x + w, y + h, radius);
+      ctx.arcTo(x + w, y + h, x, y + h, radius);
+      ctx.arcTo(x, y + h, x, y, radius);
+      ctx.arcTo(x, y, x + w, y, radius);
+      ctx.closePath();
+    }
+
+    /**
+     * Helper membungkus teks panjang menjadi beberapa baris pada Canvas 2D
+     */
+    function wrapCanvasText(ctx, text, maxWidth) {
+      const words = String(text || "-").split(/\s+/);
+      const lines = [];
+      let currentLine = words[0] || "";
+
+      for (let i = 1; i < words.length; i++) {
+        const word = words[i];
+        const width = ctx.measureText(currentLine + " " + word).width;
+        if (width < maxWidth) {
+          currentLine += " " + word;
+        } else {
+          lines.push(currentLine);
+          currentLine = word;
+        }
+      }
+      if (currentLine) lines.push(currentLine);
+      return lines;
+    }
+
+    /**
+     * Merender E-Ticket secara Native ke HTML5 2D Canvas (1400 x 720 px)
+     * 100% bebas bug html2canvas — QR Code digambar langsung dari matriks ke kanvas utama!
+     */
+    function renderNativeETicketCanvas(data) {
+      const W = 1400;
+      const H = 720;
+      const canvas = document.createElement("canvas");
+      canvas.width = W;
+      canvas.height = H;
+      const ctx = canvas.getContext("2d");
+
+      // 1. Background Putih Bersih
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, W, H);
+
+      // 2. Garis Tepi Putus-putus (Dashed Ticket Border)
+      ctx.save();
+      drawRoundRectPath(ctx, 14, 14, W - 28, H - 28, 32);
+      ctx.strokeStyle = "#94a3b8";
+      ctx.lineWidth = 4;
+      ctx.setLineDash([12, 10]);
+      ctx.stroke();
+      ctx.restore();
+
+      const leftX = 64;
+
+      // 3. Badge "EVENT" (Biru) & "TERDAFTAR" (Hijau)
+      ctx.save();
+      drawRoundRectPath(ctx, leftX, 56, 108, 42, 21);
+      ctx.fillStyle = "#0d6efd";
+      ctx.fill();
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 20px 'Plus Jakarta Sans', Arial, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("EVENT", leftX + 54, 77);
+
+      const b2X = leftX + 124;
+      drawRoundRectPath(ctx, b2X, 56, 172, 42, 21);
+      ctx.fillStyle = "#d1e7dd";
+      ctx.fill();
+      ctx.strokeStyle = "#a3cfbb";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.fillStyle = "#0f5132";
+      ctx.font = "bold 20px 'Plus Jakarta Sans', Arial, sans-serif";
+      ctx.fillText("TERDAFTAR", b2X + 86, 77);
+      ctx.restore();
+
+      // 4. Nama Lengkap Peserta & Satuan Pendidikan
+      const namaPeserta = String(data?.namaLengkap || data?.nama || document.getElementById("ticketNamaPeserta")?.textContent || "-");
+      const namaSekolah = String(data?.namaSekolah || data?.sekolah || document.getElementById("ticketSekolahPeserta")?.textContent || "-");
+      const regId = String(data?.regId || document.getElementById("ticketRegId")?.textContent || "-");
+      const namaKegiatan = String(data?.namaKegiatan || activeSelectedEvent?.namaKegiatan || document.getElementById("ticketNamaKegiatan")?.textContent || "-");
+      const tanggal = String(activeSelectedEvent?.tanggalPelaksanaan || document.getElementById("ticketTanggal")?.textContent || "Jadwal Resmi");
+      const kaos = String(document.getElementById("ticketKaos")?.textContent || ((data?.ukuranKaos || "-") + (data?.panjangLengan ? ` (${data.panjangLengan})` : "")));
+
+      ctx.save();
+      ctx.fillStyle = "#1e293b";
+      ctx.font = "800 40px 'Plus Jakarta Sans', Arial, sans-serif";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "top";
+      const nameLines = wrapCanvasText(ctx, namaPeserta, 760);
+      ctx.fillText(nameLines[0] || "-", leftX, 128);
+
+      ctx.fillStyle = "#64748b";
+      ctx.font = "500 24px 'Plus Jakarta Sans', Arial, sans-serif";
+      ctx.fillText(namaSekolah, leftX, 184);
+      ctx.restore();
+
+      // 5. Kotak Abu-abu Detail Informasi Pendaftaran
+      const boxY = 236;
+      const boxW = 760;
+      const boxH = 290;
+      ctx.save();
+      drawRoundRectPath(ctx, leftX, boxY, boxW, boxH, 20);
+      ctx.fillStyle = "#f8fafc";
+      ctx.fill();
+
+      const labelX = leftX + 32;
+      const valX = leftX + 315;
+      let curY = boxY + 34;
+
+      // Baris 1: ID Registrasi
+      ctx.textAlign = "left";
+      ctx.textBaseline = "top";
+      ctx.fillStyle = "#64748b";
+      ctx.font = "500 23px 'Plus Jakarta Sans', Arial, sans-serif";
+      ctx.fillText("ID Registrasi:", labelX, curY);
+
+      ctx.fillStyle = "#0d6efd";
+      ctx.font = "bold 24px monospace";
+      ctx.fillText(regId, valX, curY);
+      curY += 52;
+
+      // Baris 2: Kegiatan (bisa 2 baris)
+      ctx.fillStyle = "#64748b";
+      ctx.font = "500 23px 'Plus Jakarta Sans', Arial, sans-serif";
+      ctx.fillText("Kegiatan:", labelX, curY);
+
+      ctx.fillStyle = "#1e293b";
+      ctx.font = "bold 23px 'Plus Jakarta Sans', Arial, sans-serif";
+      const kegLines = wrapCanvasText(ctx, namaKegiatan, 415).slice(0, 2);
+      kegLines.forEach((line, idx) => {
+        ctx.fillText(line, valX, curY + idx * 32);
+      });
+      curY += Math.max(52, kegLines.length * 32 + 22);
+
+      // Baris 3: Tanggal
+      ctx.fillStyle = "#64748b";
+      ctx.font = "500 23px 'Plus Jakarta Sans', Arial, sans-serif";
+      ctx.fillText("Tanggal:", labelX, curY);
+
+      ctx.fillStyle = "#1e293b";
+      ctx.font = "500 23px 'Plus Jakarta Sans', Arial, sans-serif";
+      ctx.fillText(tanggal, valX, curY);
+      curY += 52;
+
+      // Baris 4: Ukuran Kaos
+      ctx.fillStyle = "#64748b";
+      ctx.font = "500 23px 'Plus Jakarta Sans', Arial, sans-serif";
+      ctx.fillText("Ukuran Kaos:", labelX, curY);
+
+      ctx.fillStyle = "#1e293b";
+      ctx.font = "bold 23px 'Plus Jakarta Sans', Arial, sans-serif";
+      ctx.fillText(kaos, valX, curY);
+      ctx.restore();
+
+      // 6. Kotak Peringatan Kuning di Bawah
+      const alertY = 552;
+      const alertH = 112;
+      ctx.save();
+      drawRoundRectPath(ctx, leftX, alertY, boxW, alertH, 16);
+      ctx.fillStyle = "#fff3cd";
+      ctx.fill();
+      ctx.strokeStyle = "#ffecb5";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Ikon bulatan info kuning
+      ctx.beginPath();
+      ctx.arc(leftX + 42, alertY + 42, 14, 0, Math.PI * 2);
+      ctx.fillStyle = "#ffc107";
+      ctx.fill();
+      ctx.fillStyle = "#1e293b";
+      ctx.font = "bold 18px Arial, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("i", leftX + 42, alertY + 43);
+
+      ctx.fillStyle = "#1e293b";
+      ctx.font = "500 23px 'Plus Jakarta Sans', Arial, sans-serif";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "top";
+      ctx.fillText("Tunjukkan QR Code ini kepada panitia saat", leftX + 68, alertY + 26);
+      ctx.fillText("kedatangan di lokasi kegiatan.", leftX + 30, alertY + 62);
+      ctx.restore();
+
+      // 7. BAGIAN KANAN: KOTAK QR CODE RESMI + BARCODE MATRIX + ID REGISTRASI
+      const qrBoxX = 895;
+      const qrBoxY = 120;
+      const qrBoxW = 435;
+      const qrBoxH = 490;
+
+      ctx.save();
+      // Kotak luar abu-abu terang
+      drawRoundRectPath(ctx, qrBoxX, qrBoxY, qrBoxW, qrBoxH, 28);
+      ctx.fillStyle = "#f8fafc";
+      ctx.fill();
+      ctx.strokeStyle = "#e2e8f0";
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // Kotak dalam putih bersih tempat QR Code
+      const innerPad = 32;
+      const innerX = qrBoxX + innerPad;
+      const innerY = qrBoxY + innerPad;
+      const innerSize = qrBoxW - innerPad * 2; // 371 x 371 px
+
+      drawRoundRectPath(ctx, innerX, innerY, innerSize, innerSize, 20);
+      ctx.fillStyle = "#ffffff";
+      ctx.fill();
+      ctx.strokeStyle = "#f1f5f9";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Gambar QR Code tajam langsung di atas kotak putih
+      const qrPadding = 18;
+      drawQrMatrixOnCtx(ctx, regId, innerX + qrPadding, innerY + qrPadding, innerSize - qrPadding * 2);
+
+      // Teks Kode Registrasi di bawah QR Code
+      ctx.fillStyle = "#0f172a";
+      ctx.font = "bold 26px monospace";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(regId, qrBoxX + qrBoxW / 2, innerY + innerSize + 44);
+      ctx.restore();
+
+      return canvas;
+    }
+
+    /**
+     * Unduh Gambar Tiket (JPG) dan Dokumen (PDF) Sekaligus via Native 2D Canvas & jsPDF
      */
     async function downloadTicketImage() {
-      const container = document.getElementById("eTicketDoubleContainer");
-      if (!container) return;
+      const regCode = String(lastTicketData?.regId || document.getElementById("ticketRegId")?.textContent || "REG-UNKNOWN");
 
-      const regCode = String(lastTicketData?.regId || "REG-UNKNOWN");
-
-      // Pastikan elemen canvas QR Code aktif dan terisi
-      let qrCanvas = document.getElementById("ticketQrCanvas");
-      if (!qrCanvas) {
-        renderTicketQr(regCode);
-        qrCanvas = document.getElementById("ticketQrCanvas");
-      }
+      // Pastikan QR Code di modal layar juga ter-render
+      renderTicketQr(regCode);
 
       Swal.fire({
         title: "Membuat Tiket JPG & PDF...",
-        text: "Sedang merender resolusi tinggi untuk gambar dan dokumen PDF...",
+        text: "Sedang merender E-Ticket dan QR Code resolusi tinggi...",
         allowOutsideClick: false,
         didOpen: () => Swal.showLoading()
       });
 
-      // Tunggu sejenak agar layout browser stabil
-      await new Promise(resolve => setTimeout(resolve, 150));
+      await new Promise(resolve => setTimeout(resolve, 80));
 
       try {
-        const scale = 2; // Skala 2x untuk kualitas tajam
-        const canvas = await html2canvas(container, {
-          scale: scale,
-          backgroundColor: "#ffffff",
-          useCORS: true,
-          allowTaint: true,
-          logging: false,
-          onclone: (clonedDoc) => {
-            // Salin langsung isi pixel bitmap canvas QR ke dokumen tiruan html2canvas
-            const origQr = document.getElementById("ticketQrCanvas");
-            const clonedQr = clonedDoc.getElementById("ticketQrCanvas");
-            if (origQr && clonedQr) {
-              clonedQr.width = origQr.width;
-              clonedQr.height = origQr.height;
-              const cCtx = clonedQr.getContext("2d");
-              cCtx.drawImage(origQr, 0, 0);
-            }
-          }
-        });
-
-        // =========================================================================
-        // DIRECT OVERLAY STAMP (GARANSI 100% QR CODE PASTI TERCETAK DI JPG & PDF)
-        // =========================================================================
-        // Menstempel QR Code beresolusi tinggi langsung ke koordinatnya di canvas hasil
-        const activeQr = document.getElementById("ticketQrCanvas");
-        if (activeQr) {
-          const containerRect = container.getBoundingClientRect();
-          const qrRect = activeQr.getBoundingClientRect();
-
-          const targetX = Math.round((qrRect.left - containerRect.left) * scale);
-          const targetY = Math.round((qrRect.top - containerRect.top) * scale);
-          const targetW = Math.round(qrRect.width * scale);
-          const targetH = Math.round(qrRect.height * scale);
-
-          const outCtx = canvas.getContext("2d");
-          // Latar belakang putih bersih di balik QR Code
-          outCtx.fillStyle = "#ffffff";
-          outCtx.fillRect(targetX - 2, targetY - 2, targetW + 4, targetH + 4);
-          // Gambar QR Code secara tajam dan sempurna
-          outCtx.drawImage(activeQr, targetX, targetY, targetW, targetH);
-        }
-
-        const regIdSafe = (lastTicketData?.regId || "Kegiatan").replace(/[^a-zA-Z0-9_-]/g, "_");
+        // Render langsung menggunakan Native 2D Canvas (100% pasti ada QR Code & teks lengkap)
+        const canvas = renderNativeETicketCanvas(lastTicketData || {});
+        const regIdSafe = regCode.replace(/[^a-zA-Z0-9_-]/g, "_");
 
         // 1. Unduh Berkas Gambar JPG
-        const imgJpgUrl = canvas.toDataURL("image/jpeg", 0.95);
+        const imgJpgUrl = canvas.toDataURL("image/jpeg", 0.96);
         const linkJpg = document.createElement("a");
         linkJpg.download = `E-Ticket-${regIdSafe}.jpg`;
         linkJpg.href = imgJpgUrl;
@@ -1698,16 +1921,15 @@
         linkJpg.click();
         document.body.removeChild(linkJpg);
 
-        // 2. Unduh Dokumen PDF Sekaligus (Simultaneous Download)
+        // 2. Unduh Dokumen PDF Sekaligus
         setTimeout(() => {
           try {
             const { jsPDF } = window.jspdf || {};
             if (jsPDF) {
               const imgW = canvas.width;
               const imgH = canvas.height;
-              // Konversi ukuran px ke mm (skala 2: 1px = 25.4/(96*2) mm)
-              const mmW = (imgW * 25.4) / 192;
-              const mmH = (imgH * 25.4) / 192;
+              const mmW = (imgW * 25.4) / 144;
+              const mmH = (imgH * 25.4) / 144;
               const isPortrait = mmH > mmW;
               const pdf = new jsPDF({
                 orientation: isPortrait ? "portrait" : "landscape",
