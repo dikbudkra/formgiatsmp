@@ -1170,15 +1170,25 @@
 
     <!-- ==================== TAB 8: ASISTEN JEMPROT AI ==================== -->
     <section id="tabGeminiAi" class="tab-pane d-none">
-      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
         <div>
           <h3 class="h4 fw-bold text-dark mb-0">Asisten Jemprot AI Panitia</h3>
           <p class="text-muted small mb-0">Analisis cerdas kehadiran, rekap logistik, dan asisten panitia</p>
         </div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1.5 small shadow-xs">
+            <i class="bi bi-award-fill me-1"></i>Data Giat: <strong id="lblAiEventActive">Memuat...</strong>
+          </span>
+          <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-xs" onclick="clearAiChat()" title="Bersihkan Riwayat Obrolan">
+            <i class="bi bi-trash3"></i>
+            <span>Bersihkan Obrolan</span>
+          </button>
+        </div>
       </div>
 
-      <div class="card card-modern p-4" style="min-height: 480px; display: flex; flex-direction: column;">
-        <div id="chatAiContainer" class="flex-grow-1 overflow-auto p-3 bg-light rounded-4 mb-3" style="min-height: 380px; max-height: 480px;">
+      <div class="card card-modern p-3 p-md-4 shadow-sm" style="min-height: 520px; display: flex; flex-direction: column;">
+        <!-- Balon Chat Area -->
+        <div id="chatAiContainer" class="flex-grow-1 overflow-auto p-3 bg-light rounded-4 mb-3 border border-light-subtle" style="min-height: 380px; max-height: 480px;">
           <div class="chat-message-row ai">
             <div class="chat-avatar ai-avatar" title="Jemprot AI">
               <i class="bi bi-robot"></i>
@@ -1194,9 +1204,34 @@
           </div>
         </div>
 
+        <!-- Quick Action Chips (Pilihan Pertanyaan Cepat Sekali Klik) -->
+        <div class="mb-2">
+          <div class="d-flex align-items-center gap-1.5 overflow-auto pb-1.5 text-nowrap" style="scrollbar-width: thin;">
+            <span class="text-muted small fw-bold me-1 flex-shrink-0" style="font-size: 0.78rem;">
+              <i class="bi bi-lightning-charge-fill text-warning me-0.5"></i>Tanya Cepat:
+            </span>
+            <button type="button" class="btn btn-light btn-sm rounded-pill border px-2.5 py-1 small text-dark fw-semibold shadow-xs flex-shrink-0" onclick="askQuickPrompt('Ada berapa kegiatan?')">
+              💡 Ada berapa kegiatan?
+            </button>
+            <button type="button" class="btn btn-light btn-sm rounded-pill border px-2.5 py-1 small text-dark fw-semibold shadow-xs flex-shrink-0" onclick="askQuickPrompt('Siapa saja yang sudah mendaftar?')">
+              👥 Siapa saja yang sudah daftar?
+            </button>
+            <button type="button" class="btn btn-light btn-sm rounded-pill border px-2.5 py-1 small text-dark fw-semibold shadow-xs flex-shrink-0" onclick="askQuickPrompt('Bagaimana rincian rekap ukuran kaos?')">
+              👕 Rekap ukuran kaos
+            </button>
+            <button type="button" class="btn btn-light btn-sm rounded-pill border px-2.5 py-1 small text-dark fw-semibold shadow-xs flex-shrink-0" onclick="askQuickPrompt('SMP mana saja yang belum mendaftar?')">
+              🏫 SMP yang belum daftar
+            </button>
+            <button type="button" class="btn btn-light btn-sm rounded-pill border px-2.5 py-1 small text-dark fw-semibold shadow-xs flex-shrink-0" onclick="askQuickPrompt('Apakah ada peserta dengan riwayat catatan kesehatan?')">
+              🚑 Catatan kesehatan &amp; darurat
+            </button>
+          </div>
+        </div>
+
+        <!-- Kotak Input Chat & Tombol Kirim -->
         <div class="d-flex gap-2">
-          <input type="text" class="form-control" id="inputAiQuestion" placeholder="Contoh: Berapa persen kehadiran hari ini? Sekolah mana yang belum hadir?" onkeypress="if(event.key==='Enter') submitAiQuestion()">
-          <button class="btn btn-primary fw-bold px-4 rounded-pill" onclick="submitAiQuestion()">
+          <input type="text" class="form-control rounded-pill px-3.5 py-2" id="inputAiQuestion" placeholder="Ketik pertanyaan untuk Jemprot AI..." onkeypress="if(event.key==='Enter') submitAiQuestion()">
+          <button class="btn btn-primary fw-bold px-4 rounded-pill d-inline-flex align-items-center justify-content-center shadow-sm" id="btnSubmitAi" onclick="submitAiQuestion()" title="Kirim Pertanyaan">
             <i class="bi bi-send-fill"></i>
           </button>
         </div>
@@ -2120,6 +2155,15 @@
         stopScannerCamera();
       }
 
+      // Jika keluar dari tab Jemprot AI ke menu lain, bersihkan obrolan otomatis
+      if (tabId !== "tabGeminiAi") {
+        if (typeof clearAiChat === "function") clearAiChat(true);
+      } else {
+        const curEv = currentDashboardData?.settings?.NAMA_KEGIATAN || activeEventId || "Kegiatan Aktif";
+        const lblActive = document.getElementById("lblAiEventActive");
+        if (lblActive) lblActive.innerText = curEv;
+      }
+
       document.querySelectorAll(".tab-pane").forEach(t => t.classList.add("d-none"));
       const target = document.getElementById(tabId);
       if (target) target.classList.remove("d-none");
@@ -2163,6 +2207,8 @@
           populateTopbarEvents(allEventsList, res.settings?.ID_KEGIATAN);
           if (res.settings?.NAMA_KEGIATAN) {
             updateTopbarActiveEventDisplay(res.settings.NAMA_KEGIATAN, res.settings.STATUS_FORM);
+            const lblAi = document.getElementById("lblAiEventActive");
+            if (lblAi) lblAi.innerText = res.settings.NAMA_KEGIATAN;
           }
           renderDashboardStats(res);
           renderManajemenKegiatan(allEventsList);
@@ -2319,6 +2365,10 @@
           const eventStatus = res.settings?.STATUS_FORM || (ev ? ev.statusForm : "");
 
           updateTopbarActiveEventDisplay(eventName, eventStatus);
+          const lblAi = document.getElementById("lblAiEventActive");
+          if (lblAi) lblAi.innerText = eventName;
+          if (typeof clearAiChat === "function") clearAiChat(true);
+
           renderDashboardStats(res);
           renderManajemenKegiatan(allEventsList);
           renderParticipantsTable(res.participants || []);
@@ -5106,6 +5156,70 @@
     /**
      * TAB 8: ASISTEN JEMPROT AI
      */
+    function clearAiChat(silent = false) {
+      const container = document.getElementById("chatAiContainer");
+      if (!container) return;
+
+      const currentEventName = currentDashboardData?.settings?.NAMA_KEGIATAN || activeEventId || "Kegiatan Aktif";
+      const lblActive = document.getElementById("lblAiEventActive");
+      if (lblActive) lblActive.innerText = currentEventName;
+
+      container.innerHTML = `
+        <div class="chat-message-row ai">
+          <div class="chat-avatar ai-avatar" title="Jemprot AI">
+            <i class="bi bi-robot"></i>
+          </div>
+          <div class="chat-bubble chat-bubble-ai">
+            <div class="d-flex align-items-center justify-content-between mb-1.5 gap-2">
+              <div class="d-flex align-items-center gap-1.5">
+                <strong class="text-primary small">Jemprot AI</strong>
+                <span class="badge bg-warning text-dark py-0.5 px-1.5 rounded-pill" style="font-size:0.65rem;">Asisten Panitia</span>
+              </div>
+              <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill small" style="font-size: 0.68rem;">
+                <i class="bi bi-award-fill me-1"></i>${escapeHtml(currentEventName)}
+              </span>
+            </div>
+            <div>Halo Panitia! Saya siap membantu menganalisis data peserta, logistik kaos, dan presensi untuk kegiatan <strong>"${escapeHtml(currentEventName)}"</strong>. Silakan tanyakan atau pilih salah satu tombol pertanyaan cepat di bawah!</div>
+            <span class="chat-time">Siap Melayani</span>
+          </div>
+        </div>
+      `;
+
+      if (!silent) {
+        Swal.fire({
+          toast: true,
+          position: "top-end",
+          icon: "success",
+          title: "Obrolan berhasil dibersihkan!",
+          showConfirmButton: false,
+          timer: 1500
+        });
+      }
+    }
+
+    function askQuickPrompt(text) {
+      const input = document.getElementById("inputAiQuestion");
+      if (input) {
+        input.value = text;
+        submitAiQuestion();
+      }
+    }
+
+    function copyAiBubbleText(btnEl) {
+      const bubble = btnEl.closest(".chat-bubble-ai");
+      if (!bubble) return;
+      const contentEl = bubble.querySelector(".chat-ai-content");
+      const textToCopy = contentEl ? contentEl.innerText : bubble.innerText;
+
+      navigator.clipboard.writeText(textToCopy).then(() => {
+        const origHtml = btnEl.innerHTML;
+        btnEl.innerHTML = '<i class="bi bi-check-lg text-success me-1"></i>Tersalin!';
+        setTimeout(() => { btnEl.innerHTML = origHtml; }, 2000);
+      }).catch(err => {
+        console.warn("Gagal menyalin teks:", err);
+      });
+    }
+
     async function submitAiQuestion() {
       const input = document.getElementById("inputAiQuestion");
       const q = input.value.trim();
@@ -5167,6 +5281,9 @@
                   <strong class="text-primary small">Jemprot AI</strong>
                   <span class="badge bg-warning text-dark py-0.5 px-1.5 rounded-pill" style="font-size:0.65rem;">Asisten Panitia</span>
                 </div>
+                <button type="button" class="btn btn-outline-secondary btn-sm py-0.5 px-2 rounded-pill small" style="font-size: 0.68rem;" onclick="copyAiBubbleText(this)" title="Salin Teks Jawaban">
+                  <i class="bi bi-clipboard me-1"></i>Salin
+                </button>
               </div>
               <div class="chat-ai-content">${formattedText}</div>
               <span class="chat-time">${respTime}</span>
