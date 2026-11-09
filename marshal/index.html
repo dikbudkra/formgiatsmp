@@ -21,7 +21,7 @@
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 
   <style>
     :root {
@@ -273,6 +273,108 @@
         size: landscape;
         margin: 1cm;
       }
+    }
+    /* ================= Modern Chat Balloons (Jemprot AI) ================= */
+    .chat-message-row {
+      display: flex;
+      margin-bottom: 1.25rem;
+      align-items: flex-end;
+      gap: 0.75rem;
+    }
+    .chat-message-row.user {
+      flex-direction: row-reverse;
+    }
+    .chat-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.15rem;
+      flex-shrink: 0;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+    }
+    .chat-avatar.user-avatar {
+      background: linear-gradient(135deg, #1e3a8a, #2563eb);
+      color: #ffffff;
+    }
+    .chat-avatar.ai-avatar {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #ffffff;
+    }
+    .chat-bubble {
+      max-width: 82%;
+      padding: 0.95rem 1.25rem;
+      border-radius: 1.25rem;
+      position: relative;
+      font-size: 0.92rem;
+      line-height: 1.6;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+    .chat-bubble-user {
+      background: linear-gradient(135deg, #1e3a8a, #2563eb);
+      color: #ffffff;
+      border-bottom-right-radius: 0.25rem;
+    }
+    .chat-bubble-ai {
+      background: #ffffff;
+      color: #1e293b;
+      border: 1px solid #e2e8f0;
+      border-bottom-left-radius: 0.25rem;
+    }
+    .chat-bubble-ai pre {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.5rem;
+      padding: 0.75rem;
+      font-size: 0.85rem;
+      overflow-x: auto;
+    }
+    .chat-bubble-ai code {
+      font-family: SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .chat-bubble-ai ul, .chat-bubble-ai ol {
+      margin-bottom: 0.5rem;
+      padding-left: 1.25rem;
+    }
+    .chat-bubble-ai li {
+      margin-bottom: 0.25rem;
+    }
+    .chat-bubble-ai table {
+      width: 100%;
+      margin-top: 0.5rem;
+      margin-bottom: 0.5rem;
+      font-size: 0.82rem;
+    }
+    .chat-time {
+      font-size: 0.7rem;
+      margin-top: 0.4rem;
+      display: block;
+      font-weight: 500;
+    }
+    .chat-bubble-user .chat-time {
+      color: rgba(255, 255, 255, 0.7);
+      text-align: right;
+    }
+    .chat-bubble-ai .chat-time {
+      color: #94a3b8;
+      text-align: left;
+    }
+    .typing-indicator span {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      margin: 0 2px;
+      background-color: #f59e0b;
+      border-radius: 50%;
+      animation: typingDots 1.4s infinite ease-in-out both;
+    }
+    .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+    .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+    @keyframes typingDots {
+      0%, 80%, 100% { transform: scale(0.3); opacity: 0.4; }
+      40% { transform: scale(1); opacity: 1; }
     }
   </style>
 </head>
@@ -531,6 +633,15 @@
         <div>
           <h3 class="h4 fw-bold text-dark mb-0">Presensi Scanner QR Code</h3>
           <p class="text-muted small mb-0">Scan tiket peserta via webcam laptop, kamera smartphone, atau unggah foto</p>
+        </div>
+      </div>
+
+      <!-- Alert jika Presensi QR Dinonaktifkan -->
+      <div id="alertPresensiDisabled" class="alert alert-warning py-3 px-4 mb-4 d-none align-items-center gap-3 rounded-4 shadow-sm border-warning">
+        <i class="bi bi-exclamation-triangle-fill fs-3 text-warning"></i>
+        <div>
+          <strong class="text-dark">Modul E-Ticket &amp; Presensi QR Dinonaktifkan (OFF)</strong>
+          <div class="small text-secondary">Kegiatan yang sedang aktif saat ini diatur tanpa E-Ticket QR Code. Peserta tidak memiliki barcode untuk di-scan, namun Anda tetap dapat melakukan verifikasi kehadiran manual jika dibutuhkan.</div>
         </div>
       </div>
 
@@ -1034,9 +1145,19 @@
       </div>
 
       <div class="card card-modern p-4" style="min-height: 480px; display: flex; flex-direction: column;">
-        <div id="chatAiContainer" class="flex-grow-1 overflow-auto p-3 bg-light rounded-4 mb-3 space-y-3" style="max-height: 400px;">
-          <div class="p-3 bg-white rounded-3 shadow-sm border small" style="max-width: 80%;">
-            <strong>🤖 Jemprot AI:</strong> Halo Panitia! Saya siap membantu menganalisis data peserta, kehadiran presensi, dan kebutuhan logistik kegiatan aktif ini. Ada yang bisa saya bantu?
+        <div id="chatAiContainer" class="flex-grow-1 overflow-auto p-3 bg-light rounded-4 mb-3" style="min-height: 380px; max-height: 480px;">
+          <div class="chat-message-row ai">
+            <div class="chat-avatar ai-avatar" title="Jemprot AI">
+              <i class="bi bi-robot"></i>
+            </div>
+            <div class="chat-bubble chat-bubble-ai">
+              <div class="d-flex align-items-center gap-1.5 mb-1.5">
+                <strong class="text-primary small">Jemprot AI</strong>
+                <span class="badge bg-warning text-dark py-0.5 px-1.5 rounded-pill" style="font-size:0.65rem;">Asisten Kedinasan</span>
+              </div>
+              <div>Halo Panitia! Saya siap membantu menganalisis data peserta, kehadiran presensi, dan kebutuhan logistik kegiatan aktif ini. Ada yang bisa saya bantu?</div>
+              <span class="chat-time">Siap Melayani</span>
+            </div>
           </div>
         </div>
 
@@ -1192,6 +1313,12 @@
                   <div class="form-check form-switch">
                     <input class="form-check-input" type="checkbox" id="switchModulKesehatan" checked>
                     <label class="form-check-label" for="switchModulKesehatan">Modul Kesehatan</label>
+                  </div>
+                </div>
+                <div class="col-6 col-md-4">
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="switchModulEticket" checked>
+                    <label class="form-check-label" for="switchModulEticket">E-Ticket &amp; Presensi QR</label>
                   </div>
                 </div>
               </div>
@@ -2066,6 +2193,17 @@
       document.getElementById("lblHadirCount").textContent = hadir;
       document.getElementById("lblTotalCount").textContent = total;
 
+      const alertPresensi = document.getElementById("alertPresensiDisabled");
+      if (alertPresensi) {
+        if (s.MODUL_ETICKET_PRESENSI === "OFF") {
+          alertPresensi.classList.remove("d-none");
+          alertPresensi.classList.add("d-flex");
+        } else {
+          alertPresensi.classList.add("d-none");
+          alertPresensi.classList.remove("d-flex");
+        }
+      }
+
       document.getElementById("lblDetailTanggal").textContent = s.TANGGAL_PELAKSANAAN || "-";
       document.getElementById("lblDetailLokasi").textContent = s.LOKASI_KEGIATAN || "-";
       document.getElementById("lblDetailKuota").textContent = s.KUOTA_PER_SEKOLAH || "-";
@@ -2315,6 +2453,8 @@
       document.getElementById("modalKegiatanTitle").textContent = "Tambah Kegiatan Baru";
       document.getElementById("eventModalId").value = "";
       document.getElementById("formEventModal").reset();
+      const swEticket = document.getElementById("switchModulEticket");
+      if (swEticket) swEticket.checked = true;
       const modal = new bootstrap.Modal(document.getElementById("modalKegiatan"));
       modal.show();
     }
@@ -2337,6 +2477,8 @@
       document.getElementById("switchModulGender").checked = (ev.modulGender === "ON");
       document.getElementById("switchModulDarurat").checked = (ev.modulKontakDarurat === "ON");
       document.getElementById("switchModulKesehatan").checked = (ev.modulKesehatan === "ON");
+      const swEticket = document.getElementById("switchModulEticket");
+      if (swEticket) swEticket.checked = (ev.modulEticketPresensi !== "OFF");
 
       const modal = new bootstrap.Modal(document.getElementById("modalKegiatan"));
       modal.show();
@@ -2357,7 +2499,7 @@
         modulGender: document.getElementById("switchModulGender").checked ? "ON" : "OFF",
         modulKontakDarurat: document.getElementById("switchModulDarurat").checked ? "ON" : "OFF",
         modulKesehatan: document.getElementById("switchModulKesehatan").checked ? "ON" : "OFF",
-        modulEticketPresensi: "ON"
+        modulEticketPresensi: document.getElementById("switchModulEticket")?.checked ? "ON" : "OFF"
       };
 
       try {
@@ -3801,6 +3943,86 @@
 
       const ws = XLSX.utils.aoa_to_sheet(wsData);
 
+      // Konfigurasi Garis Border dan Style Sel (xlsx-js-style)
+      const borderThin = {
+        top: { style: "thin", color: { rgb: "000000" } },
+        bottom: { style: "thin", color: { rgb: "000000" } },
+        left: { style: "thin", color: { rgb: "000000" } },
+        right: { style: "thin", color: { rgb: "000000" } }
+      };
+
+      const borderDoubleTotal = {
+        top: { style: "thin", color: { rgb: "000000" } },
+        bottom: { style: "double", color: { rgb: "000000" } },
+        left: { style: "thin", color: { rgb: "000000" } },
+        right: { style: "thin", color: { rgb: "000000" } }
+      };
+
+      const headerRowIdx = 4; // Baris 5 (0-indexed: 4)
+      const totalRowIdx = headerRowIdx + selectedList.length + 1;
+
+      // Beri style pada Judul Header Surat (B1, B2, B3)
+      ["B1", "B2", "B3"].forEach(addr => {
+        if (ws[addr]) {
+          ws[addr].s = {
+            font: { bold: true, sz: 12, color: { rgb: "0F172A" } },
+            alignment: { horizontal: "left" }
+          };
+        }
+      });
+
+      // Terapkan border ke seluruh sel tabel SPJ
+      for (let R = headerRowIdx; R <= totalRowIdx; ++R) {
+        for (let C = 1; C <= 14; ++C) {
+          const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
+          if (!ws[cellRef]) {
+            ws[cellRef] = { t: "s", v: "" };
+          }
+          const cell = ws[cellRef];
+
+          if (R === headerRowIdx) {
+            // Header Tabel (NO, NAMA LENGKAP, NIP, GOL, dll)
+            cell.s = {
+              font: { bold: true, sz: 10, color: { rgb: "000000" } },
+              fill: { fgColor: { rgb: "E2E8F0" } },
+              alignment: { horizontal: "center", vertical: "center", wrapText: true },
+              border: borderThin
+            };
+          } else if (R === totalRowIdx) {
+            // Baris Total
+            cell.s = {
+              font: { bold: true, sz: 10, color: { rgb: "000000" } },
+              fill: { fgColor: { rgb: "F1F5F9" } },
+              alignment: { vertical: "center" },
+              border: borderDoubleTotal
+            };
+            if (C === 2) {
+              cell.s.alignment = { horizontal: "center" };
+            } else if (C >= 11 && C <= 13) {
+              cell.s.alignment = { horizontal: "right" };
+              cell.z = "#,##0";
+            }
+          } else {
+            // Baris Data Peserta
+            cell.s = {
+              font: { sz: 9.5, color: { rgb: "000000" } },
+              alignment: { vertical: "center" },
+              border: borderThin
+            };
+
+            // Aturan Rata Teks / Angka
+            if (C === 1 || C === 4 || C === 8 || C === 9) {
+              cell.s.alignment.horizontal = "center";
+            } else if (C >= 10 && C <= 13) {
+              cell.s.alignment.horizontal = "right";
+              cell.z = "#,##0";
+            } else if (C === 14) {
+              cell.s.alignment.horizontal = "left";
+            }
+          }
+        }
+      }
+
       ws['!cols'] = [
         { wch: 3 },
         { wch: 5 },
@@ -3982,6 +4204,43 @@
     }
 
     /**
+     * Helper Markdown Parser untuk Balon Chat Jemprot AI
+     */
+    function formatAiMarkdown(text) {
+      if (!text) return "";
+      let html = escapeHtml(text);
+
+      // Code blocks ```code```
+      html = html.replace(/```([a-zA-Z]*)\n([\s\S]*?)```/g, (match, lang, code) => {
+        return `<pre class="my-2 p-2.5 bg-dark text-light rounded-3 font-monospace small"><code>${code}</code></pre>`;
+      });
+
+      // Inline code `code`
+      html = html.replace(/`([^`]+)`/g, '<code class="bg-secondary-subtle text-dark px-1.5 py-0.5 rounded font-monospace small">$1</code>');
+
+      // Bold **text**
+      html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+      html = html.replace(/__([^_]+)__/g, '<strong>$1</strong>');
+
+      // Italic *text*
+      html = html.replace(/(^|[^\*])\*([^\*]+)\*([^\*]|$)/g, '$1<em>$2</em>$3');
+
+      // Bullet lists
+      html = html.replace(/(?:^|\n)[ \t]*[*\-•][ \t]+(.+)/g, '<li class="ms-3 mb-1">$1</li>');
+      // Numbered lists
+      html = html.replace(/(?:^|\n)[ \t]*(\d+)\.[ \t]+(.+)/g, '<li class="ms-3 mb-1"><span class="fw-bold">$1.</span> $2</li>');
+
+      // Wrap consecutive <li> into <ul>
+      html = html.replace(/(<li[\s\S]*?<\/li>)+/g, '<ul class="ps-1 my-2 list-unstyled">$0</ul>');
+
+      // Line breaks
+      html = html.replace(/\n{2,}/g, '<div class="my-2"></div>');
+      html = html.replace(/\n/g, '<br>');
+
+      return html;
+    }
+
+    /**
      * TAB 8: ASISTEN JEMPROT AI
      */
     async function submitAiQuestion() {
@@ -3990,17 +4249,41 @@
       if (!q) return;
 
       const container = document.getElementById("chatAiContainer");
+      const timeStr = new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) + " WIB";
+
+      // Balon Chat Pengguna (Panitia) - Sisi Kanan
       container.insertAdjacentHTML("beforeend", `
-        <div class="p-3 bg-primary text-white rounded-3 shadow-sm ms-auto text-end small" style="max-width: 80%;">
-          ${escapeHtml(q)}
+        <div class="chat-message-row user">
+          <div class="chat-avatar user-avatar" title="Panitia">
+            <i class="bi bi-person-fill"></i>
+          </div>
+          <div class="chat-bubble chat-bubble-user">
+            <div class="fw-bold small text-white-50 mb-1">Panitia</div>
+            <div>${escapeHtml(q)}</div>
+            <span class="chat-time">${timeStr}</span>
+          </div>
         </div>
       `);
       input.value = "";
 
       const loadingId = "aiLoading" + Date.now();
+      // Balon Chat Indikator Loading AI - Sisi Kiri
       container.insertAdjacentHTML("beforeend", `
-        <div id="${loadingId}" class="p-3 bg-white rounded-3 shadow-sm border small" style="max-width: 80%;">
-          <span class="spinner-border spinner-border-sm me-2"></span> Menganalisis data kegiatan...
+        <div id="${loadingId}" class="chat-message-row ai">
+          <div class="chat-avatar ai-avatar" title="Jemprot AI">
+            <i class="bi bi-robot"></i>
+          </div>
+          <div class="chat-bubble chat-bubble-ai">
+            <div class="d-flex align-items-center gap-1.5 mb-1.5">
+              <strong class="text-primary small">Jemprot AI</strong>
+              <span class="badge bg-warning text-dark py-0.5 px-1.5 rounded-pill" style="font-size:0.65rem;">Asisten Kedinasan</span>
+            </div>
+            <div class="d-flex align-items-center gap-2 py-1">
+              <div class="typing-indicator"><span></span><span></span><span></span></div>
+              <span class="small text-muted">Sedang menganalisis data kegiatan...</span>
+            </div>
+            <span class="chat-time">${timeStr}</span>
+          </div>
         </div>
       `);
       container.scrollTop = container.scrollHeight;
@@ -4009,11 +4292,36 @@
         const res = await callGasApi("askGemini", { question: q, pin: currentAdminPin });
         const loadEl = document.getElementById(loadingId);
         if (loadEl) {
-          loadEl.innerHTML = `<strong>🤖 Jemprot AI:</strong><br>${(res.answer || res.message || "Tidak ada jawaban.").replace(/\n/g, "<br>")}`;
+          const respTime = new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) + " WIB";
+          const formattedText = formatAiMarkdown(res.answer || res.message || "Tidak ada jawaban.");
+          loadEl.innerHTML = `
+            <div class="chat-avatar ai-avatar" title="Jemprot AI">
+              <i class="bi bi-robot"></i>
+            </div>
+            <div class="chat-bubble chat-bubble-ai">
+              <div class="d-flex align-items-center justify-content-between mb-1.5 gap-2">
+                <div class="d-flex align-items-center gap-1.5">
+                  <strong class="text-primary small">Jemprot AI</strong>
+                  <span class="badge bg-warning text-dark py-0.5 px-1.5 rounded-pill" style="font-size:0.65rem;">Asisten Kedinasan</span>
+                </div>
+              </div>
+              <div class="chat-ai-content">${formattedText}</div>
+              <span class="chat-time">${respTime}</span>
+            </div>
+          `;
         }
       } catch (e) {
         const loadEl = document.getElementById(loadingId);
-        if (loadEl) loadEl.innerHTML = '<span class="text-danger">Gagal menghubungi Jemprot AI.</span>';
+        if (loadEl) {
+          loadEl.innerHTML = `
+            <div class="chat-avatar ai-avatar" title="Jemprot AI">
+              <i class="bi bi-robot"></i>
+            </div>
+            <div class="chat-bubble chat-bubble-ai border-danger">
+              <span class="text-danger small"><i class="bi bi-exclamation-triangle-fill me-1"></i> Gagal menghubungi Jemprot AI. Pastikan jaringan internet stabil.</span>
+            </div>
+          `;
+        }
       }
       container.scrollTop = container.scrollHeight;
     }

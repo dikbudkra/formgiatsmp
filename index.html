@@ -18,9 +18,10 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 
-  <!-- QR Code & Canvas Libraries for E-Ticket -->
+  <!-- QR Code, Canvas & PDF Libraries for E-Ticket -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <style>
     :root {
@@ -792,7 +793,7 @@
               <i class="bi bi-whatsapp me-1"></i> Kirim ke WhatsApp
             </button>
             <button type="button" class="btn btn-primary rounded-pill px-4" onclick="downloadTicketImage()">
-              <i class="bi bi-download me-1"></i> Unduh Tiket (PNG)
+              <i class="bi bi-download me-1"></i> Unduh Tiket (JPG &amp; PDF)
             </button>
           </div>
         </div>
@@ -1453,8 +1454,26 @@
           Swal.close();
           lastTicketData = response.data || {};
 
-          // Tampilkan Modal E-Ticket
-          showETicketModal(lastTicketData);
+          // Cek apakah kegiatan ini mengaktifkan modul E-Ticket & Presensi
+          const isEticketOn = !activeSelectedEvent || activeSelectedEvent.modulEticketPresensi !== "OFF";
+          if (isEticketOn) {
+            showETicketModal(lastTicketData);
+          } else {
+            Swal.fire({
+              title: "Pendaftaran Berhasil!",
+              html: `Data pendaftaran Anda telah berhasil tersimpan resmi.<br><br><strong>ID Registrasi:</strong> <span class="badge bg-primary fs-6 px-3 py-1.5">${escapeHtml(lastTicketData.regId || "-")}</span><br><br><span class="text-muted small">Kegiatan ini tidak memerlukan E-Ticket presensi QR di lokasi. Simpan ID Registrasi Anda sebagai bukti pendaftaran sah.</span>`,
+              icon: "success",
+              showCancelButton: true,
+              confirmButtonText: '<i class="bi bi-whatsapp me-1"></i> Kirim ke WhatsApp',
+              cancelButtonText: "Tutup",
+              confirmButtonColor: "#22c55e",
+              cancelButtonColor: "#64748b"
+            }).then((result) => {
+              if (result.isConfirmed) {
+                shareTicketToWhatsApp();
+              }
+            });
+          }
 
           // Reset Form
           document.getElementById("registrationForm").reset();
@@ -1536,7 +1555,7 @@
     }
 
     /**
-     * Unduh Gambar Tiket (PNG) via HTML2Canvas
+     * Unduh Gambar Tiket (JPG) dan Dokumen (PDF) Sekaligus via HTML2Canvas & jsPDF
      */
     async function downloadTicketImage() {
       const container = document.getElementById("eTicketDoubleContainer");
@@ -1566,8 +1585,8 @@
       }
 
       Swal.fire({
-        title: "Membuat Gambar Tiket...",
-        text: "Sedang merender resolusi tinggi...",
+        title: "Membuat Tiket JPG & PDF...",
+        text: "Sedang merender resolusi tinggi untuk gambar dan dokumen PDF...",
         allowOutsideClick: false,
         didOpen: () => Swal.showLoading()
       });
@@ -1591,15 +1610,53 @@
           }
         });
 
+        const regIdSafe = (lastTicketData?.regId || "Kegiatan").replace(/[^a-zA-Z0-9_-]/g, "_");
+
+        // 1. Unduh Berkas Gambar JPG
+        const imgJpgUrl = canvas.toDataURL("image/jpeg", 0.95);
+        const linkJpg = document.createElement("a");
+        linkJpg.download = `E-Ticket-${regIdSafe}.jpg`;
+        linkJpg.href = imgJpgUrl;
+        document.body.appendChild(linkJpg);
+        linkJpg.click();
+        document.body.removeChild(linkJpg);
+
+        // 2. Unduh Dokumen PDF Sekaligus (Simultaneous Download)
+        setTimeout(() => {
+          try {
+            const { jsPDF } = window.jspdf || {};
+            if (jsPDF) {
+              const imgW = canvas.width;
+              const imgH = canvas.height;
+              // Konversi ukuran px ke mm (skala 2: 1px = 25.4/(96*2) mm)
+              const mmW = (imgW * 25.4) / 192;
+              const mmH = (imgH * 25.4) / 192;
+              const isPortrait = mmH > mmW;
+              const pdf = new jsPDF({
+                orientation: isPortrait ? "portrait" : "landscape",
+                unit: "mm",
+                format: [mmW + 8, mmH + 8]
+              });
+              pdf.addImage(imgJpgUrl, "JPEG", 4, 4, mmW, mmH);
+              pdf.save(`E-Ticket-${regIdSafe}.pdf`);
+            }
+          } catch (pdfErr) {
+            console.warn("Gagal membuat file PDF:", pdfErr);
+          }
+        }, 250);
+
         Swal.close();
-        const link = document.createElement("a");
-        link.download = `E-Ticket-${lastTicketData?.regId || "Kegiatan"}.png`;
-        link.href = canvas.toDataURL("image/png");
-        link.click();
+        Swal.fire({
+          title: "Unduh Berhasil!",
+          text: "E-Ticket format JPG dan PDF berhasil diunduh secara bersamaan ke perangkat Anda.",
+          icon: "success",
+          timer: 2800,
+          showConfirmButton: false
+        });
       } catch (err) {
         Swal.close();
-        console.error("Gagal html2canvas:", err);
-        showErrorAlert("Gagal menyimpan gambar tiket.");
+        console.error("Gagal generate tiket:", err);
+        showErrorAlert("Gagal menyimpan tiket.");
       }
     }
 
