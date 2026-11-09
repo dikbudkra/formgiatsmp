@@ -124,6 +124,22 @@ function getSpreadsheet_() {
 
 /**
  * =========================================================================
+ * FUNGSI OTORISASI GOOGLE DRIVE (DRIVEAPP)
+ * Jika muncul pesan "Anda tidak memiliki izin untuk memanggil DriveApp...":
+ * 1. Di toolbar atas Apps Script, pilih fungsi: OTORISASI_GOOGLE_DRIVE
+ * 2. Klik tombol "Run" / "Jalankan"
+ * 3. Klik "Review permissions" -> Pilih Akun Google -> Advanced -> Go to ... (unsafe) -> Allow.
+ * 4. Terapkan (Deploy) Versi Baru (New Version).
+ * =========================================================================
+ */
+function OTORISASI_GOOGLE_DRIVE() {
+  const root = DriveApp.getRootFolder();
+  Logger.log("✅ Izin Google Drive (DriveApp) aktif! Root Folder: " + root.getName());
+  return "Izin Google Drive (DriveApp) Berhasil Diberikan!";
+}
+
+/**
+ * =========================================================================
  * FUNGSI SETUP / MIGRASI DATABASE MULTI-KEGIATAN
  * PANDUAN PENGGUNAAN MAS BOS:
  * 1. Buka Google Apps Script editor.
@@ -2576,6 +2592,23 @@ function getSpjTemplateList(pin) {
 }
 
 /**
+ * Dapatkan Folder Penyimpanan Template SPJ & Doc di Google Drive
+ */
+function getSpjFolder_() {
+  const folderId = FOLDER_SPJ_ID;
+  if (folderId && folderId !== "1Rhc_GVXNtFA8wPzkgerLCztrXQeML037") {
+    try {
+      return DriveApp.getFolderById(folderId);
+    } catch (e) {}
+  }
+  const existing = DriveApp.getFoldersByName("Templates_SPJ_Bidang_SMP");
+  if (existing.hasNext()) {
+    return existing.next();
+  }
+  return DriveApp.createFolder("Templates_SPJ_Bidang_SMP");
+}
+
+/**
  * Upload template baru (.xlsx atau .docx) ke Google Drive & rekam di sheet
  */
 function uploadSpjTemplate(fileData, pin) {
@@ -2600,13 +2633,7 @@ function uploadSpjTemplate(fileData, pin) {
 
   try {
     ensureDatabaseReady_();
-    const folderId = FOLDER_SPJ_ID;
-    let folder;
-    try {
-      folder = DriveApp.getFolderById(folderId);
-    } catch (e) {
-      folder = DriveApp.createFolder("Templates_SPJ_Bidang_SMP");
-    }
+    const folder = getSpjFolder_();
 
     const decodedBytes = Utilities.base64Decode(fileData.base64Data);
     const mimeType = ext === "xlsx" 
