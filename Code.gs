@@ -2368,21 +2368,16 @@ function askGeminiAboutActiveEvent(question, pin, targetEventIdOrName) {
     const activeEventName = settings.NAMA_KEGIATAN || "Kegiatan Aktif";
     const systemInstruction = 
       "Anda adalah 'Jemprot AI - Asisten Analis Data Kegiatan Bidang SMP DISDIKBUD Karanganyar'.\n" +
-      "Tugas Anda: Menjawab pertanyaan panitia secara cepat, sopan, dan akurat berdasarkan data kegiatan dinas.\n\n" +
-      "ATURAN KHUSUS MULTI-KEGIATAN & STRICT GROUNDING:\n" +
-      "1. Saat ini Anda HANYA MEMEGANG DAN MENGANALISIS RINCIAN DATA PESERTA UNTUK KEGIATAN: '" + activeEventName + "'. Anda TIDAK MEMILIKI rincian peserta dari kegiatan lain demi menjaga akurasi data.\n" +
-      "2. Jika panitia menanyakan ADA BERAPA KEGIATAN, sebutkan jumlah total kegiatan yang tercatat di daftarSemuaKegiatan beserta nama dan statusnya, TETAPI TEGASKAN BAHWA saat ini Anda hanya membaca data peserta untuk kegiatan '" + activeEventName + "'.\n" +
-      "3. Jika panitia menanyakan peserta, kuota, kaos, atau sekolah: jawab HANYA berdasarkan data peserta kegiatan '" + activeEventName + "' yang dilampirkan.\n" +
-      "4. Berikan jawaban dalam Bahasa Indonesia yang profesional, ramah, dan ringkas. Gunakan angka persis, poin (bullet), atau tabel sederhana jika menyajikan rincian peserta atau sekolah.\n" +
+      "Tugas Anda: Menjawab pertanyaan panitia secara cepat, to-the-point, ramah, dan akurat HANYA BERDASARKAN DATA KEGIATAN YANG SEDANG AKTIF DI LAYAR: '" + activeEventName + "'.\n\n" +
+      "ATURAN MUTLAK (STRICT GROUNDING KEGIATAN AKTIF):\n" +
+      "1. Anda HANYA BISA MEMBACA DAN MENGANALISIS kegiatan yang sedang dibuka di layar saat ini, yaitu: '" + activeEventName + "'. Anda TIDAK MEMILIKI akses atau informasi kegiatan lain di luar kegiatan aktif ini.\n" +
+      "2. Jika panitia bertanya tentang kegiatan, peserta, kuota, kaos, atau sekolah: jawab langsung to-the-point dan ringkas berdasarkan data kegiatan aktif '" + activeEventName + "' tanpa bertele-tele.\n" +
+      "3. Jika ada hal yang datanya tidak tercatat dalam lampiran, jawab singkat dan sopan bahwa informasi tidak tersedia pada kegiatan ini.\n" +
+      "4. Gunakan Bahasa Indonesia yang profesional, ringkas, dan jelas. Gunakan poin (bullet) atau angka persis jika menyajikan daftar peserta/sekolah.\n" +
       "5. Tanggal & waktu saat ini: " + Utilities.formatDate(new Date(), Session.getScriptTimeZone() || "GMT+7", "dd MMMM yyyy HH:mm") + " WIB.";
 
     const contextData = {
-      daftarSemuaKegiatan: (dashData.allEvents || []).map(ev => ({
-        namaKegiatan: ev.namaKegiatan,
-        statusFormulir: ev.statusForm,
-        isSedangDibacaSaatIni: ev.idKegiatan === settings.ID_KEGIATAN
-      })),
-      kegiatanYangSedangDibacaSaatIni: {
+      kegiatanAktif: {
         namaKegiatan: settings.NAMA_KEGIATAN || "-",
         subKegiatan: settings.SUB_KEGIATAN || "-",
         tanggalPelaksanaan: settings.TANGGAL_KEGIATAN || "-",
