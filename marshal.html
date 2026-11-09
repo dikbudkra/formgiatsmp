@@ -3887,25 +3887,8 @@
         }
       } catch (err) {
         if (loading) loading.classList.add("d-none");
-        console.warn("Gagal panggil getSpjTemplateList, gunakan fallback lokal:", err);
-        // Fallback default template jika baru pertama kali atau offline
-        spjTemplates = [
-          {
-            id: "TPL-SPJ-01",
-            namaDokumen: "Daftar Penerimaan Uang Saku & Transport",
-            tipeFile: "XLSX",
-            fileId: "DEFAULT",
-            namaFileAsli: "Daftar_Penerimaan_Uang_Saku_Standar.xlsx",
-            ukuranFile: "Bawaan",
-            tanggalUpload: "06/11/2026 21:00",
-            metadata: {
-              jenis: "Keuangan (Uang Saku/Transport/Honor)",
-              hasNominal: true,
-              defaultNominal: 200000,
-              defaultHari: 1
-            }
-          }
-        ];
+        console.warn("Gagal panggil getSpjTemplateList:", err);
+        spjTemplates = [];
         renderSpjTemplates(spjTemplates);
       }
     }
