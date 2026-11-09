@@ -1552,10 +1552,9 @@
               <div class="table-responsive" id="containerFormatRealPreview">
                 <!-- Tabel akan di-render secara dinamis dari file Excel asli -->
               </div>
-            </div>
 
-              <!-- Format Tanda Tangan 3 Pejabat -->
-              <div class="row text-center mt-5 pt-3" style="font-size: 9.5pt;">
+              <!-- Format Tanda Tangan 3 Pejabat (SPJ Keuangan) -->
+              <div id="signRowFormatFinance" class="row text-center mt-5 pt-3" style="font-size: 9.5pt;">
                 <div class="col-12 text-end mb-3 pe-4 text-muted fst-italic">
                   <span>Karanganyar, [Tanggal Dokumen SPJ]</span>
                 </div>
@@ -1581,11 +1580,32 @@
                   <p class="small text-muted mb-0">NIP 197610022010012002</p>
                 </div>
               </div>
+
+              <!-- Format Tanda Tangan Presensi / Daftar Hadir Murni -->
+              <div id="signRowFormatAttendance" class="row text-center mt-5 pt-3 d-none" style="font-size: 9.5pt;">
+                <div class="col-12 text-end mb-3 pe-4 text-muted fst-italic">
+                  <span>Karanganyar, [Tanggal Pelaksanaan Kegiatan]</span>
+                </div>
+                <div class="col-6">
+                  <p class="mb-1 fw-bold">Mengetahui,</p>
+                  <p class="mb-0 text-muted small" style="line-height: 1.2;">Kepala Bidang SMP<br>Disdikbud Kab. Karanganyar</p>
+                  <div style="height: 55px;"></div>
+                  <p class="fw-bold mb-0 text-decoration-underline">Rehatta Rakasiwi, S.Psi.,M.Si</p>
+                  <p class="small text-muted mb-0">NIP 198401162011011009</p>
+                </div>
+                <div class="col-6">
+                  <p class="mb-1 fw-bold">Panitia Penyelenggara,</p>
+                  <p class="mb-0 text-muted small" style="line-height: 1.2;">Ketua Pelaksana Kegiatan<br>&nbsp;</p>
+                  <div style="height: 55px;"></div>
+                  <p class="fw-bold mb-0 text-decoration-underline">Agus Pruwitanto, S.Sos</p>
+                  <p class="small text-muted mb-0">NIP 197408191999031005</p>
+                </div>
+              </div>
             </div>
 
             <div class="text-center py-4 mt-3 bg-white border rounded shadow-sm">
-              <h6 class="fw-bold text-dark mb-1">Siap Mencetak Lembar SPJ untuk Kegiatan Ini?</h6>
-              <p class="text-muted small mb-3">Klik tombol di bawah ini untuk mengisi nominal anggaran &amp; memuat seluruh nama peserta terdaftar.</p>
+              <h6 class="fw-bold text-dark mb-1">Siap Mengisi Data Peserta ke Dokumen Ini?</h6>
+              <p class="text-muted small mb-3">Klik tombol di bawah ini untuk mengisi seluruh nama peserta kegiatan yang terdaftar secara otomatis.</p>
               <button type="button" class="btn btn-success btn-lg fw-bold px-5 py-2 rounded-pill shadow" onclick="switchToSpjProcess()">
                 <i class="bi bi-play-circle-fill me-2"></i> Buat Dokumen
               </button>
@@ -1802,8 +1822,8 @@
                 </table>
               </div>
 
-              <!-- Tanda Tangan 3 Pejabat -->
-              <div class="row text-center mt-5 pt-3 signature-block" style="font-size: 9.5pt;">
+              <!-- Tanda Tangan 3 Pejabat (SPJ Keuangan) -->
+              <div id="signRowProcessFinance" class="row text-center mt-5 pt-3 signature-block" style="font-size: 9.5pt;">
                 <div class="col-12 text-end mb-3 pe-4">
                   <span id="lblPreviewSpjTanggal">Karanganyar, ...</span>
                 </div>
@@ -1827,6 +1847,27 @@
                   <div style="height: 60px;"></div>
                   <p class="fw-bold mb-0 text-decoration-underline" id="lblPreviewBendaharaNama">Dwi Suprasetiarini, S.M</p>
                   <p class="small text-muted mb-0" id="lblPreviewBendaharaNip">NIP 197610022010012002</p>
+                </div>
+              </div>
+
+              <!-- Tanda Tangan Presensi / Daftar Hadir Murni -->
+              <div id="signRowProcessAttendance" class="row text-center mt-5 pt-3 signature-block d-none" style="font-size: 9.5pt;">
+                <div class="col-12 text-end mb-3 pe-4">
+                  <span id="lblPreviewSpjTanggalAtt">Karanganyar, ...</span>
+                </div>
+                <div class="col-6">
+                  <p class="mb-1 fw-bold">Mengetahui,</p>
+                  <p class="mb-0 text-muted small" style="line-height: 1.2;">Kepala Bidang SMP<br>Disdikbud Kab. Karanganyar</p>
+                  <div style="height: 60px;"></div>
+                  <p class="fw-bold mb-0 text-decoration-underline" id="lblPreviewAttKpaNama">Rehatta Rakasiwi, S.Psi.,M.Si</p>
+                  <p class="small text-muted mb-0" id="lblPreviewAttKpaNip">NIP 198401162011011009</p>
+                </div>
+                <div class="col-6">
+                  <p class="mb-1 fw-bold">Panitia Penyelenggara,</p>
+                  <p class="mb-0 text-muted small" style="line-height: 1.2;">Ketua Pelaksana Kegiatan<br>&nbsp;</p>
+                  <div style="height: 60px;"></div>
+                  <p class="fw-bold mb-0 text-decoration-underline" id="lblPreviewAttPptkNama">Agus Pruwitanto, S.Sos</p>
+                  <p class="small text-muted mb-0" id="lblPreviewAttPptkNip">NIP 197408191999031005</p>
                 </div>
               </div>
             </div>
@@ -3303,7 +3344,7 @@
       XLSX.utils.book_append_sheet(wb, ws, "Rekapitulasi Lengkap");
       const cleanEventName = (activeEventId || "Kegiatan").replace(/[/\\?%*:|"<>]/g, "");
       const fileName = `Rekapitulasi-Lengkap-${cleanEventName}-${new Date().toISOString().slice(0, 10)}.xlsx`;
-      XLSX.writeFile(wb, fileName);
+      safeSaveWorkbook(wb, fileName);
       Swal.fire({
         toast: true,
         position: 'top-end',
@@ -3603,7 +3644,7 @@
         fileName = `Rekap-Monitoring-Sekolah-${cleanEventName}-${fileDate}.xlsx`;
       }
 
-      XLSX.writeFile(wb, fileName);
+      safeSaveWorkbook(wb, fileName);
 
       Swal.fire({
         toast: true,
@@ -3730,7 +3771,7 @@
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Peserta");
       const fileName = `Data-Peserta-${activeEventId || "Export"}.xlsx`;
-      XLSX.writeFile(wb, fileName);
+      safeSaveWorkbook(wb, fileName);
       Swal.fire({
         toast: true,
         position: 'top-end',
@@ -4055,6 +4096,17 @@
         if (resp && resp.success) {
           if (resp.template && resp.template.id) {
             templateBinaryCache[resp.template.id] = selectedSpjFileBase64;
+            try {
+              localStorage.setItem("spj_tpl_bin_" + resp.template.id, selectedSpjFileBase64);
+              if (resp.template.fileId) {
+                localStorage.setItem("spj_tpl_bin_" + resp.template.fileId, selectedSpjFileBase64);
+              }
+              if (selectedSpjFileName) {
+                localStorage.setItem("spj_tpl_bin_name_" + selectedSpjFileName.toLowerCase(), selectedSpjFileBase64);
+              }
+            } catch (e) {
+              console.warn("LocalStorage save error:", e);
+            }
           }
           const modalEl = document.getElementById("modalUploadSpj");
           if (modalEl) {
@@ -4095,6 +4147,7 @@
           const resp = await callGasApi("deleteSpjTemplate", { templateId: tplId, pin: currentAdminPin });
           Swal.close();
           if (resp && resp.success) {
+            try { localStorage.removeItem("spj_tpl_bin_" + tplId); } catch(e) {}
             Swal.fire("Terhapus!", resp.message, "success");
             loadSpjTemplates();
           } else {
@@ -4139,31 +4192,90 @@
     }
 
     /**
+     * Membuka file explorer lokal jika file template belum ada di memori perangkat ini
+     */
+    function promptUploadTemplateLocally(tplId) {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = ".xlsx";
+      input.onchange = function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          const res = evt.target.result;
+          const base64 = res.includes(",") ? res.split(",")[1] : res;
+          if (base64) {
+            templateBinaryCache[tplId] = base64;
+            try {
+              localStorage.setItem("spj_tpl_bin_" + tplId, base64);
+              if (currentSelectedSpjTpl && currentSelectedSpjTpl.fileId) {
+                localStorage.setItem("spj_tpl_bin_" + currentSelectedSpjTpl.fileId, base64);
+              }
+            } catch (err) {}
+            if (currentSelectedSpjTpl && currentSelectedSpjTpl.id === tplId) {
+              renderRealTemplateFormatPreview(currentSelectedSpjTpl);
+            }
+            Swal.fire({
+              icon: "success",
+              title: "Template Terhubung!",
+              text: `File "${file.name}" berhasil dibaca dan disimpan pada perangkat ini.`,
+              timer: 1800,
+              showConfirmButton: false
+            });
+          }
+        };
+        reader.readAsDataURL(file);
+      };
+      input.click();
+    }
+
+    /**
      * Membaca file template asli (.xlsx) dan merender tabel lembar kerja aslinya
      */
     async function renderRealTemplateFormatPreview(tpl) {
       const container = document.getElementById("containerFormatRealPreview");
       if (!container) return;
       const noticeEl = document.getElementById("lblFormatDocNotice");
+      const isNonFin = isTemplateNonFinance(tpl);
 
-      container.innerHTML = `
-        <div class="text-center py-4">
-          <div class="spinner-border text-success spinner-border-sm" role="status"></div>
-          <div class="small text-muted mt-2">Membaca struktur file Excel asli "<strong>${escapeHtml(tpl.namaDokumen)}</strong>"...</div>
-        </div>
-      `;
+      // Sinkronkan tanda tangan format view
+      const signFmtFinance = document.getElementById("signRowFormatFinance");
+      const signFmtAttendance = document.getElementById("signRowFormatAttendance");
+      if (signFmtFinance) signFmtFinance.classList.toggle("d-none", isNonFin);
+      if (signFmtAttendance) signFmtAttendance.classList.toggle("d-none", !isNonFin);
 
-      try {
-        let base64 = templateBinaryCache[tpl.id] || null;
-        if (!base64 && tpl.fileId && tpl.fileId !== "DEFAULT") {
+      let base64 = templateBinaryCache[tpl.id] || 
+                   (tpl.fileId ? templateBinaryCache[tpl.fileId] : null) ||
+                   localStorage.getItem("spj_tpl_bin_" + tpl.id) ||
+                   (tpl.fileId ? localStorage.getItem("spj_tpl_bin_" + tpl.fileId) : null) ||
+                   (tpl.namaFileAsli ? localStorage.getItem("spj_tpl_bin_name_" + tpl.namaFileAsli.toLowerCase()) : null);
+
+      if (!base64 && tpl.fileId && tpl.fileId !== "DEFAULT") {
+        container.innerHTML = `
+          <div class="text-center py-4">
+            <div class="spinner-border text-success spinner-border-sm" role="status"></div>
+            <div class="small text-muted mt-2">Membaca struktur file Excel asli "<strong>${escapeHtml(tpl.namaDokumen)}</strong>"...</div>
+          </div>
+        `;
+
+        try {
           const resp = await callGasApi("getSpjTemplateFile", { fileId: tpl.fileId, pin: currentAdminPin });
           if (resp && resp.success && resp.base64Data) {
             base64 = resp.base64Data;
             templateBinaryCache[tpl.id] = base64;
+            try {
+              localStorage.setItem("spj_tpl_bin_" + tpl.id, base64);
+              if (tpl.fileId) localStorage.setItem("spj_tpl_bin_" + tpl.fileId, base64);
+            } catch (e) {}
           }
+        } catch (err) {
+          console.warn("Gagal mengambil file template dari cloud:", err);
         }
+      }
 
-        if (base64 && tpl.tipeFile === "XLSX") {
+      if (base64 && tpl.tipeFile === "XLSX") {
+        try {
           const wb = XLSX.read(base64, { type: "base64" });
           const sheetName = wb.SheetNames[0];
           const ws = wb.Sheets[sheetName];
@@ -4172,8 +4284,10 @@
             container.innerHTML = `
               <div class="p-2 bg-white rounded border">
                 <div class="small text-muted mb-2 fst-italic d-flex justify-content-between align-items-center">
-                  <span><i class="bi bi-file-earmark-spreadsheet-fill text-success me-1"></i> Lembar: <strong>${escapeHtml(sheetName)}</strong> (Format Asli Excel Dinas)</span>
-                  <span class="badge bg-light text-dark border">Dibaca Dari File Asli</span>
+                  <span><i class="bi bi-file-earmark-spreadsheet-fill text-success me-1"></i> Lembar: <strong>${escapeHtml(sheetName)}</strong> (Format Asli Excel yang Diunggah)</span>
+                  <button class="btn btn-outline-secondary btn-sm py-0 px-2" style="font-size: 0.75rem;" onclick="promptUploadTemplateLocally('${tpl.id}')" title="Hubungkan file Excel dari komputer ini jika file belum terbaca penuh">
+                    <i class="bi bi-arrow-repeat me-1"></i>Ganti / Muat File Lokal
+                  </button>
                 </div>
                 <div class="table-responsive">
                   ${rawHtml}
@@ -4190,13 +4304,12 @@
             }
             return;
           }
+        } catch (e) {
+          console.warn("Gagal merender lembar Excel asli:", e);
         }
-
-        renderDefaultMockFormatPreview(tpl);
-      } catch (err) {
-        console.error("Gagal membaca preview template Excel:", err);
-        renderDefaultMockFormatPreview(tpl);
       }
+
+      renderDefaultMockFormatPreview(tpl);
     }
 
     function renderDefaultMockFormatPreview(tpl) {
@@ -4291,9 +4404,10 @@
       }
 
       currentSelectedSpjTpl = spjTemplates.find(t => t.id === tplId) || null;
-      const docTitle = currentSelectedSpjTpl ? currentSelectedSpjTpl.namaDokumen : "Daftar Penerimaan Uang Saku & Transport";
+      const isNonFin = isTemplateNonFinance(currentSelectedSpjTpl);
+      const docTitle = currentSelectedSpjTpl ? currentSelectedSpjTpl.namaDokumen : (isNonFin ? "Daftar Hadir Peserta" : "Daftar Penerimaan Uang Saku & Transport");
       const fileType = currentSelectedSpjTpl ? currentSelectedSpjTpl.tipeFile : "XLSX";
-      const fileName = currentSelectedSpjTpl ? currentSelectedSpjTpl.namaFileAsli : "Template_Standar.xlsx";
+      const fileName = currentSelectedSpjTpl ? currentSelectedSpjTpl.namaFileAsli : (isNonFin ? "Daftar_Hadir.xlsx" : "Template_Standar.xlsx");
 
       const titleEl = document.getElementById("modalGenerateSpjTitle");
       const badgeTipe = document.getElementById("badgeModalSpjTipe");
@@ -4320,14 +4434,24 @@
       // Set header format view
       const prevFormatHeader = document.getElementById("previewFormatDocHeader");
       const prevFormatSubHeader = document.getElementById("previewFormatDocSubHeader");
-      if (prevFormatHeader) prevFormatHeader.innerText = (docTitle || "DAFTAR PENERIMAAN UANG SAKU").toUpperCase();
+      const defaultHeader = isNonFin ? "DAFTAR HADIR PESERTA" : "DAFTAR PENERIMAAN UANG SAKU & TRANSPORT";
+      if (prevFormatHeader) prevFormatHeader.innerText = (docTitle || defaultHeader).toUpperCase();
       if (prevFormatSubHeader) prevFormatSubHeader.innerText = currentEventName.toUpperCase();
 
       // Set header proses view
       const prevDocHeader = document.getElementById("previewSpjDocHeader");
       const prevDocSubHeader = document.getElementById("previewSpjDocSubHeader");
-      if (prevDocHeader) prevDocHeader.innerText = (docTitle || "DAFTAR PENERIMAAN UANG SAKU").toUpperCase();
+      if (prevDocHeader) prevDocHeader.innerText = (docTitle || defaultHeader).toUpperCase();
       if (prevDocSubHeader) prevDocSubHeader.innerText = currentEventName.toUpperCase();
+
+      // Sinkronkan tanda tangan di format view
+      const signFmtFinance = document.getElementById("signRowFormatFinance");
+      const signFmtAttendance = document.getElementById("signRowFormatAttendance");
+      if (signFmtFinance) signFmtFinance.classList.toggle("d-none", isNonFin);
+      if (signFmtAttendance) signFmtAttendance.classList.toggle("d-none", !isNonFin);
+
+      // Siapkan hitungan pendaftar di latar belakang agar activeSpjData selalu siap
+      recalculateAndRenderSpjPreview();
 
       renderRealTemplateFormatPreview(currentSelectedSpjTpl);
       switchToSpjFormatView();
@@ -4371,7 +4495,7 @@
       if (footerProcess) footerProcess.classList.remove("d-none");
 
       if (titleEl && currentSelectedSpjTpl) {
-        titleEl.innerText = "Buat Dokumen SPJ: " + currentSelectedSpjTpl.namaDokumen;
+        titleEl.innerText = (isTemplateNonFinance(currentSelectedSpjTpl) ? "Buat Daftar Hadir: " : "Buat Dokumen SPJ: ") + currentSelectedSpjTpl.namaDokumen;
       }
 
       if (btnWord) {
@@ -4387,6 +4511,17 @@
       const boxParam = document.getElementById("boxSpjParameters");
       const alertNotice = document.getElementById("alertSpjAttendanceNotice");
       const thead = document.getElementById("theadPreviewSpj");
+      const tfoot = document.getElementById("tfootPreviewSpj");
+
+      const prevDocHeader = document.getElementById("previewSpjDocHeader");
+      const defaultHeader = isNonFin ? "DAFTAR HADIR PESERTA" : "DAFTAR PENERIMAAN UANG SAKU & TRANSPORT";
+      if (prevDocHeader) prevDocHeader.innerText = (currentSelectedSpjTpl?.namaDokumen || defaultHeader).toUpperCase();
+
+      const signProcessFinance = document.getElementById("signRowProcessFinance");
+      const signProcessAttendance = document.getElementById("signRowProcessAttendance");
+      if (signProcessFinance) signProcessFinance.classList.toggle("d-none", isNonFin);
+      if (signProcessAttendance) signProcessAttendance.classList.toggle("d-none", !isNonFin);
+      if (tfoot) tfoot.style.display = isNonFin ? "none" : "";
 
       if (isNonFin) {
         if (boxParam) boxParam.classList.add("d-none");
@@ -4834,21 +4969,37 @@
       // Bersihkan nama file dari karakter ilegal sistem operasi (\ / : * ? " < > |)
       const cleanName = String(filename || 'Dokumen.xlsx').replace(/[\\/:*?"<>|]/g, '_').replace(/\s+/g, '_').trim();
       try {
-        XLSX.writeFile(wb, cleanName);
-      } catch (err) {
-        console.warn("XLSX.writeFile standar gagal, mencoba metode Blob download:", err);
         const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-        const blob = new Blob([wbout], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+        const blob = new Blob([wbout], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8" });
+        
+        if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+          window.navigator.msSaveOrOpenBlob(blob, cleanName);
+          return true;
+        }
+
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
+        a.style.display = "none";
         a.href = url;
-        a.download = cleanName;
+        a.setAttribute("download", cleanName);
         document.body.appendChild(a);
         a.click();
         setTimeout(() => {
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
-        }, 1500);
+          try {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          } catch (e) {}
+        }, 3000);
+        return true;
+      } catch (err) {
+        console.warn("safeSaveWorkbook Blob save gagal, mencoba metode XLSX.writeFile:", err);
+        try {
+          XLSX.writeFile(wb, cleanName);
+          return true;
+        } catch (e) {
+          console.error("Critical: Seluruh metode penyimpanan Excel gagal:", e);
+          return false;
+        }
       }
     }
 
@@ -5085,8 +5236,15 @@
     }
 
     async function downloadSpjExcel() {
-      if (!activeSpjData || !activeSpjData.participants) {
-        Swal.fire("Peringatan", "Belum ada data kegiatan untuk diunduh. Pastikan kegiatan memiliki peserta.", "warning");
+      // 1. Pastikan activeSpjData siap dan terisi peserta
+      if (!activeSpjData || !activeSpjData.participants || activeSpjData.participants.length === 0) {
+        if (currentDashboardData && Array.isArray(currentDashboardData.participants) && currentDashboardData.participants.length > 0) {
+          await recalculateAndRenderSpjPreview();
+        }
+      }
+
+      if (!activeSpjData || !activeSpjData.participants || activeSpjData.participants.length === 0) {
+        Swal.fire("Peringatan", "Belum ada data kegiatan untuk diunduh. Pastikan kegiatan memiliki peserta terdaftar.", "warning");
         return;
       }
 
@@ -5114,50 +5272,53 @@
       if (currentSelectedSpjTpl && currentSelectedSpjTpl.fileId && currentSelectedSpjTpl.fileId !== "DEFAULT" && currentSelectedSpjTpl.tipeFile === "XLSX") {
         Swal.fire({
           title: "Menyiapkan Dokumen Excel...",
-          html: `Sedang menyuntikkan <strong>${selectedList.length} peserta</strong> ke dalam template resmi <em>"${escapeHtml(currentSelectedSpjTpl.namaDokumen)}"</em>...`,
+          html: `Sedang menyiapkan data <strong>${selectedList.length} peserta</strong> ke dalam template <em>"${escapeHtml(currentSelectedSpjTpl.namaDokumen)}"</em>...`,
           allowOutsideClick: false,
           didOpen: () => Swal.showLoading()
         });
 
         try {
-          let base64 = templateBinaryCache[currentSelectedSpjTpl.id];
+          // Cari binary di cache memori, localStorage id, fileId, atau nama file
+          let base64 = templateBinaryCache[currentSelectedSpjTpl.id] || 
+                       (currentSelectedSpjTpl.fileId ? templateBinaryCache[currentSelectedSpjTpl.fileId] : null) ||
+                       localStorage.getItem("spj_tpl_bin_" + currentSelectedSpjTpl.id) ||
+                       (currentSelectedSpjTpl.fileId ? localStorage.getItem("spj_tpl_bin_" + currentSelectedSpjTpl.fileId) : null) ||
+                       (currentSelectedSpjTpl.namaFileAsli ? localStorage.getItem("spj_tpl_bin_name_" + currentSelectedSpjTpl.namaFileAsli.toLowerCase()) : null);
+
           if (!base64) {
-            const resp = await callGasApi("getSpjTemplateFile", { fileId: currentSelectedSpjTpl.fileId, pin: currentAdminPin });
-            if (resp && resp.success && resp.base64Data) {
-              base64 = resp.base64Data;
-              templateBinaryCache[currentSelectedSpjTpl.id] = base64;
-            } else {
-              throw new Error(resp ? resp.message : "Gagal mengambil file template dari server.");
+            try {
+              const resp = await callGasApi("getSpjTemplateFile", { fileId: currentSelectedSpjTpl.fileId, pin: currentAdminPin });
+              if (resp && resp.success && resp.base64Data) {
+                base64 = resp.base64Data;
+                templateBinaryCache[currentSelectedSpjTpl.id] = base64;
+                try {
+                  localStorage.setItem("spj_tpl_bin_" + currentSelectedSpjTpl.id, base64);
+                } catch (e) {}
+              }
+            } catch (netErr) {
+              console.warn("Koneksi getSpjTemplateFile ke server gagal:", netErr);
             }
           }
 
-          const wbInjected = injectParticipantsIntoExcelTemplate(base64, selectedList, activeSpjData);
-          const prefix = isNonFin ? "Daftar_Hadir" : "SPJ";
-          const cleanFilename = `${prefix}_${sanitizeName(eventName)}_${sanitizeName(currentSelectedSpjTpl.namaDokumen)}.xlsx`;
-          
-          safeSaveWorkbook(wbInjected, cleanFilename);
-          Swal.close();
+          if (base64) {
+            const wbInjected = injectParticipantsIntoExcelTemplate(base64, selectedList, activeSpjData);
+            const prefix = isNonFin ? "Daftar_Hadir" : "SPJ";
+            const cleanFilename = `${prefix}_${sanitizeName(eventName)}_${sanitizeName(currentSelectedSpjTpl.namaDokumen)}.xlsx`;
+            
+            safeSaveWorkbook(wbInjected, cleanFilename);
 
-          Swal.fire({
-            icon: "success",
-            title: "Download Excel Berhasil!",
-            text: `Data ${selectedList.length} peserta berhasil diisikan ke template "${cleanFilename}".`,
-            timer: 2500,
-            showConfirmButton: false
-          });
-          return;
+            Swal.fire({
+              icon: "success",
+              title: "Download Excel Berhasil!",
+              text: `Data ${selectedList.length} peserta berhasil diisikan ke template "${cleanFilename}".`,
+              timer: 2500,
+              showConfirmButton: false
+            });
+            return;
+          }
         } catch (err) {
-          console.error("Gagal menyuntikkan ke template kustom:", err);
-          Swal.close();
-          const confirmFallback = await Swal.fire({
-            icon: "warning",
-            title: "Gagal Membaca Template",
-            html: `Terjadi kendala pada file template: <strong>${escapeHtml(err.message)}</strong>.<br><br>Apakah Mas Bos ingin tetap mengunduh dengan generator format baku resmi dinas?`,
-            showCancelButton: true,
-            confirmButtonText: "Ya, Unduh Format Baku Dinas",
-            cancelButtonText: "Batal"
-          });
-          if (!confirmFallback.isConfirmed) return;
+          console.warn("Gagal menyuntikkan data ke file template kustom, mengalihkan ke generator format dinas:", err);
+          // Tetap lanjut ke generator format baku di bawah, unduhan TIDAK AKAN PERNAH DIBATALKAN
         }
       }
 
