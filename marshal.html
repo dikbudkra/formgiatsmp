@@ -3695,6 +3695,7 @@
     let overridePajakMap = {};
     let selectedSpjFileBase64 = null;
     let selectedSpjFileName = "";
+    const templateBinaryCache = {};
 
     async function loadSpjTemplates() {
       const loading = document.getElementById("loadingSpjTemplates");
@@ -3921,6 +3922,9 @@
           btnSubmit.innerHTML = '<i class="bi bi-upload me-1"></i> Simpan Template';
         }
         if (resp && resp.success) {
+          if (resp.template && resp.template.id) {
+            templateBinaryCache[resp.template.id] = selectedSpjFileBase64;
+          }
           const modalEl = document.getElementById("modalUploadSpj");
           if (modalEl) {
             const modal = bootstrap.Modal.getInstance(modalEl);
@@ -4426,7 +4430,194 @@
       }
     }
 
-    function downloadSpjExcel() {
+    /**
+     * Opsi A: Menyuntikkan data peserta langsung ke dalam file template Excel (.xlsx) yang diunggah dinas
+     */
+    function injectParticipantsIntoExcelTemplate(base64Data, selectedList, activeSpjData) {
+      const wb = XLSX.read(base64Data, { type: "base64", cellStyles: true });
+      const sheetName = wb.SheetNames[0];
+      const ws = wb.Sheets[sheetName];
+      if (!ws) throw new Error("Lembar kerja Excel tidak ditemukan dalam file template.");
+
+      const range = XLSX.utils.decode_range(ws['!ref'] || "A1:Z50");
+      let headerRow = -1;
+      let colMap = {
+        no: -1,
+        nama: -1,
+        nip: -1,
+        gol: -1,
+        jabatan: -1,
+        unit: -1,
+        jml: -1,
+        satuan: -1,
+        tarif: -1,
+        bruto: -1,
+        pph: -1,
+        netto: -1,
+        ttd: -1
+      };
+
+      // 1. Pindai mencari baris header tabel template dinas
+      for (let R = range.s.r; R <= Math.min(range.e.r, 35); ++R) {
+        let hasNo = false;
+        let hasNama = false;
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+          const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
+          if (!cell || cell.v === undefined) continue;
+          const val = String(cell.v).toUpperCase().trim();
+          if (val === "NO" || val === "NO." || val === "NOMOR") hasNo = true;
+          if (val.includes("NAMA")) hasNama = true;
+        }
+        if (hasNo && hasNama) {
+          headerRow = R;
+          break;
+        }
+      }
+
+      // Petakan kolom berdasarkan header dinas (tanpa kolom Kecamatan)
+      if (headerRow !== -1) {
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+          const cell = ws[XLSX.utils.encode_cell({ r: headerRow, c: C })];
+          if (!cell || cell.v === undefined) continue;
+          const val = String(cell.v).toUpperCase().trim();
+          if ((val === "NO" || val === "NO." || val === "NOMOR") && colMap.no === -1) colMap.no = C;
+          else if (val.includes("NAMA") && colMap.nama === -1) colMap.nama = C;
+          else if (val.includes("NIP") && colMap.nip === -1) colMap.nip = C;
+          else if (val.includes("GOL") && colMap.gol === -1) colMap.gol = C;
+          else if (val.includes("JABATAN") && colMap.jabatan === -1) colMap.jabatan = C;
+          else if ((val.includes("UNIT") || val.includes("SEKOLAH") || val.includes("INSTANSI")) && colMap.unit === -1) colMap.unit = C;
+          else if ((val === "JML" || val.includes("HARI") || val.includes("WAKTU") || val.includes("VOLUME")) && colMap.jml === -1) colMap.jml = C;
+          else if (val.includes("SATUAN") && colMap.satuan === -1) colMap.satuan = C;
+          else if ((val.includes("TARIF") || val.includes("JASA")) && colMap.tarif === -1) colMap.tarif = C;
+          else if ((val.includes("JUMLAH") || val.includes("BRUTO") || val.includes("HONOR")) && colMap.bruto === -1) colMap.bruto = C;
+          else if ((val.includes("PPH") || val.includes("PAJAK")) && colMap.pph === -1) colMap.pph = C;
+          else if ((val.includes("PENERIMAAN") || val.includes("NETTO") || val.includes("DITERIMA") || val.includes("BERSIH")) && colMap.netto === -1) colMap.netto = C;
+          else if ((val.includes("TANDA") || val.includes("TTD") || val.includes("TANGAN")) && colMap.ttd === -1) colMap.ttd = C;
+        }
+      }
+
+      // Default fallback jika mapping otomatis tidak lengkap
+      if (headerRow === -1 || colMap.nama === -1) {
+        headerRow = 4;
+        colMap = { no: 1, nama: 2, nip: 3, gol: 4, jabatan: 5, unit: 6, jml: 7, satuan: 8, tarif: 9, bruto: 10, pph: 11, netto: 12, ttd: 13 };
+      }
+
+      // Ambil contoh formatting dari baris data pertama dalam template
+      const sampleRow = headerRow + 1;
+      const sampleStyles = {};
+      for (let C = range.s.c; C <= range.e.c; ++C) {
+        const sc = ws[XLSX.utils.encode_cell({ r: sampleRow, c: C })];
+        if (sc && sc.s) sampleStyles[C] = sc.s;
+      }
+
+      let totalBruto = 0, totalPajak = 0, totalNetto = 0;
+      const startDataRow = headerRow + 1;
+
+      // Suntikkan data peserta baris demi baris ke file template
+      selectedList.forEach((p, i) => {
+        const r = startDataRow + i;
+        const rowNo = i + 1;
+        totalBruto += p.bruto;
+        totalPajak += p.pph21;
+        totalNetto += p.netto;
+
+        const isOdd = (rowNo % 2 !== 0);
+        const ttdVal = isOdd ? (rowNo + ". .......................") : ("                 " + rowNo + ". .......................");
+
+        function setCell(colIdx, value, type, numFmt, align) {
+          if (colIdx < 0) return;
+          const cellAddr = XLSX.utils.encode_cell({ r: r, c: colIdx });
+          let cellStyle = sampleStyles[colIdx] ? JSON.parse(JSON.stringify(sampleStyles[colIdx])) : {
+            font: { sz: 9.5, color: { rgb: "000000" } },
+            border: {
+              top: { style: "thin", color: { rgb: "000000" } },
+              bottom: { style: "thin", color: { rgb: "000000" } },
+              left: { style: "thin", color: { rgb: "000000" } },
+              right: { style: "thin", color: { rgb: "000000" } }
+            },
+            alignment: { vertical: "center" }
+          };
+          if (align) {
+            cellStyle.alignment = cellStyle.alignment || { vertical: "center" };
+            cellStyle.alignment.horizontal = align;
+          }
+          ws[cellAddr] = { t: type || "s", v: value, s: cellStyle };
+          if (numFmt) ws[cellAddr].z = numFmt;
+        }
+
+        // Tulis data peserta (tidak ada kolom kecamatan)
+        setCell(colMap.no, rowNo, "n", null, "center");
+        if (colMap.nip !== -1) {
+          setCell(colMap.nama, p.nama, "s", null, "left");
+          setCell(colMap.nip, p.nip ? "'" + p.nip : "-", "s", null, "center");
+        } else {
+          setCell(colMap.nama, p.nama + (p.nip && p.nip !== "-" ? "\nNIP. " + p.nip : ""), "s", null, "left");
+        }
+        setCell(colMap.gol, p.golongan || "-", "s", null, "center");
+        setCell(colMap.jabatan, p.jabatan || "Guru", "s", null, "left");
+        setCell(colMap.unit, p.unitKerja || "-", "s", null, "left");
+        setCell(colMap.jml, p.jumlahHari, "n", null, "center");
+        if (colMap.satuan !== -1) setCell(colMap.satuan, p.satuanWaktu, "s", null, "center");
+        setCell(colMap.tarif, p.tarifSatuan, "n", "#,##0", "right");
+        setCell(colMap.bruto, p.bruto, "n", "#,##0", "right");
+        setCell(colMap.pph, p.pph21, "n", "#,##0", "right");
+        setCell(colMap.netto, p.netto, "n", "#,##0", "right");
+        setCell(colMap.ttd, ttdVal, "s", null, "left");
+      });
+
+      // Tulis Baris Total
+      const totalR = startDataRow + selectedList.length;
+      const totalBorder = {
+        top: { style: "thin", color: { rgb: "000000" } },
+        bottom: { style: "double", color: { rgb: "000000" } },
+        left: { style: "thin", color: { rgb: "000000" } },
+        right: { style: "thin", color: { rgb: "000000" } }
+      };
+
+      const maxColIdx = Math.max(range.e.c, colMap.ttd !== -1 ? colMap.ttd : 13);
+      for (let C = range.s.c; C <= maxColIdx; ++C) {
+        const cellAddr = XLSX.utils.encode_cell({ r: totalR, c: C });
+        ws[cellAddr] = {
+          t: "s",
+          v: "",
+          s: { font: { bold: true, sz: 10 }, fill: { fgColor: { rgb: "F1F5F9" } }, border: totalBorder, alignment: { vertical: "center" } }
+        };
+      }
+
+      const totalLabelCol = colMap.nama !== -1 ? colMap.nama : 2;
+      ws[XLSX.utils.encode_cell({ r: totalR, c: totalLabelCol })] = {
+        t: "s",
+        v: "JUMLAH TOTAL",
+        s: { font: { bold: true, sz: 10 }, alignment: { horizontal: "center", vertical: "center" }, border: totalBorder }
+      };
+
+      if (colMap.bruto !== -1) {
+        ws[XLSX.utils.encode_cell({ r: totalR, c: colMap.bruto })] = {
+          t: "n", v: totalBruto, z: "#,##0",
+          s: { font: { bold: true, sz: 10 }, alignment: { horizontal: "right", vertical: "center" }, border: totalBorder }
+        };
+      }
+      if (colMap.pph !== -1) {
+        ws[XLSX.utils.encode_cell({ r: totalR, c: colMap.pph })] = {
+          t: "n", v: totalPajak, z: "#,##0",
+          s: { font: { bold: true, sz: 10 }, alignment: { horizontal: "right", vertical: "center" }, border: totalBorder }
+        };
+      }
+      if (colMap.netto !== -1) {
+        ws[XLSX.utils.encode_cell({ r: totalR, c: colMap.netto })] = {
+          t: "n", v: totalNetto, z: "#,##0",
+          s: { font: { bold: true, sz: 10 }, alignment: { horizontal: "right", vertical: "center" }, border: totalBorder }
+        };
+      }
+
+      // Perbarui cakupan area lembar kerja
+      const maxRow = Math.max(range.e.r, totalR + 10);
+      ws['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: maxRow, c: maxColIdx } });
+
+      return wb;
+    }
+
+    async function downloadSpjExcel() {
       if (!activeSpjData || !activeSpjData.participants) {
         Swal.fire("Peringatan", "Belum ada data untuk diunduh.", "warning");
         return;
@@ -4442,12 +4633,59 @@
       const eventName = (d.eventName || currentDashboardData?.settings?.NAMA_KEGIATAN || "KEGIATAN BIDANG SMP").toUpperCase();
       const subName = (d.subEventName || currentDashboardData?.settings?.SUB_KEGIATAN || "BIDANG SMP DISDIKBUD KARANGANYAR").toUpperCase();
 
+      // =========================================================================
+      // OPSI A: Jika Panitia memilih template kustom yang diunggah (.xlsx)
+      // =========================================================================
+      if (currentSelectedSpjTpl && currentSelectedSpjTpl.fileId && currentSelectedSpjTpl.fileId !== "DEFAULT" && currentSelectedSpjTpl.tipeFile === "XLSX") {
+        Swal.fire({
+          title: "Menyiapkan Template SPJ Dinas...",
+          html: `Sedang menyuntikkan <strong>${selectedList.length} peserta</strong> ke dalam template resmi <em>"${escapeHtml(currentSelectedSpjTpl.namaDokumen)}"</em>...`,
+          allowOutsideClick: false,
+          didOpen: () => Swal.showLoading()
+        });
+
+        try {
+          let base64 = templateBinaryCache[currentSelectedSpjTpl.id];
+          if (!base64) {
+            const resp = await callGasApi("getSpjTemplateFile", { fileId: currentSelectedSpjTpl.fileId, pin: currentAdminPin });
+            if (resp && resp.success && resp.base64Data) {
+              base64 = resp.base64Data;
+              templateBinaryCache[currentSelectedSpjTpl.id] = base64;
+            } else {
+              throw new Error(resp ? resp.message : "Gagal mengambil file template dari server.");
+            }
+          }
+
+          const wbInjected = injectParticipantsIntoExcelTemplate(base64, selectedList, activeSpjData);
+          const cleanFilename = `SPJ_${(eventName || 'Kegiatan').replace(/\s+/g, '_')}_${(currentSelectedSpjTpl.namaDokumen || 'Dinas').replace(/\s+/g, '_')}.xlsx`;
+          
+          XLSX.writeFile(wbInjected, cleanFilename);
+          Swal.close();
+
+          Swal.fire({
+            icon: "success",
+            title: "Download Template SPJ Berhasil!",
+            text: `Data ${selectedList.length} peserta berhasil diisikan ke template dinas "${cleanFilename}".`,
+            timer: 2500,
+            showConfirmButton: false
+          });
+          return;
+        } catch (err) {
+          console.warn("Gagal menyuntikkan ke template kustom, beralih ke generator baku dinas:", err);
+          Swal.close();
+          // Lanjut ke generator format baku dinas di bawah
+        }
+      }
+
+      // =========================================================================
+      // GENERATOR FORMAT BAKU DINAS (13 Kolom Baku - Bersih tanpa Kolom Kecamatan)
+      // =========================================================================
       const wsData = [
         ["", "DAFTAR PENERIMAAN UANG SAKU & TRANSPORT PESERTA", "", "", "", "", "", "", "", "", "", "", "", ""],
         ["", eventName, "", "", "", "", "", "", "", "", "", "", "", ""],
         ["", subName, "", "", "", "", "", "", "", "", "", "", "", ""],
         [],
-        ["", "NO", "NAMA LENGKAP & GELAR", "NIP", "GOL", "JABATAN", "UNIT KERJA / SEKOLAH", "KECAMATAN", "JML", "SATUAN", "TARIF (RP)", "JUMLAH (RP)", "PPH 21 (RP)", "PENERIMAAN (RP)", "TANDA TANGAN"]
+        ["", "NO", "NAMA LENGKAP & GELAR", "NIP", "GOL", "JABATAN", "UNIT KERJA / SEKOLAH", "JML", "SATUAN", "TARIF (RP)", "JUMLAH (RP)", "PPH 21 (RP)", "PENERIMAAN (RP)", "TANDA TANGAN"]
       ];
 
       let totalBruto = 0;
@@ -4472,7 +4710,6 @@
           p.golongan || "-",
           p.jabatan || "Guru",
           p.unitKerja || "-",
-          p.kecamatan || "-",
           p.jumlahHari,
           p.satuanWaktu,
           p.tarifSatuan,
@@ -4483,12 +4720,11 @@
         ]);
       });
 
-      // Baris Total
+      // Baris Total (K = Bruto, L = PPh 21, M = Netto)
       wsData.push([
         "",
         "",
         "JUMLAH TOTAL",
-        "",
         "",
         "",
         "",
@@ -4504,9 +4740,9 @@
 
       // Tanda Tangan 3 Pejabat di Bagian Bawah
       wsData.push([]);
-      wsData.push(["", "", "", "", "", "", "", "", "", "", "", "", d.tanggalSpj || "Karanganyar", ""]);
-      wsData.push(["", "", "Setuju Dibayar,", "", "", "Mengetahui,", "", "", "", "", "", "Yang Membayarkan,", "", ""]);
-      wsData.push(["", "", "Kepala Bidang SMP", "", "", "Pejabat Pelaksana Teknis Kegiatan", "", "", "", "", "", "Bendahara Pengeluaran Pembantu,", "", ""]);
+      wsData.push(["", "", "", "", "", "", "", "", "", "", d.tanggalSpj || "Karanganyar", "", "", ""]);
+      wsData.push(["", "", "Setuju Dibayar,", "", "", "Mengetahui,", "", "", "", "", "Yang Membayarkan,", "", "", ""]);
+      wsData.push(["", "", "Kepala Bidang SMP", "", "", "Pejabat Pelaksana Teknis Kegiatan", "", "", "", "", "Bendahara Pengeluaran Pembantu,", "", "", ""]);
       wsData.push(["", "", "selaku Kuasa Pengguna Anggaran", "", "", "(PPTK)", "", "", "", "", "", "", "", ""]);
       wsData.push([]);
       wsData.push([]);
@@ -4522,8 +4758,8 @@
         "",
         "",
         "",
-        "",
         d.pejabat?.bendahara?.nama || "-",
+        "",
         "",
         ""
       ]);
@@ -4538,8 +4774,8 @@
         "",
         "",
         "",
-        "",
         "NIP. " + (d.pejabat?.bendahara?.nip || "-"),
+        "",
         "",
         ""
       ]);
@@ -4574,9 +4810,9 @@
         }
       });
 
-      // Terapkan border ke seluruh sel tabel SPJ
+      // Terapkan border ke seluruh sel tabel SPJ (Kolom 1 s.d. 13)
       for (let R = headerRowIdx; R <= totalRowIdx; ++R) {
-        for (let C = 1; C <= 14; ++C) {
+        for (let C = 1; C <= 13; ++C) {
           const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
           if (!ws[cellRef]) {
             ws[cellRef] = { t: "s", v: "" };
@@ -4584,7 +4820,7 @@
           const cell = ws[cellRef];
 
           if (R === headerRowIdx) {
-            // Header Tabel (NO, NAMA LENGKAP, NIP, GOL, dll)
+            // Header Tabel
             cell.s = {
               font: { bold: true, sz: 10, color: { rgb: "000000" } },
               fill: { fgColor: { rgb: "E2E8F0" } },
@@ -4601,7 +4837,7 @@
             };
             if (C === 2) {
               cell.s.alignment = { horizontal: "center" };
-            } else if (C >= 11 && C <= 13) {
+            } else if (C >= 10 && C <= 12) {
               cell.s.alignment = { horizontal: "right" };
               cell.z = "#,##0";
             }
@@ -4613,35 +4849,35 @@
               border: borderThin
             };
 
-            // Aturan Rata Teks / Angka
-            if (C === 1 || C === 4 || C === 8 || C === 9) {
+            // Aturan Rata Teks / Angka (13 Kolom)
+            if (C === 1 || C === 3 || C === 4 || C === 7 || C === 8) {
               cell.s.alignment.horizontal = "center";
-            } else if (C >= 10 && C <= 13) {
+            } else if (C >= 9 && C <= 12) {
               cell.s.alignment.horizontal = "right";
               cell.z = "#,##0";
-            } else if (C === 14) {
+            } else if (C === 13) {
               cell.s.alignment.horizontal = "left";
             }
           }
         }
       }
 
+      // Lebar kolom tabel (13 kolom data + 1 margin kolom A)
       ws['!cols'] = [
-        { wch: 3 },
-        { wch: 5 },
-        { wch: 32 },
-        { wch: 20 },
-        { wch: 8 },
-        { wch: 20 },
-        { wch: 30 },
-        { wch: 16 },
-        { wch: 6 },
-        { wch: 8 },
-        { wch: 14 },
-        { wch: 14 },
-        { wch: 12 },
-        { wch: 15 },
-        { wch: 24 }
+        { wch: 3 },  // A: Margin
+        { wch: 5 },  // B: NO
+        { wch: 32 }, // C: NAMA LENGKAP & GELAR
+        { wch: 22 }, // D: NIP
+        { wch: 8 },  // E: GOL
+        { wch: 20 }, // F: JABATAN
+        { wch: 32 }, // G: UNIT KERJA / SEKOLAH
+        { wch: 6 },  // H: JML
+        { wch: 8 },  // I: SATUAN
+        { wch: 14 }, // J: TARIF (RP)
+        { wch: 15 }, // K: JUMLAH (RP)
+        { wch: 14 }, // L: PPH 21 (RP)
+        { wch: 16 }, // M: PENERIMAAN (RP)
+        { wch: 25 }  // N: TANDA TANGAN
       ];
 
       const wb = XLSX.utils.book_new();

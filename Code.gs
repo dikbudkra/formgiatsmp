@@ -583,6 +583,9 @@ function handleApiRequest_(action, payload) {
     case "deleteSpjTemplate":
       return deleteSpjTemplate(payload.templateId, payload.pin);
 
+    case "getSpjTemplateFile":
+      return getSpjTemplateFile(payload.fileId, payload.pin);
+
     case "getSpjGeneratorData":
       return getSpjGeneratorData(payload.params || payload, payload.pin);
 
@@ -2713,6 +2716,33 @@ function deleteSpjTemplate(templateId, pin) {
   } catch (err) {
     Logger.log("Error deleteSpjTemplate: " + err.toString());
     return { success: false, message: "Gagal menghapus template: " + err.message };
+  }
+}
+
+/**
+ * Mengambil file template (.xlsx / .docx) dalam format Base64 dari Google Drive untuk Template Injection
+ */
+function getSpjTemplateFile(fileId, pin) {
+  if (!verifyAdminPin(pin)) {
+    return { success: false, message: "Akses ditolak: PIN Panitia tidak valid." };
+  }
+  if (!fileId || fileId === "DEFAULT") {
+    return { success: false, message: "File ID tidak valid atau template bawaan." };
+  }
+
+  try {
+    const file = DriveApp.getFileById(fileId);
+    const blob = file.getBlob();
+    const base64 = Utilities.base64Encode(blob.getBytes());
+    return {
+      success: true,
+      fileName: file.getName(),
+      mimeType: file.getMimeType(),
+      base64Data: base64
+    };
+  } catch (err) {
+    Logger.log("Error getSpjTemplateFile: " + err.toString());
+    return { success: false, message: "Gagal mengambil file template dari Google Drive: " + err.message };
   }
 }
 

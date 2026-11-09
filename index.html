@@ -1446,7 +1446,7 @@
         kategoriUnit: isOpd ? "LAIN" : "SMP",
         statusKepegawaian: statusPegawai,
         jabatan: document.getElementById("inputJabatan").value.trim(),
-        nip: (statusPegawai === "PNS" || statusPegawai === "PPPK") ? cleanNip : "-",
+        nip: (statusPegawai === "PNS" || statusPegawai === "PPPK" || statusPegawai === "PPPK PW" || statusPegawai.includes("PPPK")) ? cleanNip : "-",
         golongan: golonganVal,
         pangkat: pangkatVal,
         namaLengkap: document.getElementById("inputNamaLengkap").value.trim(),
