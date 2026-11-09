@@ -2118,7 +2118,7 @@ function archiveAndResetEvent(pin) {
 
 /**
  * --------------------------------------------------------------------------
- * 8. ASISTEN AI GEMINI (TANYA JAWAB SEPUTAR DATA KEGIATAN AKTIF)
+ * 8. ASISTEN JEMPROT AI (TANYA JAWAB SEPUTAR DATA KEGIATAN AKTIF)
  * --------------------------------------------------------------------------
  */
 
@@ -2212,7 +2212,7 @@ function askGeminiAboutActiveEvent(question, pin) {
     }));
 
     const systemInstruction = 
-      "Anda adalah 'Asisten Analis Data Kegiatan Bidang SMP DISDIKBUD Karanganyar'.\n" +
+      "Anda adalah 'Jemprot AI - Asisten Analis Data Kegiatan Bidang SMP DISDIKBUD Karanganyar'.\n" +
       "Tugas Anda: Menjawab pertanyaan panitia secara cepat, sopan, dan akurat HANYA DAN EKSKLUSIF BERDASARKAN DATA KEGIATAN AKTIF YANG DILAMPIRKAN DI BAWAH INI.\n\n" +
       "ATURAN MUTLAK (STRICT GROUNDING):\n" +
       "1. Sumber kebenaran satu-satunya adalah DATA RESMI KEGIATAN AKTIF yang terlampir. Anda DILARANG KERAS menjawab informasi umum, pengetahuan ensiklopedia, atau topik lain di luar data ini.\n" +
@@ -2328,7 +2328,7 @@ function callGeminiAPI_(apiKey, promptText, systemInstructionText) {
 
   return {
     success: false,
-    message: "Gagal mendapatkan respon dari AI Gemini. " + lastError
+    message: "Gagal mendapatkan respon dari Jemprot AI. " + lastError
   };
 }
 
@@ -2463,7 +2463,7 @@ function uploadSpjTemplate(fileData, pin) {
     const fileId = driveFile.getId();
     const fileSizeKb = Math.round(decodedBytes.length / 1024) + " KB";
 
-    // Analisis Cerdas Gemini: deteksi apakah nama/jenis dokumen butuh nominal uang
+    // Analisis Cerdas Jemprot AI: deteksi apakah nama/jenis dokumen butuh nominal uang
     const analysis = analyzeSpjWithGemini_(fileData.namaDokumen, ext, fileName);
 
     const ss = getSpreadsheet_();
@@ -2734,7 +2734,7 @@ function getSpjGeneratorData(params, pin) {
 }
 
 /**
- * Analisis Cerdas Gemini: mendeteksi jenis dan kebutuhan variabel template
+ * Analisis Cerdas Jemprot AI: mendeteksi jenis dan kebutuhan variabel template
  * Menggunakan Gemini API (Script Properties) dengan fallback otomatis ke sistem pencocokan aturan
  */
 function analyzeSpjWithGemini_(templateName, fileType, fileName) {

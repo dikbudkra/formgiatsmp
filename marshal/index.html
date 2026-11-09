@@ -394,7 +394,7 @@
     <div class="nav-group-title">Kecerdasan Buatan</div>
     <div class="nav-sidebar-link" onclick="switchTab('tabGeminiAi', this)">
       <i class="bi bi-stars text-warning"></i>
-      <span>Tanya AI Gemini</span>
+      <span>Tanya Jemprot AI</span>
     </div>
 
     <!-- 6. SISTEM & PENGATURAN -->
@@ -967,7 +967,7 @@
             </span>
             <h4 class="fw-bold text-dark mb-1">Pustaka &amp; Generator Dokumen SPJ</h4>
             <p class="text-muted small mb-0">
-              Kelola format dokumen dan SPJ dinas (<strong>.xlsx</strong> &amp; <strong>.docx</strong>), tersimpan aman di Google Drive dan terisi otomatis dari data peserta kegiatan aktif dengan analisis AI Gemini.
+              Kelola format dokumen dan SPJ dinas (<strong>.xlsx</strong> &amp; <strong>.docx</strong>), tersimpan aman di Google Drive dan terisi otomatis dari data peserta kegiatan aktif dengan analisis Jemprot AI.
             </p>
           </div>
           <div class="d-flex gap-2">
@@ -1024,11 +1024,11 @@
       </div>
     </section>
 
-    <!-- ==================== TAB 8: ASISTEN AI GEMINI ==================== -->
+    <!-- ==================== TAB 8: ASISTEN JEMPROT AI ==================== -->
     <section id="tabGeminiAi" class="tab-pane d-none">
       <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
-          <h3 class="h4 fw-bold text-dark mb-0">Asisten AI Gemini Kedinasan</h3>
+          <h3 class="h4 fw-bold text-dark mb-0">Asisten Jemprot AI Kedinasan</h3>
           <p class="text-muted small mb-0">Analisis cerdas kehadiran, rekap logistik, dan asisten panitia</p>
         </div>
       </div>
@@ -1036,7 +1036,7 @@
       <div class="card card-modern p-4" style="min-height: 480px; display: flex; flex-direction: column;">
         <div id="chatAiContainer" class="flex-grow-1 overflow-auto p-3 bg-light rounded-4 mb-3 space-y-3" style="max-height: 400px;">
           <div class="p-3 bg-white rounded-3 shadow-sm border small" style="max-width: 80%;">
-            <strong>🤖 Asisten AI:</strong> Halo Panitia! Saya siap membantu menganalisis data peserta, kehadiran presensi, dan kebutuhan logistik kegiatan aktif ini. Ada yang bisa saya bantu?
+            <strong>🤖 Jemprot AI:</strong> Halo Panitia! Saya siap membantu menganalisis data peserta, kehadiran presensi, dan kebutuhan logistik kegiatan aktif ini. Ada yang bisa saya bantu?
           </div>
         </div>
 
@@ -2944,7 +2944,7 @@
 
     /**
      * =========================================================================
-     * TAB 7: MODUL PUSTAKA TEMPLATE & GENERATOR SPJ DINAMIS (AI GEMINI)
+     * TAB 7: MODUL PUSTAKA TEMPLATE & GENERATOR SPJ DINAMIS (JEMPROT AI)
      * =========================================================================
      */
     let spjTemplates = [];
@@ -3964,7 +3964,7 @@
     }
 
     /**
-     * TAB 8: ASISTEN AI GEMINI
+     * TAB 8: ASISTEN JEMPROT AI
      */
     async function submitAiQuestion() {
       const input = document.getElementById("inputAiQuestion");
@@ -3991,11 +3991,11 @@
         const res = await callGasApi("askGemini", { question: q, pin: currentAdminPin });
         const loadEl = document.getElementById(loadingId);
         if (loadEl) {
-          loadEl.innerHTML = `<strong>🤖 Asisten AI:</strong><br>${(res.answer || res.message || "Tidak ada jawaban.").replace(/\n/g, "<br>")}`;
+          loadEl.innerHTML = `<strong>🤖 Jemprot AI:</strong><br>${(res.answer || res.message || "Tidak ada jawaban.").replace(/\n/g, "<br>")}`;
         }
       } catch (e) {
         const loadEl = document.getElementById(loadingId);
-        if (loadEl) loadEl.innerHTML = '<span class="text-danger">Gagal menghubungi Gemini AI.</span>';
+        if (loadEl) loadEl.innerHTML = '<span class="text-danger">Gagal menghubungi Jemprot AI.</span>';
       }
       container.scrollTop = container.scrollHeight;
     }

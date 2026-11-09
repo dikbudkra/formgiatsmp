@@ -1479,6 +1479,8 @@
       }
     }
 
+    let currentTicketQrDataUrl = "";
+
     /**
      * Tampilkan Modal E-Ticket dan Render QR Code
      */
@@ -1494,14 +1496,39 @@
       // Render QR Code
       const qrWrapper = document.getElementById("qrcodeWrapper");
       qrWrapper.innerHTML = "";
-      new QRCode(qrWrapper, {
-        text: String(data.regId || "REG-UNKNOWN"),
-        width: 140,
-        height: 140,
-        colorDark: "#0f172a",
-        colorLight: "#ffffff",
-        correctLevel: QRCode.CorrectLevel.H
-      });
+      currentTicketQrDataUrl = "";
+
+      const regCode = String(data.regId || "REG-UNKNOWN");
+
+      // Coba render via QRCode.js
+      try {
+        new QRCode(qrWrapper, {
+          text: regCode,
+          width: 140,
+          height: 140,
+          colorDark: "#0f172a",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.H
+        });
+
+        // Ambil data URL dari canvas yang dihasilkan qrcodejs sesegera mungkin
+        setTimeout(() => {
+          const c = qrWrapper.querySelector("canvas");
+          if (c) {
+            try {
+              currentTicketQrDataUrl = c.toDataURL("image/png");
+              qrWrapper.innerHTML = `<img id="ticketQrImageEl" src="${currentTicketQrDataUrl}" alt="QR Code" width="140" height="140" style="display:block; margin:0 auto; width:140px; height:140px;" />`;
+            } catch (e) {
+              console.warn("Gagal convert canvas QR ke dataURL:", e);
+            }
+          }
+        }, 60);
+      } catch (err) {
+        console.warn("QRCode.js gagal, gunakan fallback generator:", err);
+        const fallbackUrl = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(regCode)}`;
+        currentTicketQrDataUrl = fallbackUrl;
+        qrWrapper.innerHTML = `<img id="ticketQrImageEl" src="${fallbackUrl}" alt="QR Code" width="140" height="140" style="display:block; margin:0 auto; width:140px; height:140px;" crossOrigin="anonymous" />`;
+      }
 
       const modalEl = document.getElementById("modalETicket");
       const modal = new bootstrap.Modal(modalEl);
@@ -1511,9 +1538,32 @@
     /**
      * Unduh Gambar Tiket (PNG) via HTML2Canvas
      */
-    function downloadTicketImage() {
+    async function downloadTicketImage() {
       const container = document.getElementById("eTicketDoubleContainer");
       if (!container) return;
+
+      const qrWrapper = document.getElementById("qrcodeWrapper");
+
+      // Pastikan dataURL QR code sudah terisi
+      if (!currentTicketQrDataUrl && qrWrapper) {
+        const c = qrWrapper.querySelector("canvas");
+        if (c) {
+          try {
+            currentTicketQrDataUrl = c.toDataURL("image/png");
+          } catch(e) {}
+        }
+        if (!currentTicketQrDataUrl) {
+          const im = qrWrapper.querySelector("img");
+          if (im && im.src) {
+            currentTicketQrDataUrl = im.src;
+          }
+        }
+      }
+
+      // Pastikan qrWrapper di DOM asli memiliki elemen <img> dengan dataURL
+      if (currentTicketQrDataUrl && qrWrapper) {
+        qrWrapper.innerHTML = `<img id="ticketQrImageEl" src="${currentTicketQrDataUrl}" alt="QR Code" width="140" height="140" style="display:block; margin:0 auto; width:140px; height:140px;" />`;
+      }
 
       Swal.fire({
         title: "Membuat Gambar Tiket...",
@@ -1522,21 +1572,35 @@
         didOpen: () => Swal.showLoading()
       });
 
-      html2canvas(container, {
-        scale: 2,
-        backgroundColor: "#ffffff",
-        useCORS: true
-      }).then(canvas => {
+      // Jeda 150ms agar browser selesai me-render dataURL image
+      await new Promise(resolve => setTimeout(resolve, 150));
+
+      try {
+        const canvas = await html2canvas(container, {
+          scale: 2,
+          backgroundColor: "#ffffff",
+          useCORS: true,
+          allowTaint: true,
+          logging: false,
+          onclone: (clonedDoc) => {
+            // Pada dokumen tiruan html2canvas, inject langsung gambar QR code
+            const clonedQr = clonedDoc.getElementById("qrcodeWrapper");
+            if (clonedQr && currentTicketQrDataUrl) {
+              clonedQr.innerHTML = `<img src="${currentTicketQrDataUrl}" alt="QR Code" width="140" height="140" style="display:block !important; margin:0 auto !important; width:140px !important; height:140px !important; visibility:visible !important;" />`;
+            }
+          }
+        });
+
         Swal.close();
         const link = document.createElement("a");
         link.download = `E-Ticket-${lastTicketData?.regId || "Kegiatan"}.png`;
         link.href = canvas.toDataURL("image/png");
         link.click();
-      }).catch(err => {
+      } catch (err) {
         Swal.close();
         console.error("Gagal html2canvas:", err);
         showErrorAlert("Gagal menyimpan gambar tiket.");
-      });
+      }
     }
 
     /**
