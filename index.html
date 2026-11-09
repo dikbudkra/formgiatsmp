@@ -25,6 +25,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 
   <!-- QR Code, Canvas & PDF Libraries for E-Ticket -->
+  <script src="./qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -1529,55 +1530,71 @@
     let currentTicketQrDataUrl = "";
 
     /**
-     * Helper menghasilkan dataURL QR Code beresolusi tinggi dan stabil
+     * Render QR Code ke dalam elemen Canvas beresolusi tinggi dan menghasilkan DataURL PNG
      */
-    function generateQrCodeDataUrl(text) {
-      return new Promise((resolve) => {
-        const safeText = String(text || "REG-UNKNOWN").trim();
-        const tempDiv = document.createElement("div");
-        tempDiv.style.width = "140px";
-        tempDiv.style.height = "140px";
-        tempDiv.style.position = "fixed";
-        tempDiv.style.left = "-9999px";
-        tempDiv.style.top = "-9999px";
-        tempDiv.style.background = "#ffffff";
-        tempDiv.style.opacity = "0";
-        tempDiv.style.pointerEvents = "none";
-        document.body.appendChild(tempDiv);
+    function renderTicketQr(text) {
+      const qrWrapper = document.getElementById("qrcodeWrapper");
+      if (!qrWrapper) return null;
+      qrWrapper.innerHTML = "";
 
-        try {
+      const safeText = String(text || "REG-UNKNOWN").trim();
+
+      // Buat elemen canvas resolusi tinggi (280x280 piksel fisik, display CSS 140x140)
+      const qrCanvas = document.createElement("canvas");
+      qrCanvas.id = "ticketQrCanvas";
+      qrCanvas.width = 280;
+      qrCanvas.height = 280;
+      qrCanvas.style.width = "140px";
+      qrCanvas.style.height = "140px";
+      qrCanvas.style.display = "block";
+      qrCanvas.style.margin = "0 auto";
+      qrWrapper.appendChild(qrCanvas);
+
+      try {
+        if (typeof QRCode !== "undefined") {
+          const tempDiv = document.createElement("div");
           new QRCode(tempDiv, {
             text: safeText,
-            width: 140,
-            height: 140,
+            width: 280,
+            height: 280,
             colorDark: "#0f172a",
             colorLight: "#ffffff",
             correctLevel: QRCode.CorrectLevel.H
           });
 
-          setTimeout(() => {
-            let dataUrl = "";
-            const cv = tempDiv.querySelector("canvas");
-            if (cv) {
-              try {
-                dataUrl = cv.toDataURL("image/png");
-              } catch(e) {}
-            }
-            if (!dataUrl) {
-              const im = tempDiv.querySelector("img");
-              if (im && im.src) dataUrl = im.src;
-            }
-            if (tempDiv.parentNode) tempDiv.parentNode.removeChild(tempDiv);
-            if (!dataUrl) {
-              dataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(safeText)}`;
-            }
-            resolve(dataUrl);
-          }, 100);
-        } catch (e) {
-          if (tempDiv.parentNode) tempDiv.parentNode.removeChild(tempDiv);
-          resolve(`https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(safeText)}`);
+          const cv = tempDiv.querySelector("canvas");
+          if (cv) {
+            const ctx = qrCanvas.getContext("2d");
+            ctx.drawImage(cv, 0, 0, 280, 280);
+            currentTicketQrDataUrl = qrCanvas.toDataURL("image/png");
+            return qrCanvas;
+          }
         }
-      });
+      } catch (err) {
+        console.warn("Gagal menggunakan QRCode library:", err);
+      }
+
+      // Fallback jika QRCode library belum siap: Buat visual kartu kode registrasi
+      const ctx = qrCanvas.getContext("2d");
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, 280, 280);
+      ctx.strokeStyle = "#0f172a";
+      ctx.lineWidth = 6;
+      ctx.strokeRect(10, 10, 260, 260);
+      ctx.fillStyle = "#0f172a";
+      ctx.font = "bold 20px monospace";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(safeText, 140, 140);
+
+      currentTicketQrDataUrl = qrCanvas.toDataURL("image/png");
+      return qrCanvas;
+    }
+
+    async function generateQrCodeDataUrl(text) {
+      const cv = renderTicketQr(text);
+      if (cv) return cv.toDataURL("image/png");
+      return "";
     }
 
     /**
@@ -1592,15 +1609,9 @@
       document.getElementById("ticketKaos").textContent = (data.ukuranKaos || "-") + (data.panjangLengan ? ` (${data.panjangLengan})` : "");
       document.getElementById("ticketQrIdText").textContent = data.regId || "-";
 
-      // Render QR Code
-      const qrWrapper = document.getElementById("qrcodeWrapper");
-      qrWrapper.innerHTML = '<div class="py-4 text-center"><span class="spinner-border spinner-border-sm text-primary"></span></div>';
-      currentTicketQrDataUrl = "";
-
+      // Render QR Code langsung ke canvas
       const regCode = String(data.regId || "REG-UNKNOWN");
-      const qrDataUrl = await generateQrCodeDataUrl(regCode);
-      currentTicketQrDataUrl = qrDataUrl;
-      qrWrapper.innerHTML = `<img id="ticketQrImageEl" src="${qrDataUrl}" alt="QR Code" width="140" height="140" style="display:block; margin:0 auto; width:140px; height:140px;" />`;
+      renderTicketQr(regCode);
 
       const modalEl = document.getElementById("modalETicket");
       const modal = new bootstrap.Modal(modalEl);
@@ -1615,13 +1626,12 @@
       if (!container) return;
 
       const regCode = String(lastTicketData?.regId || "REG-UNKNOWN");
-      if (!currentTicketQrDataUrl || currentTicketQrDataUrl.length < 50) {
-        currentTicketQrDataUrl = await generateQrCodeDataUrl(regCode);
-      }
 
-      const qrWrapper = document.getElementById("qrcodeWrapper");
-      if (qrWrapper && currentTicketQrDataUrl) {
-        qrWrapper.innerHTML = `<img id="ticketQrImageEl" src="${currentTicketQrDataUrl}" alt="QR Code" width="140" height="140" style="display:block; margin:0 auto; width:140px; height:140px;" />`;
+      // Pastikan elemen canvas QR Code aktif dan terisi
+      let qrCanvas = document.getElementById("ticketQrCanvas");
+      if (!qrCanvas) {
+        renderTicketQr(regCode);
+        qrCanvas = document.getElementById("ticketQrCanvas");
       }
 
       Swal.fire({
@@ -1631,24 +1641,51 @@
         didOpen: () => Swal.showLoading()
       });
 
-      // Jeda 200ms agar browser selesai me-render dataURL image
-      await new Promise(resolve => setTimeout(resolve, 200));
+      // Tunggu sejenak agar layout browser stabil
+      await new Promise(resolve => setTimeout(resolve, 150));
 
       try {
+        const scale = 2; // Skala 2x untuk kualitas tajam
         const canvas = await html2canvas(container, {
-          scale: 2,
+          scale: scale,
           backgroundColor: "#ffffff",
           useCORS: true,
           allowTaint: true,
           logging: false,
           onclone: (clonedDoc) => {
-            // Pada dokumen tiruan html2canvas, inject langsung gambar QR code
-            const clonedQr = clonedDoc.getElementById("qrcodeWrapper");
-            if (clonedQr && currentTicketQrDataUrl) {
-              clonedQr.innerHTML = `<img src="${currentTicketQrDataUrl}" alt="QR Code" width="140" height="140" style="display:block !important; margin:0 auto !important; width:140px !important; height:140px !important; visibility:visible !important;" />`;
+            // Salin langsung isi pixel bitmap canvas QR ke dokumen tiruan html2canvas
+            const origQr = document.getElementById("ticketQrCanvas");
+            const clonedQr = clonedDoc.getElementById("ticketQrCanvas");
+            if (origQr && clonedQr) {
+              clonedQr.width = origQr.width;
+              clonedQr.height = origQr.height;
+              const cCtx = clonedQr.getContext("2d");
+              cCtx.drawImage(origQr, 0, 0);
             }
           }
         });
+
+        // =========================================================================
+        // DIRECT OVERLAY STAMP (GARANSI 100% QR CODE PASTI TERCETAK DI JPG & PDF)
+        // =========================================================================
+        // Menstempel QR Code beresolusi tinggi langsung ke koordinatnya di canvas hasil
+        const activeQr = document.getElementById("ticketQrCanvas");
+        if (activeQr) {
+          const containerRect = container.getBoundingClientRect();
+          const qrRect = activeQr.getBoundingClientRect();
+
+          const targetX = Math.round((qrRect.left - containerRect.left) * scale);
+          const targetY = Math.round((qrRect.top - containerRect.top) * scale);
+          const targetW = Math.round(qrRect.width * scale);
+          const targetH = Math.round(qrRect.height * scale);
+
+          const outCtx = canvas.getContext("2d");
+          // Latar belakang putih bersih di balik QR Code
+          outCtx.fillStyle = "#ffffff";
+          outCtx.fillRect(targetX - 2, targetY - 2, targetW + 4, targetH + 4);
+          // Gambar QR Code secara tajam dan sempurna
+          outCtx.drawImage(activeQr, targetX, targetY, targetW, targetH);
+        }
 
         const regIdSafe = (lastTicketData?.regId || "Kegiatan").replace(/[^a-zA-Z0-9_-]/g, "_");
 
@@ -1688,7 +1725,7 @@
         Swal.close();
         Swal.fire({
           title: "Unduh Berhasil!",
-          text: "E-Ticket format JPG dan PDF berhasil diunduh secara bersamaan ke perangkat Anda.",
+          text: "E-Ticket format JPG dan PDF berhasil diunduh ke perangkat Anda lengkap dengan QR Code presensi resmi.",
           icon: "success",
           timer: 2800,
           showConfirmButton: false
@@ -1696,7 +1733,7 @@
       } catch (err) {
         Swal.close();
         console.error("Gagal generate tiket:", err);
-        showErrorAlert("Gagal menyimpan tiket.");
+        showErrorAlert("Gagal menyimpan tiket: " + err.message);
       }
     }
 

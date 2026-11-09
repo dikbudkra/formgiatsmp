@@ -3,13 +3,14 @@
  * PWA Offline Cache & Background Engine
  */
 
-const CACHE_NAME = 'formgiatsmp-v1.1.3';
+const CACHE_NAME = 'formgiatsmp-v1.1.4';
 
 // Daftar aset inti yang di-cache saat instalasi
 const PRECACHE_ASSETS = [
   './',
   './index.html',
   './marshal.html',
+  './qrcode.min.js',
   './manifest.json',
   './icons/icon-192.png',
   './icons/icon-512.png',
