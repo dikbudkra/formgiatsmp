@@ -563,36 +563,40 @@
             <!-- Pilihan Golongan Khusus PNS -->
             <div class="col-md-6 d-none" id="boxGolonganPns">
               <label class="form-label" for="selectGolonganPns">Pangkat / Golongan Ruang (PNS) <span class="text-danger">*</span></label>
-              <select class="form-select" id="selectGolonganPns" onchange="handleGolonganChange(this.value)">
+              <select class="form-select" id="selectGolonganPns" onchange="handleGolonganChange(this.value)" onclick="event.stopPropagation()">
                 <option value="">-- Pilih Golongan PNS --</option>
-                <option disabled class="fw-bold bg-light text-dark">── Golongan IV (Pembina) ──</option>
-                <option value="IV/e|Pembina Utama">IV/e - Pembina Utama</option>
-                <option value="IV/d|Pembina Utama Madya">IV/d - Pembina Utama Madya</option>
-                <option value="IV/c|Pembina Utama Muda">IV/c - Pembina Utama Muda</option>
-                <option value="IV/b|Pembina Tingkat I">IV/b - Pembina Tingkat I</option>
-                <option value="IV/a|Pembina">IV/a - Pembina</option>
-                <option disabled class="fw-bold bg-light text-dark">── Golongan III (Penata) ──</option>
-                <option value="III/d|Penata Tingkat I">III/d - Penata Tingkat I</option>
-                <option value="III/c|Penata">III/c - Penata</option>
-                <option value="III/b|Penata Muda Tingkat I">III/b - Penata Muda Tingkat I</option>
-                <option value="III/a|Penata Muda">III/a - Penata Muda</option>
-                <option disabled class="fw-bold bg-light text-dark">── Golongan II (Pengatur) ──</option>
-                <option value="II/d|Pengatur Tingkat I">II/d - Pengatur Tingkat I</option>
-                <option value="II/c|Pengatur">II/c - Pengatur</option>
-                <option value="II/b|Pengatur Muda Tingkat I">II/b - Pengatur Muda Tingkat I</option>
-                <option value="II/a|Pengatur Muda">II/a - Pengatur Muda</option>
-                <option disabled class="fw-bold bg-light text-dark">── Golongan I (Juru) ──</option>
-                <option value="I/d|Juru Tingkat I">I/d - Juru Tingkat I</option>
-                <option value="I/c|Juru">I/c - Juru</option>
-                <option value="I/b|Juru Muda Tingkat I">I/b - Juru Muda Tingkat I</option>
-                <option value="I/a|Juru Muda">I/a - Juru Muda</option>
+                <optgroup label="Golongan IV (Pembina)">
+                  <option value="IV/e|Pembina Utama">IV/e - Pembina Utama</option>
+                  <option value="IV/d|Pembina Utama Madya">IV/d - Pembina Utama Madya</option>
+                  <option value="IV/c|Pembina Utama Muda">IV/c - Pembina Utama Muda</option>
+                  <option value="IV/b|Pembina Tingkat I">IV/b - Pembina Tingkat I</option>
+                  <option value="IV/a|Pembina">IV/a - Pembina</option>
+                </optgroup>
+                <optgroup label="Golongan III (Penata)">
+                  <option value="III/d|Penata Tingkat I">III/d - Penata Tingkat I</option>
+                  <option value="III/c|Penata">III/c - Penata</option>
+                  <option value="III/b|Penata Muda Tingkat I">III/b - Penata Muda Tingkat I</option>
+                  <option value="III/a|Penata Muda">III/a - Penata Muda</option>
+                </optgroup>
+                <optgroup label="Golongan II (Pengatur)">
+                  <option value="II/d|Pengatur Tingkat I">II/d - Pengatur Tingkat I</option>
+                  <option value="II/c|Pengatur">II/c - Pengatur</option>
+                  <option value="II/b|Pengatur Muda Tingkat I">II/b - Pengatur Muda Tingkat I</option>
+                  <option value="II/a|Pengatur Muda">II/a - Pengatur Muda</option>
+                </optgroup>
+                <optgroup label="Golongan I (Juru)">
+                  <option value="I/d|Juru Tingkat I">I/d - Juru Tingkat I</option>
+                  <option value="I/c|Juru">I/c - Juru</option>
+                  <option value="I/b|Juru Muda Tingkat I">I/b - Juru Muda Tingkat I</option>
+                  <option value="I/a|Juru Muda">I/a - Juru Muda</option>
+                </optgroup>
               </select>
             </div>
 
             <!-- Pilihan Golongan Khusus PPPK -->
             <div class="col-md-6 d-none" id="boxGolonganPppk">
               <label class="form-label" for="selectGolonganPppk">Golongan (PPPK) <span class="text-danger">*</span></label>
-              <select class="form-select" id="selectGolonganPppk" onchange="handleGolonganChange(this.value)">
+              <select class="form-select" id="selectGolonganPppk" onchange="handleGolonganChange(this.value)" onclick="event.stopPropagation()">
                 <option value="">-- Pilih Golongan PPPK --</option>
                 <option value="Golongan V">Golongan V</option>
                 <option value="Golongan VI">Golongan VI</option>
@@ -1325,12 +1329,14 @@
       if (drop) drop.style.display = "none";
     }
 
-    // Tutup dropdown sekolah jika klik di luar box pencarian
+    // Tutup dropdown sekolah jika klik di luar box pencarian (Hanya aktif jika dropdown sedang terbuka)
     document.addEventListener("click", function(event) {
-      const box = document.getElementById("boxPencarianSekolah");
       const drop = document.getElementById("schoolListContainer");
-      if (drop && box && !box.contains(event.target)) {
-        drop.style.display = "none";
+      if (drop && drop.style.display === "block") {
+        const box = document.getElementById("boxPencarianSekolah");
+        if (box && !box.contains(event.target)) {
+          drop.style.display = "none";
+        }
       }
     });
 
