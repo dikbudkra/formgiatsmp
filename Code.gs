@@ -169,7 +169,15 @@ function JALANKAN_SETUP_DATABASE_MULTI_KEGIATAN() {
     "Modul ETicket Presensi",
     "Tanggal Pelaksanaan",
     "Lokasi Kegiatan",
-    "Waktu Dibuat"
+    "Waktu Dibuat",
+    "Modul Sertifikat",
+    "Status Unduh Sertifikat",
+    "Kriteria Unduh Sertifikat",
+    "Orientasi Sertifikat",
+    "Nomor Sertifikat",
+    "Blanko Depan ID",
+    "Blanko Belakang ID",
+    "Konfigurasi Layout Sertifikat"
   ];
 
   let sheetKegiatan = ss.getSheetByName(SHEET_MASTER_KEGIATAN);
@@ -179,6 +187,11 @@ function JALANKAN_SETUP_DATABASE_MULTI_KEGIATAN() {
     Logger.log("✨ Sheet 'Master_Kegiatan' baru saja dibuat!");
   } else {
     Logger.log("ℹ️ Sheet 'Master_Kegiatan' sudah ada, memeriksa kolom...");
+    if (sheetKegiatan.getLastRow() === 0) {
+      sheetKegiatan.appendRow(headersKegiatan);
+    } else {
+      sheetKegiatan.getRange(1, 1, 1, headersKegiatan.length).setValues([headersKegiatan]);
+    }
   }
 
   // Format Header Master_Kegiatan
@@ -392,7 +405,15 @@ function ensureDatabaseReady_() {
     "Modul ETicket Presensi",
     "Tanggal Pelaksanaan",
     "Lokasi Kegiatan",
-    "Waktu Dibuat"
+    "Waktu Dibuat",
+    "Modul Sertifikat",
+    "Status Unduh Sertifikat",
+    "Kriteria Unduh Sertifikat",
+    "Orientasi Sertifikat",
+    "Nomor Sertifikat",
+    "Blanko Depan ID",
+    "Blanko Belakang ID",
+    "Konfigurasi Layout Sertifikat"
   ];
   let sheetKegiatan = ss.getSheetByName(SHEET_MASTER_KEGIATAN);
   if (!sheetKegiatan) {
@@ -400,6 +421,8 @@ function ensureDatabaseReady_() {
     sheetKegiatan.appendRow(headersKegiatan);
   } else if (sheetKegiatan.getLastRow() === 0) {
     sheetKegiatan.appendRow(headersKegiatan);
+  } else if (sheetKegiatan.getLastColumn() < headersKegiatan.length) {
+    sheetKegiatan.getRange(1, 1, 1, headersKegiatan.length).setValues([headersKegiatan]);
   }
 
   // 6. Sheet Master_SMP
@@ -575,6 +598,31 @@ function handleApiRequest_(action, payload) {
     case "searchParticipantForBiodata":
     case "searchParticipant":
       return searchParticipantForBiodata(payload.query || payload.q, payload.targetEventIdOrName || payload.eventId);
+
+    case "searchParticipantForCertificate":
+      return searchParticipantForCertificate(payload.query || payload.q, payload.eventId || payload.targetEventIdOrName);
+
+    case "getCertificateAssets":
+      return getCertificateAssets(payload.eventId || payload.targetEventIdOrName);
+
+    case "saveCertificateSettings": {
+      let certData = payload.certConfig || payload;
+      if (typeof certData === "string") {
+        try { certData = JSON.parse(certData); } catch (e) {}
+      }
+      return saveCertificateSettings(certData, payload.pin);
+    }
+
+    case "uploadCertificateBlanko": {
+      let bData = payload.fileData || payload;
+      if (typeof bData === "string") {
+        try { bData = JSON.parse(bData); } catch (e) {}
+      }
+      return uploadCertificateBlanko(bData, payload.pin);
+    }
+
+    case "removeCertificateBlanko":
+      return removeCertificateBlanko(payload.eventId, payload.side, payload.pin);
 
     case "checkInParticipant":
     case "checkIn":
@@ -1003,6 +1051,51 @@ function getRegisteredSchoolList(namaKegiatan) {
  * --------------------------------------------------------------------------
  */
 
+// Default tata letak teks sertifikat (Persentase Kanvas & Ukuran Font)
+function getDefaultCertificateLayout_() {
+  return {
+    nomor: {
+      xPct: 50,
+      yPct: 33,
+      fontSize: 18,
+      fontFamily: "Times New Roman",
+      fontWeight: "bold",
+      color: "#000000"
+    },
+    nama: {
+      xPct: 50,
+      yPct: 48,
+      fontSize: 40,
+      fontFamily: "Times New Roman",
+      fontWeight: "bold",
+      color: "#000000"
+    },
+    unit: {
+      xPct: 50,
+      yPct: 59,
+      fontSize: 22,
+      fontFamily: "Arial",
+      fontWeight: "bold",
+      color: "#000000"
+    }
+  };
+}
+
+function parseCertLayoutJson_(rawStr) {
+  const def = getDefaultCertificateLayout_();
+  if (!rawStr) return def;
+  try {
+    const parsed = typeof rawStr === "object" ? rawStr : JSON.parse(String(rawStr));
+    return {
+      nomor: { ...def.nomor, ...(parsed.nomor || {}) },
+      nama: { ...def.nama, ...(parsed.nama || {}) },
+      unit: { ...def.unit, ...(parsed.unit || {}) }
+    };
+  } catch (e) {
+    return def;
+  }
+}
+
 // Helper internal mengambil seluruh daftar kegiatan dari Master_Kegiatan
 function getAllEventsForAdminInternal_() {
   try {
@@ -1032,7 +1125,15 @@ function getAllEventsForAdminInternal_() {
           modulEticketPresensi: String(row[10] || "ON").trim().toUpperCase(),
           tanggalPelaksanaan: String(row[11] || "-").trim(),
           lokasiKegiatan: String(row[12] || "-").trim(),
-          waktuDibuat: row[13] ? Utilities.formatDate(new Date(row[13]), Session.getScriptTimeZone() || "GMT+7", "dd/MM/yyyy HH:mm") : "-"
+          waktuDibuat: row[13] ? Utilities.formatDate(new Date(row[13]), Session.getScriptTimeZone() || "GMT+7", "dd/MM/yyyy HH:mm") : "-",
+          modulSertifikat: String(row[14] || "OFF").trim().toUpperCase(),
+          statusUnduhSertifikat: String(row[15] || "KUNCI").trim().toUpperCase(),
+          kriteriaUnduhSertifikat: String(row[16] || "HADIR").trim().toUpperCase(),
+          orientasiSertifikat: String(row[17] || "LANDSCAPE").trim().toUpperCase(),
+          nomorSertifikat: String(row[18] || "").trim(),
+          blankoDepanId: String(row[19] || "").trim(),
+          blankoBelakangId: String(row[20] || "").trim(),
+          layoutSertifikat: parseCertLayoutJson_(row[21])
         });
       }
     }
@@ -1101,11 +1202,40 @@ function saveEvent(eventData, pin) {
     const finalModulKaos = String(eventData.modulKaos || "ON").trim().toUpperCase();
     const finalModulLengan = (finalModulKaos === "OFF") ? "OFF" : String(eventData.modulLengan || "ON").trim().toUpperCase();
 
+    // Pertahankan pengaturan sertifikat yang sudah ada jika mengedit kegiatan
+    const existingRow = targetRow !== -1 ? data[targetRow - 1] : [];
+    const finalModulSertifikat = eventData.modulSertifikat !== undefined
+      ? String(eventData.modulSertifikat).trim().toUpperCase()
+      : String(existingRow[14] || "OFF").trim().toUpperCase();
+    const finalStatusUnduh = eventData.statusUnduhSertifikat !== undefined
+      ? String(eventData.statusUnduhSertifikat).trim().toUpperCase()
+      : String(existingRow[15] || "KUNCI").trim().toUpperCase();
+    const finalKriteriaUnduh = eventData.kriteriaUnduhSertifikat !== undefined
+      ? String(eventData.kriteriaUnduhSertifikat).trim().toUpperCase()
+      : String(existingRow[16] || "HADIR").trim().toUpperCase();
+    const finalOrientasi = eventData.orientasiSertifikat !== undefined
+      ? String(eventData.orientasiSertifikat).trim().toUpperCase()
+      : String(existingRow[17] || "LANDSCAPE").trim().toUpperCase();
+    const finalNomorSertifikat = eventData.nomorSertifikat !== undefined
+      ? String(eventData.nomorSertifikat).trim()
+      : String(existingRow[18] || "").trim();
+    const finalBlankoDepanId = eventData.blankoDepanId !== undefined
+      ? String(eventData.blankoDepanId).trim()
+      : String(existingRow[19] || "").trim();
+    const finalBlankoBelakangId = eventData.blankoBelakangId !== undefined
+      ? String(eventData.blankoBelakangId).trim()
+      : String(existingRow[20] || "").trim();
+    const finalLayoutJson = eventData.layoutSertifikat !== undefined
+      ? (typeof eventData.layoutSertifikat === "string" ? eventData.layoutSertifikat : JSON.stringify(eventData.layoutSertifikat))
+      : (existingRow[21] ? String(existingRow[21]) : JSON.stringify(getDefaultCertificateLayout_()));
+
+    const finalStatusForm = String(eventData.statusForm || "BUKA").trim().toUpperCase();
+
     const rowData = [
       finalId,
       nama,
       String(eventData.subKegiatan || "Bidang SMP - Dinas Pendidikan dan Kebudayaan Kabupaten Karanganyar").trim(),
-      String(eventData.statusForm || "BUKA").trim().toUpperCase(),
+      finalStatusForm,
       String(eventData.kuotaPerSekolah || "1").trim(),
       finalModulKaos,
       finalModulLengan,
@@ -1115,13 +1245,36 @@ function saveEvent(eventData, pin) {
       String(eventData.modulEticketPresensi || "ON").trim().toUpperCase(),
       String(eventData.tanggalPelaksanaan || "-").trim(),
       String(eventData.lokasiKegiatan || "Kabupaten Karanganyar").trim(),
-      timestampStr
+      timestampStr,
+      finalModulSertifikat,
+      finalStatusUnduh,
+      finalKriteriaUnduh,
+      finalOrientasi,
+      finalNomorSertifikat,
+      finalBlankoDepanId,
+      finalBlankoBelakangId,
+      finalLayoutJson
     ];
 
     if (targetRow !== -1) {
       sheet.getRange(targetRow, 1, 1, rowData.length).setValues([rowData]);
     } else {
       sheet.appendRow(rowData);
+    }
+
+    // Sinkronkan Config sheet jika kegiatan berstatus BUKA agar tidak tertahan di status TUTUP lama
+    if (finalStatusForm === "BUKA") {
+      try {
+        const sheetConfig = ss.getSheetByName(SHEET_CONFIG);
+        if (sheetConfig) {
+          const cfgData = sheetConfig.getDataRange().getValues();
+          for (let i = 1; i < cfgData.length; i++) {
+            const k = String(cfgData[i][0]).trim();
+            if (k === "NAMA_KEGIATAN") sheetConfig.getRange(i + 1, 2).setValue(nama);
+            else if (k === "STATUS_FORM") sheetConfig.getRange(i + 1, 2).setValue("BUKA");
+          }
+        }
+      } catch (eCfg) {}
     }
 
     return {
@@ -1323,6 +1476,7 @@ function deleteEvent(eventId, pin) {
 
 /**
  * Mengambil daftar kegiatan yang berstatus 'BUKA' untuk ditampilkan di halaman publik
+ * serta daftar kegiatan yang mengaktifkan Modul Sertifikat (ON)
  */
 function getActiveEventsForPublic() {
   try {
@@ -1332,42 +1486,479 @@ function getActiveEventsForPublic() {
     if (!sheet || sheet.getLastRow() <= 1) {
       return {
         success: true,
-        events: []
+        events: [],
+        certificateEvents: []
       };
     }
 
     const data = sheet.getDataRange().getValues();
     const activeEvents = [];
+    const certificateEvents = [];
 
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
+      const id = String(row[0] || "").trim();
+      if (!id) continue;
+
       const status = String(row[3] || "").trim().toUpperCase();
+      const modulCert = String(row[14] || "OFF").trim().toUpperCase();
+      const evObj = {
+        idKegiatan: id,
+        namaKegiatan: String(row[1] || "").trim(),
+        subKegiatan: String(row[2] || "").trim(),
+        statusForm: status || "TUTUP",
+        kuotaPerSekolah: String(row[4] || "1").trim(),
+        modulKaos: String(row[5] || "ON").trim().toUpperCase(),
+        modulLengan: String(row[6] || "ON").trim().toUpperCase(),
+        modulGender: String(row[7] || "ON").trim().toUpperCase(),
+        modulKontakDarurat: String(row[8] || "ON").trim().toUpperCase(),
+        modulKesehatan: String(row[9] || "ON").trim().toUpperCase(),
+        modulEticketPresensi: String(row[10] || "ON").trim().toUpperCase(),
+        tanggalPelaksanaan: String(row[11] || "-").trim(),
+        lokasiKegiatan: String(row[12] || "-").trim(),
+        modulSertifikat: modulCert,
+        statusUnduhSertifikat: String(row[15] || "KUNCI").trim().toUpperCase(),
+        kriteriaUnduhSertifikat: String(row[16] || "HADIR").trim().toUpperCase(),
+        orientasiSertifikat: String(row[17] || "LANDSCAPE").trim().toUpperCase(),
+        nomorSertifikat: String(row[18] || "").trim(),
+        hasBlankoDepan: Boolean(String(row[19] || "").trim()),
+        hasBlankoBelakang: Boolean(String(row[20] || "").trim()),
+        layoutSertifikat: parseCertLayoutJson_(row[21])
+      };
+
       if (status === "BUKA") {
-        activeEvents.push({
-          idKegiatan: String(row[0] || "").trim(),
-          namaKegiatan: String(row[1] || "").trim(),
-          subKegiatan: String(row[2] || "").trim(),
-          statusForm: "BUKA",
-          kuotaPerSekolah: String(row[4] || "1").trim(),
-          modulKaos: String(row[5] || "ON").trim().toUpperCase(),
-          modulLengan: String(row[6] || "ON").trim().toUpperCase(),
-          modulGender: String(row[7] || "ON").trim().toUpperCase(),
-          modulKontakDarurat: String(row[8] || "ON").trim().toUpperCase(),
-          modulKesehatan: String(row[9] || "ON").trim().toUpperCase(),
-          modulEticketPresensi: String(row[10] || "ON").trim().toUpperCase(),
-          tanggalPelaksanaan: String(row[11] || "-").trim(),
-          lokasiKegiatan: String(row[12] || "-").trim()
-        });
+        activeEvents.push(evObj);
+      }
+      if (modulCert === "ON") {
+        certificateEvents.push(evObj);
       }
     }
 
     return {
       success: true,
-      events: activeEvents
+      events: activeEvents,
+      certificateEvents: certificateEvents
     };
   } catch (err) {
     Logger.log("Error getActiveEventsForPublic: " + err.toString());
-    return { success: false, events: [], message: err.message };
+    return { success: false, events: [], certificateEvents: [], message: err.message };
+  }
+}
+
+/**
+ * --------------------------------------------------------------------------
+ * 3.1.B ENGINE MANAJEMEN E-SERTIFIKAT DINAMIS PER KEGIATAN
+ * --------------------------------------------------------------------------
+ */
+
+/**
+ * Dapatkan Folder Penyimpanan Blanko Sertifikat di Google Drive Panitia
+ */
+function getCertificateFolder_() {
+  try {
+    const parentFolder = getSpjFolder_();
+    if (parentFolder) {
+      const sub = parentFolder.getFoldersByName("Blanko_Sertifikat_Bidang_SMP");
+      if (sub.hasNext()) return sub.next();
+      return parentFolder.createFolder("Blanko_Sertifikat_Bidang_SMP");
+    }
+  } catch (e) {}
+
+  try {
+    const existing = DriveApp.getFoldersByName("Blanko_Sertifikat_Bidang_SMP");
+    if (existing.hasNext()) return existing.next();
+    return DriveApp.createFolder("Blanko_Sertifikat_Bidang_SMP");
+  } catch (err) {
+    return null;
+  }
+}
+
+/**
+ * Simpan Pengaturan Modul, Saklar Unduh, Kriteria, Orientasi, Nomor, dan Posisi Teks Sertifikat
+ */
+function saveCertificateSettings(certConfig, pin) {
+  if (!verifyAdminPin(pin)) {
+    return { success: false, message: "Akses ditolak: PIN Panitia tidak valid." };
+  }
+  certConfig = certConfig || {};
+  const eventId = String(certConfig.eventId || certConfig.idKegiatan || "").trim();
+  if (!eventId) {
+    return { success: false, message: "ID Kegiatan wajib dipilih terlebih dahulu." };
+  }
+
+  try {
+    ensureDatabaseReady_();
+    const ss = getSpreadsheet_();
+    const sheet = ss.getSheetByName(SHEET_MASTER_KEGIATAN);
+    if (!sheet) return { success: false, message: "Sheet Master_Kegiatan tidak ditemukan." };
+
+    const data = sheet.getDataRange().getValues();
+    let targetRow = -1;
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][0]).trim() === eventId) {
+        targetRow = i + 1;
+        break;
+      }
+    }
+
+    if (targetRow === -1) {
+      return { success: false, message: "Kegiatan dengan ID " + eventId + " tidak ditemukan." };
+    }
+
+    const modulSertifikat = String(certConfig.modulSertifikat || "OFF").trim().toUpperCase() === "ON" ? "ON" : "OFF";
+    const statusUnduh = String(certConfig.statusUnduhSertifikat || "KUNCI").trim().toUpperCase() === "BUKA" ? "BUKA" : "KUNCI";
+    const kriteriaUnduh = String(certConfig.kriteriaUnduhSertifikat || "HADIR").trim().toUpperCase() === "SEMUA" ? "SEMUA" : "HADIR";
+    const orientasi = String(certConfig.orientasiSertifikat || "LANDSCAPE").trim().toUpperCase() === "PORTRAIT" ? "PORTRAIT" : "LANDSCAPE";
+    const nomorSertifikat = String(certConfig.nomorSertifikat || "").trim();
+    const layoutObj = parseCertLayoutJson_(certConfig.layoutSertifikat);
+    const layoutJson = JSON.stringify(layoutObj);
+
+    // Kolom 15 (idx 14) s.d. Kolom 22 (idx 21)
+    sheet.getRange(targetRow, 15).setValue(modulSertifikat);
+    sheet.getRange(targetRow, 16).setValue(statusUnduh);
+    sheet.getRange(targetRow, 17).setValue(kriteriaUnduh);
+    sheet.getRange(targetRow, 18).setValue(orientasi);
+    sheet.getRange(targetRow, 19).setValue(nomorSertifikat);
+    sheet.getRange(targetRow, 22).setValue(layoutJson);
+
+    return {
+      success: true,
+      message: "Pengaturan E-Sertifikat berhasil disimpan!",
+      config: {
+        idKegiatan: eventId,
+        modulSertifikat: modulSertifikat,
+        statusUnduhSertifikat: statusUnduh,
+        kriteriaUnduhSertifikat: kriteriaUnduh,
+        orientasiSertifikat: orientasi,
+        nomorSertifikat: nomorSertifikat,
+        layoutSertifikat: layoutObj
+      }
+    };
+  } catch (err) {
+    Logger.log("Error saveCertificateSettings: " + err.toString());
+    return { success: false, message: "Gagal menyimpan pengaturan sertifikat: " + err.message };
+  }
+}
+
+/**
+ * Unggah Blanko Desain Sertifikat (DEPAN / BELAKANG) dalam format JPG/PNG ke Google Drive + Cache Binary Sheet
+ */
+function uploadCertificateBlanko(fileData, pin) {
+  if (!verifyAdminPin(pin)) {
+    return { success: false, message: "Akses ditolak: PIN Panitia tidak valid." };
+  }
+  fileData = fileData || {};
+  const eventId = String(fileData.eventId || fileData.idKegiatan || "").trim();
+  const side = String(fileData.side || "DEPAN").trim().toUpperCase() === "BELAKANG" ? "BELAKANG" : "DEPAN";
+  let rawBase64 = String(fileData.base64Data || "").trim();
+  const fileName = String(fileData.fileName || ("Blanko_" + side + ".jpg")).trim();
+  const mimeType = String(fileData.mimeType || (fileName.toLowerCase().endsWith(".png") ? "image/png" : "image/jpeg")).trim();
+
+  if (!eventId || !rawBase64) {
+    return { success: false, message: "ID Kegiatan dan data gambar blanko wajib disertakan." };
+  }
+
+  // Bersihkan prefix data:image/...;base64, jika ada
+  if (rawBase64.includes(",")) {
+    rawBase64 = rawBase64.split(",")[1];
+  }
+
+  try {
+    ensureDatabaseReady_();
+    const ss = getSpreadsheet_();
+    const sheet = ss.getSheetByName(SHEET_MASTER_KEGIATAN);
+    if (!sheet) return { success: false, message: "Sheet Master_Kegiatan tidak ditemukan." };
+
+    const data = sheet.getDataRange().getValues();
+    let targetRow = -1;
+    let oldFileId = "";
+    const colIndex1Based = (side === "BELAKANG") ? 21 : 20; // Kolom 20 = Depan, Kolom 21 = Belakang
+
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][0]).trim() === eventId) {
+        targetRow = i + 1;
+        oldFileId = String(data[i][colIndex1Based - 1] || "").trim();
+        break;
+      }
+    }
+
+    if (targetRow === -1) {
+      return { success: false, message: "Kegiatan tidak ditemukan." };
+    }
+
+    // Hapus file Drive lama jika ada
+    if (oldFileId && !oldFileId.startsWith("SHEET:")) {
+      try {
+        DriveApp.getFileById(oldFileId).setTrashed(true);
+      } catch (eOld) {}
+    }
+
+    const binKey = "CERT_" + eventId + "_" + side;
+    const decodedBytes = Utilities.base64Decode(rawBase64);
+    let finalFileId = "SHEET:" + binKey;
+    let storageLocation = "Database Cloud";
+
+    // Simpan ke Google Drive folder khusus sertifikat
+    try {
+      const folder = getCertificateFolder_();
+      if (folder) {
+        const cleanName = "BLANKO_" + side + "_" + eventId + "_" + fileName;
+        const blob = Utilities.newBlob(decodedBytes, mimeType, cleanName);
+        const driveFile = folder.createFile(blob);
+        finalFileId = driveFile.getId();
+        storageLocation = "Google Drive Panitia (Folder Blanko_Sertifikat_Bidang_SMP)";
+      }
+    } catch (driveErr) {
+      Logger.log("Info: Fallback penyimpanan blanko ke Sheet Binary: " + driveErr.toString());
+    }
+
+    // Simpan juga cache Base64 di Sheet Binary agar pemuatan kanvas super cepat & bebas masalah CORS browser
+    saveTemplateBinaryToSheet_(binKey, "data:" + mimeType + ";base64," + rawBase64);
+
+    // Catat File ID di Master_Kegiatan
+    sheet.getRange(targetRow, colIndex1Based).setValue(finalFileId);
+
+    return {
+      success: true,
+      side: side,
+      fileId: finalFileId,
+      message: `Blanko Halaman ${side === "DEPAN" ? "Depan" : "Belakang"} berhasil diunggah ke ${storageLocation}!`
+    };
+  } catch (err) {
+    Logger.log("Error uploadCertificateBlanko: " + err.toString());
+    return { success: false, message: "Gagal mengunggah blanko sertifikat: " + err.message };
+  }
+}
+
+/**
+ * Hapus Blanko Sertifikat (Depan atau Belakang)
+ */
+function removeCertificateBlanko(eventId, side, pin) {
+  if (!verifyAdminPin(pin)) {
+    return { success: false, message: "Akses ditolak: PIN Panitia tidak valid." };
+  }
+  const cleanEventId = String(eventId || "").trim();
+  const cleanSide = String(side || "BELAKANG").trim().toUpperCase() === "DEPAN" ? "DEPAN" : "BELAKANG";
+  if (!cleanEventId) return { success: false, message: "ID Kegiatan tidak valid." };
+
+  try {
+    const ss = getSpreadsheet_();
+    const sheet = ss.getSheetByName(SHEET_MASTER_KEGIATAN);
+    if (!sheet) return { success: false, message: "Sheet Master_Kegiatan tidak ditemukan." };
+
+    const data = sheet.getDataRange().getValues();
+    const colIndex1Based = (cleanSide === "BELAKANG") ? 21 : 20;
+
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][0]).trim() === cleanEventId) {
+        const oldFileId = String(data[i][colIndex1Based - 1] || "").trim();
+        if (oldFileId && !oldFileId.startsWith("SHEET:")) {
+          try { DriveApp.getFileById(oldFileId).setTrashed(true); } catch (e) {}
+        }
+        deleteTemplateBinaryFromSheet_("CERT_" + cleanEventId + "_" + cleanSide);
+        sheet.getRange(i + 1, colIndex1Based).setValue("");
+        return {
+          success: true,
+          side: cleanSide,
+          message: `Blanko Halaman ${cleanSide === "DEPAN" ? "Depan" : "Belakang"} berhasil dihapus.`
+        };
+      }
+    }
+    return { success: false, message: "Kegiatan tidak ditemukan." };
+  } catch (err) {
+    return { success: false, message: "Gagal menghapus blanko: " + err.message };
+  }
+}
+
+/**
+ * Helper internal memuat Data URL gambar blanko dari Cache Sheet atau Google Drive
+ */
+function loadCertificateBlankoDataUrl_(eventId, side, fileId) {
+  const binKey = "CERT_" + eventId + "_" + side;
+  const cached = getTemplateBinaryFromSheet_(binKey);
+  if (cached) {
+    if (cached.startsWith("data:image")) return cached;
+    return "data:image/jpeg;base64," + cached;
+  }
+
+  if (fileId && !fileId.startsWith("SHEET:")) {
+    try {
+      const file = DriveApp.getFileById(fileId);
+      const mime = file.getMimeType() || "image/jpeg";
+      const b64 = Utilities.base64Encode(file.getBlob().getBytes());
+      const dataUrl = "data:" + mime + ";base64," + b64;
+      // Simpan ke cache agar pemanggilan berikutnya instan
+      try { saveTemplateBinaryToSheet_(binKey, dataUrl); } catch (eCache) {}
+      return dataUrl;
+    } catch (eDrive) {
+      Logger.log("Gagal membaca blanko dari Drive (" + fileId + "): " + eDrive.toString());
+    }
+  }
+  return "";
+}
+
+/**
+ * Ambil Aset & Konfigurasi Lengkap Sertifikat untuk suatu Kegiatan (Digunakan Editor Marshal & Generator PDF Peserta)
+ */
+function getCertificateAssets(eventIdOrName) {
+  try {
+    ensureDatabaseReady_();
+    const target = String(eventIdOrName || "").trim();
+    const allEvents = getAllEventsForAdminInternal_();
+    let matched = allEvents.find(ev => ev.idKegiatan === target || ev.namaKegiatan.toLowerCase() === target.toLowerCase());
+    if (!matched && allEvents.length > 0) {
+      matched = allEvents.find(ev => ev.modulSertifikat === "ON") || allEvents[0];
+    }
+    if (!matched) {
+      return { success: false, message: "Data kegiatan tidak ditemukan." };
+    }
+
+    const depanDataUrl = matched.blankoDepanId
+      ? loadCertificateBlankoDataUrl_(matched.idKegiatan, "DEPAN", matched.blankoDepanId)
+      : "";
+    const belakangDataUrl = matched.blankoBelakangId
+      ? loadCertificateBlankoDataUrl_(matched.idKegiatan, "BELAKANG", matched.blankoBelakangId)
+      : "";
+
+    return {
+      success: true,
+      event: {
+        idKegiatan: matched.idKegiatan,
+        namaKegiatan: matched.namaKegiatan,
+        subKegiatan: matched.subKegiatan,
+        tanggalPelaksanaan: matched.tanggalPelaksanaan,
+        lokasiKegiatan: matched.lokasiKegiatan,
+        modulSertifikat: matched.modulSertifikat,
+        statusUnduhSertifikat: matched.statusUnduhSertifikat,
+        kriteriaUnduhSertifikat: matched.kriteriaUnduhSertifikat,
+        orientasiSertifikat: matched.orientasiSertifikat,
+        nomorSertifikat: matched.nomorSertifikat,
+        blankoDepanId: matched.blankoDepanId,
+        blankoBelakangId: matched.blankoBelakangId,
+        layoutSertifikat: matched.layoutSertifikat
+      },
+      blankoDepanDataUrl: depanDataUrl,
+      blankoBelakangDataUrl: belakangDataUrl
+    };
+  } catch (err) {
+    Logger.log("Error getCertificateAssets: " + err.toString());
+    return { success: false, message: "Gagal memuat aset sertifikat: " + err.message };
+  }
+}
+
+/**
+ * Pencarian Mandiri Peserta pada Card Khusus E-Sertifikat di Halaman Publik (index.html)
+ */
+function searchParticipantForCertificate(query, eventIdOrName) {
+  try {
+    ensureDatabaseReady_();
+    const cleanQ = String(query || "").trim().toLowerCase();
+    if (!cleanQ || cleanQ.length < 3) {
+      return { success: false, message: "Ketik minimal 3 karakter (NIP, Nomor WhatsApp, atau Nama Lengkap) untuk mencari sertifikat Anda." };
+    }
+
+    const targetEvStr = String(eventIdOrName || "").trim();
+    const allEvents = getAllEventsForAdminInternal_();
+    let targetEvent = allEvents.find(ev => ev.idKegiatan === targetEvStr || ev.namaKegiatan.toLowerCase() === targetEvStr.toLowerCase());
+    if (!targetEvent) {
+      targetEvent = allEvents.find(ev => ev.modulSertifikat === "ON");
+    }
+
+    if (!targetEvent || targetEvent.modulSertifikat !== "ON") {
+      return {
+        success: false,
+        message: "Fasilitas E-Sertifikat tidak diaktifkan untuk kegiatan ini."
+      };
+    }
+
+    if (targetEvent.statusUnduhSertifikat !== "BUKA") {
+      return {
+        success: false,
+        locked: true,
+        message: "Pengunduhan E-Sertifikat untuk kegiatan ini belum dibuka oleh panitia. Silakan menunggu pengumuman resmi panitia."
+      };
+    }
+
+    const ss = getSpreadsheet_();
+    const sheet = ss.getSheetByName(SHEET_PESERTA);
+    if (!sheet || sheet.getLastRow() <= 1) {
+      return { success: true, participants: [], event: targetEvent };
+    }
+
+    const data = sheet.getDataRange().getValues();
+    const headerRow = data[0].map(h => String(h).trim().toLowerCase());
+    const hasKegiatanCol = headerRow.includes("nama kegiatan");
+    const offset = hasKegiatanCol ? 1 : 0;
+    const idxHadir = headerRow.findIndex(h => h.includes("status kehadiran") || h.includes("kehadiran"));
+
+    const qDigitsOnly = cleanQ.replace(/[^0-9]/g, "");
+    const matches = [];
+    const requireHadir = (targetEvent.kriteriaUnduhSertifikat !== "SEMUA");
+
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      const rowKeg = hasKegiatanCol ? String(row[2] || "").trim() : targetEvent.namaKegiatan;
+
+      if (rowKeg.toLowerCase() !== targetEvent.namaKegiatan.toLowerCase() &&
+          rowKeg.toLowerCase() !== targetEvent.idKegiatan.toLowerCase()) {
+        continue;
+      }
+
+      const regId = String(row[1] || "").trim();
+      const namaSekolah = String(row[2 + offset] || "-").trim();
+      const namaLengkap = String(row[6 + offset] || "-").trim();
+      const nip = String(row[8 + offset] || "-").replace(/^'/, "").trim();
+      const jabatan = String(row[11 + offset] || "-").trim();
+      const noWa = String(row[hasKegiatanCol ? 16 : 14] || "-").replace(/^'/, "").trim();
+      const noWaDigits = noWa.replace(/[^0-9]/g, "");
+      const statusHadirVal = idxHadir !== -1
+        ? String(row[idxHadir] || "BELUM HADIR").trim().toUpperCase()
+        : String(row[hasKegiatanCol ? 20 : 18] || "BELUM HADIR").trim().toUpperCase();
+
+      const isMatch = (
+        (nip && nip !== "-" && nip.toLowerCase().includes(cleanQ)) ||
+        (qDigitsOnly.length >= 4 && noWaDigits.includes(qDigitsOnly)) ||
+        (namaLengkap && namaLengkap.toLowerCase().includes(cleanQ)) ||
+        (regId && regId.toLowerCase().includes(cleanQ))
+      );
+
+      if (isMatch) {
+        const isEligible = requireHadir ? (statusHadirVal === "HADIR") : true;
+        matches.push({
+          regId: regId,
+          namaKegiatan: targetEvent.namaKegiatan,
+          idKegiatan: targetEvent.idKegiatan,
+          namaLengkap: namaLengkap,
+          namaSekolah: namaSekolah,
+          jabatan: jabatan,
+          statusKehadiran: statusHadirVal,
+          eligible: isEligible,
+          kriteria: targetEvent.kriteriaUnduhSertifikat
+        });
+        if (matches.length >= 10) break;
+      }
+    }
+
+    return {
+      success: true,
+      query: query,
+      totalFound: matches.length,
+      participants: matches,
+      event: {
+        idKegiatan: targetEvent.idKegiatan,
+        namaKegiatan: targetEvent.namaKegiatan,
+        subKegiatan: targetEvent.subKegiatan,
+        tanggalPelaksanaan: targetEvent.tanggalPelaksanaan,
+        lokasiKegiatan: targetEvent.lokasiKegiatan,
+        orientasiSertifikat: targetEvent.orientasiSertifikat,
+        nomorSertifikat: targetEvent.nomorSertifikat,
+        kriteriaUnduhSertifikat: targetEvent.kriteriaUnduhSertifikat,
+        layoutSertifikat: targetEvent.layoutSertifikat
+      }
+    };
+  } catch (err) {
+    Logger.log("Error searchParticipantForCertificate: " + err.toString());
+    return { success: false, message: "Terjadi kesalahan saat mencari sertifikat: " + err.message };
   }
 }
 
@@ -1625,7 +2216,8 @@ function getInitialFormData(targetEventIdOrName) {
       settings: settings,
       schools: schools,
       registeredSchools: registeredSchools,
-      activeEvents: activeEvents
+      activeEvents: activeEvents,
+      certificateEvents: activeEventsRes.certificateEvents || []
     };
   } catch (err) {
     Logger.log("Error getInitialFormData: " + err.toString());
@@ -1635,6 +2227,7 @@ function getInitialFormData(targetEventIdOrName) {
       schools: [...DEFAULT_SMP_KARANGANYAR],
       registeredSchools: [],
       activeEvents: [],
+      certificateEvents: [],
       message: err.toString()
     };
   }
@@ -2055,7 +2648,15 @@ function getAdminDashboardData(pin, targetEventIdOrName) {
         MODUL_KESEHATAN: selectedEvent.modulKesehatan,
         MODUL_ETICKET_PRESENSI: selectedEvent.modulEticketPresensi,
         TANGGAL_PELAKSANAAN: selectedEvent.tanggalPelaksanaan,
-        LOKASI_KEGIATAN: selectedEvent.lokasiKegiatan
+        LOKASI_KEGIATAN: selectedEvent.lokasiKegiatan,
+        MODUL_SERTIFIKAT: selectedEvent.modulSertifikat || "OFF",
+        STATUS_UNDUH_SERTIFIKAT: selectedEvent.statusUnduhSertifikat || "KUNCI",
+        KRITERIA_UNDUH_SERTIFIKAT: selectedEvent.kriteriaUnduhSertifikat || "HADIR",
+        ORIENTASI_SERTIFIKAT: selectedEvent.orientasiSertifikat || "LANDSCAPE",
+        NOMOR_SERTIFIKAT: selectedEvent.nomorSertifikat || "",
+        BLANKO_DEPAN_ID: selectedEvent.blankoDepanId || "",
+        BLANKO_BELAKANG_ID: selectedEvent.blankoBelakangId || "",
+        LAYOUT_SERTIFIKAT: selectedEvent.layoutSertifikat || getDefaultCertificateLayout_()
       };
     } else {
       settings = {

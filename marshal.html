@@ -14,21 +14,23 @@
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
   <link rel="icon" type="image/png" href="./icons/favicon.png">
 
-  <!-- Google Fonts: Plus Jakarta Sans -->
+  <!-- Google Fonts: Plus Jakarta Sans & 10 Font Sertifikat Kedinasan -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=EB+Garamond:wght@400;700&family=Lora:wght@400;700&family=Merriweather:wght@400;700&family=Montserrat:wght@400;700&family=Playfair+Display:wght@400;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
   <!-- Bootstrap 5.3.2 CSS & Bootstrap Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 
-  <!-- QR Scanner, QR Code Generator & Export Libraries -->
+  <!-- QR Scanner, QR Code Generator, JSZip & Export Libraries -->
   <script src="./qrcode.min.js"></script>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="./cert-engine.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 
   <style>
@@ -518,6 +520,10 @@
     <div class="nav-sidebar-link" onclick="switchTab('tabDokumenSpj', this)">
       <i class="bi bi-file-earmark-spreadsheet-fill text-success"></i>
       <span>Generator Dokumen SPJ</span>
+    </div>
+    <div class="nav-sidebar-link" onclick="switchTab('tabSertifikat', this)">
+      <i class="bi bi-award-fill text-warning"></i>
+      <span>Sertifikat</span>
     </div>
 
     <!-- 5. KECERDASAN BUATAN -->
@@ -1177,6 +1183,124 @@
           <button class="btn btn-success btn-sm fw-bold" onclick="openModalUploadSpj()">
             <i class="bi bi-cloud-arrow-up-fill me-1"></i> Upload Format Pertama
           </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB: E-SERTIFIKAT ==================== -->
+    <section id="tabSertifikat" class="tab-pane d-none">
+      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+          <h3 class="h4 fw-bold text-dark mb-0"><i class="bi bi-award-fill text-warning me-1"></i>Pengaturan E-Sertifikat</h3>
+          <p class="text-muted small mb-0">Kegiatan: <strong id="certEventName">-</strong></p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+          <button class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold" onclick="certPreviewSample()"><i class="bi bi-eye-fill me-1"></i>Tes Pratinjau Sampel</button>
+          <button class="btn btn-success btn-sm rounded-pill px-3 fw-bold" onclick="certDownloadAllZip()"><i class="bi bi-file-earmark-zip-fill me-1"></i>Unduh Semua (ZIP)</button>
+          <button class="btn btn-primary btn-sm rounded-pill px-3 fw-bold" id="btnCertSave" onclick="certSaveSettings()"><i class="bi bi-check-circle-fill me-1"></i>Simpan Pengaturan</button>
+        </div>
+      </div>
+
+      <div class="row g-3">
+        <!-- Panel Kiri: Kontrol -->
+        <div class="col-lg-4">
+          <div class="card card-modern p-3 mb-3">
+            <h6 class="fw-bold mb-3"><i class="bi bi-toggles me-1 text-primary"></i>Saklar Kontrol</h6>
+            <div class="form-check form-switch mb-2">
+              <input class="form-check-input" type="checkbox" id="certSwModul">
+              <label class="form-check-label small fw-bold" for="certSwModul">Modul Sertifikat (Card tampil di publik)</label>
+            </div>
+            <div class="form-check form-switch mb-2">
+              <input class="form-check-input" type="checkbox" id="certSwUnduh">
+              <label class="form-check-label small fw-bold" for="certSwUnduh">Buka Unduh Sertifikat untuk Peserta</label>
+            </div>
+            <label class="form-label small fw-bold mt-2 mb-1">Kriteria Peserta yang Berhak</label>
+            <select class="form-select form-select-sm mb-2" id="certKriteria">
+              <option value="HADIR">Hanya Peserta HADIR</option>
+              <option value="SEMUA">Semua Peserta Terdaftar</option>
+            </select>
+            <label class="form-label small fw-bold mt-2 mb-1">Orientasi Kertas (A4)</label>
+            <div class="btn-group w-100" role="group">
+              <input type="radio" class="btn-check" name="certOrient" id="certOrientL" value="LANDSCAPE" checked onchange="certOnOrientChange()">
+              <label class="btn btn-outline-primary btn-sm" for="certOrientL"><i class="bi bi-file-earmark-richtext me-1"></i>Landscape</label>
+              <input type="radio" class="btn-check" name="certOrient" id="certOrientP" value="PORTRAIT" onchange="certOnOrientChange()">
+              <label class="btn btn-outline-primary btn-sm" for="certOrientP"><i class="bi bi-file-earmark me-1"></i>Portrait</label>
+            </div>
+            <label class="form-label small fw-bold mt-3 mb-1">Nomor Sertifikat (1 nomor bersama)</label>
+            <input type="text" class="form-control form-control-sm" id="certNomor" placeholder="Contoh: 421.3 / 125 / SMP / 2026" oninput="certRender()">
+          </div>
+
+          <div class="card card-modern p-3 mb-3">
+            <h6 class="fw-bold mb-2"><i class="bi bi-image me-1 text-success"></i>Blanko Desain (JPG/PNG)</h6>
+            <div class="mb-2">
+              <label class="small fw-bold">Halaman Depan <span class="text-danger">*</span></label>
+              <div class="d-flex gap-1 align-items-center">
+                <input type="file" class="form-control form-control-sm" accept="image/png,image/jpeg" onchange="certUploadBlanko(this, 'DEPAN')">
+              </div>
+              <div class="small text-muted mt-1" id="certStatusDepan">Belum diunggah</div>
+            </div>
+            <div>
+              <label class="small fw-bold">Halaman Belakang <span class="text-muted">(opsional)</span></label>
+              <div class="d-flex gap-1 align-items-center">
+                <input type="file" class="form-control form-control-sm" accept="image/png,image/jpeg" onchange="certUploadBlanko(this, 'BELAKANG')">
+                <button class="btn btn-outline-danger btn-sm" title="Hapus Blanko Belakang" onclick="certRemoveBelakang()"><i class="bi bi-trash"></i></button>
+              </div>
+              <div class="small text-muted mt-1" id="certStatusBelakang">Tidak ada (sertifikat 1 halaman)</div>
+            </div>
+          </div>
+
+          <div class="card card-modern p-3">
+            <h6 class="fw-bold mb-2"><i class="bi bi-fonts me-1 text-danger"></i>Elemen Teks Terpilih: <span id="certSelLabel" class="text-primary">Nama Peserta</span></h6>
+            <div class="btn-group w-100 mb-2" role="group">
+              <button class="btn btn-outline-secondary btn-sm cert-el-btn" data-el="nomor" onclick="certSelect('nomor')">Nomor</button>
+              <button class="btn btn-outline-secondary btn-sm cert-el-btn active" data-el="nama" onclick="certSelect('nama')">Nama</button>
+              <button class="btn btn-outline-secondary btn-sm cert-el-btn" data-el="unit" onclick="certSelect('unit')">Unit Kerja</button>
+            </div>
+            <label class="small fw-bold mb-1">Jenis Font</label>
+            <select class="form-select form-select-sm mb-2" id="certFont" onchange="certUpdateProp('fontFamily', this.value)">
+              <option>Times New Roman</option>
+              <option>Arial</option>
+              <option>Georgia</option>
+              <option value="EB Garamond">Garamond</option>
+              <option>Playfair Display</option>
+              <option>Montserrat</option>
+              <option>Merriweather</option>
+              <option>Cinzel</option>
+              <option>Lora</option>
+              <option>Courier New</option>
+            </select>
+            <div class="d-flex gap-2 mb-2">
+              <div class="flex-grow-1">
+                <label class="small fw-bold mb-1">Ukuran Font: <span id="certSizeLbl">0</span></label>
+                <input type="range" class="form-range" id="certSize" min="14" max="200" oninput="certUpdateProp('fontSize', parseInt(this.value))">
+              </div>
+              <div>
+                <label class="small fw-bold mb-1 d-block">Gaya</label>
+                <button class="btn btn-sm btn-outline-dark fw-bold" id="certBoldBtn" onclick="certToggleBold()">B</button>
+              </div>
+            </div>
+            <label class="small fw-bold mb-1">Warna Huruf</label>
+            <div class="d-flex gap-1 align-items-center mb-2">
+              <button class="btn btn-sm border" style="background:#000000;width:28px;height:28px" onclick="certUpdateProp('color','#000000')" title="Hitam"></button>
+              <button class="btn btn-sm border" style="background:#1B365D;width:28px;height:28px" onclick="certUpdateProp('color','#1B365D')" title="Navy"></button>
+              <button class="btn btn-sm border" style="background:#B38F00;width:28px;height:28px" onclick="certUpdateProp('color','#B38F00')" title="Emas"></button>
+              <button class="btn btn-sm border" style="background:#721C24;width:28px;height:28px" onclick="certUpdateProp('color','#721C24')" title="Marun"></button>
+              <input type="color" class="form-control form-control-color form-control-sm" id="certColor" oninput="certUpdateProp('color', this.value)">
+            </div>
+            <button class="btn btn-outline-info btn-sm w-100 fw-bold" onclick="certCenterSelected()"><i class="bi bi-bullseye me-1"></i>Pas Tengah</button>
+          </div>
+        </div>
+
+        <!-- Panel Kanan: Kanvas Editor -->
+        <div class="col-lg-8">
+          <div class="card card-modern p-3">
+            <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+              <span class="small text-muted"><i class="bi bi-hand-index me-1"></i>Klik &amp; geser teks. Tarik titik sudut kotak untuk perbesar/perkecil. Garis bantu magnetis muncul di tengah.</span>
+            </div>
+            <div class="d-flex justify-content-center bg-light rounded p-2" style="overflow:auto;">
+              <canvas id="certCanvas" style="max-width:100%; box-shadow:0 4px 18px rgba(0,0,0,.15); background:#fff; touch-action:none; cursor:default;"></canvas>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -2302,6 +2426,9 @@
       if (tabId === "tabPengaturan") {
         if (typeof populatePopupSettingsUI === "function") populatePopupSettingsUI();
       }
+      if (tabId === "tabSertifikat") {
+        certLoad();
+      }
     }
 
     /**
@@ -2514,6 +2641,7 @@
           renderMatriksKaos(res.participants || []);
           renderMonitoringSekolah(res);
           renderSpjPreview(res);
+          if (!document.getElementById("tabSertifikat").classList.contains("d-none")) certLoad();
 
           Swal.fire({
             toast: true,
@@ -3773,6 +3901,471 @@
     }
 
     /**
+     * =========================================================================
+     * MENU SERTIFIKAT: EDITOR KANVAS INTERAKTIF (DRAG, RESIZE SUDUT, GARIS MAGNETIS)
+     * =========================================================================
+     */
+    const CERT_SAMPLE = { nama: "Nama Lengkap Peserta, S.Pd., M.Pd.", unit: "SMP NEGERI 1 KARANGANYAR" };
+    const CERT_LABELS = { nomor: "Nomor Sertifikat", nama: "Nama Peserta", unit: "Unit Kerja" };
+    const CERT_SNAP = 12;
+    const CERT_HANDLE = 9;
+    let certState = {
+      event: null, front: null, back: null, loadedFor: "",
+      layout: CertEngine.defaultLayout(), selected: "nama",
+      drag: null, guideV: false, guideH: false, canvasReady: false
+    };
+
+    function certOrient() {
+      return document.getElementById("certOrientP").checked ? "PORTRAIT" : "LANDSCAPE";
+    }
+
+    function certEditorTexts() {
+      const nomor = document.getElementById("certNomor").value.trim() || "[Nomor Sertifikat]";
+      return { nomor, nama: CERT_SAMPLE.nama, unit: CERT_SAMPLE.unit };
+    }
+
+    function certSetupCanvas() {
+      const cv = document.getElementById("certCanvas");
+      const pm = CertEngine.pageMm(certOrient());
+      cv.width = Math.round(pm.w * CertEngine.MM_PX);
+      cv.height = Math.round(pm.h * CertEngine.MM_PX);
+      cv.style.width = certOrient() === "PORTRAIT" ? "min(100%, 520px)" : "100%";
+      if (!certState.canvasReady) {
+        cv.addEventListener("pointerdown", certPointerDown);
+        cv.addEventListener("pointermove", certPointerMove);
+        window.addEventListener("pointerup", certPointerUp);
+        certState.canvasReady = true;
+      }
+    }
+
+    function certPt(e) {
+      const cv = document.getElementById("certCanvas");
+      const r = cv.getBoundingClientRect();
+      return { x: (e.clientX - r.left) * (cv.width / r.width), y: (e.clientY - r.top) * (cv.height / r.height) };
+    }
+
+    function certBox(k) {
+      const cv = document.getElementById("certCanvas");
+      const ctx = cv.getContext("2d");
+      const el = certState.layout[k];
+      const scale = CertEngine.scaleFor(cv.width, certOrient());
+      ctx.font = CertEngine.fontStr(el, scale);
+      const w = ctx.measureText(certEditorTexts()[k]).width;
+      const h = el.fontSize * scale * 1.25;
+      const cx = (el.xPct / 100) * cv.width, cy = (el.yPct / 100) * cv.height;
+      return { x: cx - w / 2 - 6, y: cy - h / 2, w: w + 12, h, cx, cy };
+    }
+
+    function certCorners(b) {
+      return [[b.x, b.y], [b.x + b.w, b.y], [b.x, b.y + b.h], [b.x + b.w, b.y + b.h]];
+    }
+
+    function certRender() {
+      const cv = document.getElementById("certCanvas");
+      if (!cv || !cv.width) return;
+      const ctx = cv.getContext("2d");
+      const W = cv.width, H = cv.height;
+      CertEngine.drawPage(ctx, W, H, certOrient(), certState.front, certState.layout, certEditorTexts());
+
+      if (!certState.front) {
+        ctx.save();
+        ctx.fillStyle = "rgba(100,116,139,.6)";
+        ctx.font = "600 16px 'Plus Jakarta Sans', sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("Unggah Blanko Halaman Depan (JPG/PNG) untuk melihat desain asli", W / 2, 30);
+        ctx.restore();
+      }
+
+      // Garis bantu magnetis
+      ctx.save();
+      ctx.setLineDash([8, 6]);
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = "#06b6d4";
+      if (certState.guideV) { ctx.beginPath(); ctx.moveTo(W / 2, 0); ctx.lineTo(W / 2, H); ctx.stroke(); }
+      if (certState.guideH) { ctx.beginPath(); ctx.moveTo(0, H / 2); ctx.lineTo(W, H / 2); ctx.stroke(); }
+      ctx.restore();
+
+      // Kotak seleksi + titik sudut
+      const b = certBox(certState.selected);
+      ctx.save();
+      ctx.strokeStyle = "#2563eb";
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 3]);
+      ctx.strokeRect(b.x, b.y, b.w, b.h);
+      ctx.setLineDash([]);
+      ctx.fillStyle = "#ffffff";
+      certCorners(b).forEach(([x, y]) => {
+        ctx.fillRect(x - CERT_HANDLE / 2, y - CERT_HANDLE / 2, CERT_HANDLE, CERT_HANDLE);
+        ctx.strokeRect(x - CERT_HANDLE / 2, y - CERT_HANDLE / 2, CERT_HANDLE, CERT_HANDLE);
+      });
+      ctx.fillStyle = "#2563eb";
+      ctx.font = "600 11px 'Plus Jakarta Sans', sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillText(CERT_LABELS[certState.selected], b.x, b.y - 6);
+      ctx.restore();
+    }
+
+    function certHitHandle(pt, b) {
+      return certCorners(b).some(([x, y]) => Math.abs(pt.x - x) <= CERT_HANDLE && Math.abs(pt.y - y) <= CERT_HANDLE);
+    }
+
+    function certHitBox(pt, b) {
+      return pt.x >= b.x && pt.x <= b.x + b.w && pt.y >= b.y && pt.y <= b.y + b.h;
+    }
+
+    function certPointerDown(e) {
+      const pt = certPt(e);
+      const selBox = certBox(certState.selected);
+      if (certHitHandle(pt, selBox)) {
+        certState.drag = {
+          type: "resize", k: certState.selected,
+          startDist: Math.max(4, Math.hypot(pt.x - selBox.cx, pt.y - selBox.cy)),
+          startSize: certState.layout[certState.selected].fontSize
+        };
+      } else {
+        const order = ["nama", "unit", "nomor"];
+        const hit = order.find(k => certHitBox(pt, certBox(k)));
+        if (!hit) return;
+        certState.selected = hit;
+        const b = certBox(hit);
+        certState.drag = { type: "move", k: hit, offX: pt.x - b.cx, offY: pt.y - b.cy };
+        certSyncControls();
+      }
+      e.target.setPointerCapture && e.target.setPointerCapture(e.pointerId);
+      e.preventDefault();
+      certRender();
+    }
+
+    function certPointerMove(e) {
+      const cv = document.getElementById("certCanvas");
+      const pt = certPt(e);
+      const d = certState.drag;
+      if (!d) {
+        const sel = certBox(certState.selected);
+        if (certHitHandle(pt, sel)) cv.style.cursor = "nwse-resize";
+        else if (CertEngine.ELEMENTS.some(k => certHitBox(pt, certBox(k)))) cv.style.cursor = "move";
+        else cv.style.cursor = "default";
+        return;
+      }
+      const el = certState.layout[d.k];
+      if (d.type === "move") {
+        let x = pt.x - d.offX, y = pt.y - d.offY;
+        certState.guideV = Math.abs(x - cv.width / 2) < CERT_SNAP;
+        certState.guideH = Math.abs(y - cv.height / 2) < CERT_SNAP;
+        if (certState.guideV) x = cv.width / 2;
+        if (certState.guideH) y = cv.height / 2;
+        el.xPct = Math.min(100, Math.max(0, (x / cv.width) * 100));
+        el.yPct = Math.min(100, Math.max(0, (y / cv.height) * 100));
+      } else {
+        const b = certBox(d.k);
+        const dist = Math.hypot(pt.x - b.cx, pt.y - b.cy);
+        el.fontSize = Math.round(Math.min(200, Math.max(8, d.startSize * (dist / d.startDist))));
+        certSyncControls();
+      }
+      certRender();
+    }
+
+    function certPointerUp() {
+      if (!certState.drag) return;
+      certState.drag = null;
+      certState.guideV = false;
+      certState.guideH = false;
+      certRender();
+    }
+
+    function certSelect(k) {
+      certState.selected = k;
+      certSyncControls();
+      certRender();
+    }
+
+    function certSyncControls() {
+      const el = certState.layout[certState.selected];
+      document.getElementById("certSelLabel").textContent = CERT_LABELS[certState.selected];
+      document.querySelectorAll(".cert-el-btn").forEach(b => b.classList.toggle("active", b.dataset.el === certState.selected));
+      document.getElementById("certFont").value = el.fontFamily;
+      document.getElementById("certSize").value = el.fontSize;
+      document.getElementById("certSizeLbl").textContent = el.fontSize;
+      document.getElementById("certColor").value = el.color || "#000000";
+      const bb = document.getElementById("certBoldBtn");
+      bb.classList.toggle("btn-dark", el.fontWeight === "bold");
+      bb.classList.toggle("btn-outline-dark", el.fontWeight !== "bold");
+    }
+
+    async function certUpdateProp(prop, val) {
+      certState.layout[certState.selected][prop] = val;
+      certSyncControls();
+      if (prop === "fontFamily") await CertEngine.ensureFonts(certState.layout);
+      certRender();
+    }
+
+    async function certToggleBold() {
+      const el = certState.layout[certState.selected];
+      el.fontWeight = el.fontWeight === "bold" ? "normal" : "bold";
+      certSyncControls();
+      await CertEngine.ensureFonts(certState.layout);
+      certRender();
+    }
+
+    function certCenterSelected() {
+      certState.layout[certState.selected].xPct = 50;
+      certRender();
+    }
+
+    function certOnOrientChange() {
+      certSetupCanvas();
+      certRender();
+    }
+
+    async function certLoad(force) {
+      const evId = currentDashboardData?.settings?.ID_KEGIATAN || activeEventId;
+      document.getElementById("certEventName").textContent = currentDashboardData?.settings?.NAMA_KEGIATAN || "-";
+      if (!evId) {
+        Swal.fire({ icon: "info", title: "Belum Ada Kegiatan", text: "Silakan buat / pilih kegiatan terlebih dahulu." });
+        return false;
+      }
+      if (!force && certState.loadedFor === evId) {
+        certSetupCanvas();
+        certRender();
+        return true;
+      }
+
+      Swal.fire({ title: "Memuat Pengaturan Sertifikat...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      try {
+        const res = await callGasApi("getCertificateAssets", { eventId: evId });
+        if (!res || !res.success) {
+          Swal.fire({ icon: "error", title: "Gagal", text: (res && res.message) || "Gagal memuat aset sertifikat. Pastikan Code.gs terbaru sudah di-deploy." });
+          return false;
+        }
+        const ev = res.event;
+        certState.event = ev;
+        certState.loadedFor = evId;
+        certState.layout = CertEngine.mergeLayout(ev.layoutSertifikat);
+
+        document.getElementById("certSwModul").checked = ev.modulSertifikat === "ON";
+        document.getElementById("certSwUnduh").checked = ev.statusUnduhSertifikat === "BUKA";
+        document.getElementById("certKriteria").value = ev.kriteriaUnduhSertifikat === "SEMUA" ? "SEMUA" : "HADIR";
+        document.getElementById(ev.orientasiSertifikat === "PORTRAIT" ? "certOrientP" : "certOrientL").checked = true;
+        document.getElementById("certNomor").value = ev.nomorSertifikat || "";
+
+        certState.front = await CertEngine.loadImage(res.blankoDepanDataUrl);
+        certState.back = await CertEngine.loadImage(res.blankoBelakangDataUrl);
+        document.getElementById("certStatusDepan").innerHTML = certState.front
+          ? '<span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i>Blanko depan tersimpan</span>' : "Belum diunggah";
+        document.getElementById("certStatusBelakang").innerHTML = certState.back
+          ? '<span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i>Blanko belakang tersimpan (PDF 2 halaman)</span>' : "Tidak ada (sertifikat 1 halaman)";
+
+        await CertEngine.ensureFonts(certState.layout);
+        Swal.close();
+        certSetupCanvas();
+        certSyncControls();
+        certRender();
+        return true;
+      } catch (err) {
+        console.error(err);
+        Swal.fire({ icon: "error", title: "Gangguan Koneksi", text: "Gagal memuat data sertifikat." });
+        return false;
+      }
+    }
+
+    async function certSaveSettings() {
+      if (!certState.event) return;
+      const btn = document.getElementById("btnCertSave");
+      btn.disabled = true;
+      const certConfig = {
+        eventId: certState.event.idKegiatan,
+        modulSertifikat: document.getElementById("certSwModul").checked ? "ON" : "OFF",
+        statusUnduhSertifikat: document.getElementById("certSwUnduh").checked ? "BUKA" : "KUNCI",
+        kriteriaUnduhSertifikat: document.getElementById("certKriteria").value,
+        orientasiSertifikat: certOrient(),
+        nomorSertifikat: document.getElementById("certNomor").value.trim(),
+        layoutSertifikat: certState.layout
+      };
+      try {
+        const res = await callGasApi("saveCertificateSettings", { pin: currentAdminPin, certConfig });
+        if (res && res.success) {
+          Object.assign(certState.event, certConfig);
+          Swal.fire({ toast: true, position: "top-end", icon: "success", title: res.message, showConfirmButton: false, timer: 2200 });
+        } else {
+          Swal.fire({ icon: "error", title: "Gagal Menyimpan", text: (res && res.message) || "Terjadi kesalahan." });
+        }
+      } catch (e) {
+        Swal.fire({ icon: "error", title: "Gangguan Koneksi", text: "Gagal menyimpan pengaturan sertifikat." });
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function certReadFileAsDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(r.result);
+        r.onerror = reject;
+        r.readAsDataURL(file);
+      });
+    }
+
+    async function certUploadBlanko(input, side) {
+      const file = input.files && input.files[0];
+      input.value = "";
+      if (!file || !certState.event) return;
+      if (!/^image\/(png|jpeg)$/.test(file.type)) {
+        Swal.fire({ icon: "warning", title: "Format Tidak Didukung", text: "Blanko harus berformat JPG atau PNG." });
+        return;
+      }
+      Swal.fire({ title: `Mengunggah Blanko ${side === "DEPAN" ? "Depan" : "Belakang"}...`, allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      try {
+        let dataUrl = await certReadFileAsDataUrl(file);
+        let mime = file.type;
+        let img = await CertEngine.loadImage(dataUrl);
+
+        // Optimasi: batasi resolusi maksimum 300 DPI A4 (3508 px) & kompres JPEG jika file besar
+        const maxSide = 3508;
+        if (img && (Math.max(img.width, img.height) > maxSide || file.size > 2.5 * 1024 * 1024)) {
+          const ratio = Math.min(1, maxSide / Math.max(img.width, img.height));
+          const c = document.createElement("canvas");
+          c.width = Math.round(img.width * ratio);
+          c.height = Math.round(img.height * ratio);
+          const cx = c.getContext("2d");
+          cx.fillStyle = "#ffffff";
+          cx.fillRect(0, 0, c.width, c.height);
+          cx.drawImage(img, 0, 0, c.width, c.height);
+          dataUrl = c.toDataURL("image/jpeg", 0.9);
+          mime = "image/jpeg";
+          img = await CertEngine.loadImage(dataUrl);
+        }
+
+        const res = await callGasApi("uploadCertificateBlanko", {
+          pin: currentAdminPin,
+          fileData: { eventId: certState.event.idKegiatan, side, base64Data: dataUrl, fileName: file.name, mimeType: mime }
+        });
+        if (!res || !res.success) {
+          Swal.fire({ icon: "error", title: "Gagal Mengunggah", text: (res && res.message) || "Terjadi kesalahan." });
+          return;
+        }
+        if (side === "DEPAN") {
+          certState.front = img;
+          document.getElementById("certStatusDepan").innerHTML = '<span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i>Blanko depan tersimpan</span>';
+        } else {
+          certState.back = img;
+          document.getElementById("certStatusBelakang").innerHTML = '<span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i>Blanko belakang tersimpan (PDF 2 halaman)</span>';
+        }
+
+        // Peringatan jika rasio gambar tidak sesuai orientasi terpilih
+        const isLandscapeImg = img && img.width >= img.height;
+        const mismatch = img && ((certOrient() === "LANDSCAPE") !== isLandscapeImg);
+        certRender();
+        Swal.fire({
+          icon: mismatch ? "warning" : "success",
+          title: mismatch ? "Blanko Terunggah (Cek Orientasi)" : "Blanko Berhasil Diunggah",
+          text: mismatch
+            ? `Gambar berbentuk ${isLandscapeImg ? "Landscape" : "Portrait"}, sedangkan orientasi terpilih ${certOrient() === "LANDSCAPE" ? "Landscape" : "Portrait"}. Sesuaikan orientasi agar tidak gepeng.`
+            : res.message
+        });
+      } catch (err) {
+        console.error(err);
+        Swal.fire({ icon: "error", title: "Gangguan Koneksi", text: "Gagal mengunggah blanko sertifikat." });
+      }
+    }
+
+    async function certRemoveBelakang() {
+      if (!certState.event || !certState.back) return;
+      const ok = await Swal.fire({ icon: "question", title: "Hapus Blanko Belakang?", text: "Sertifikat akan kembali menjadi 1 halaman.", showCancelButton: true, confirmButtonText: "Hapus", confirmButtonColor: "#dc2626" });
+      if (!ok.isConfirmed) return;
+      const res = await callGasApi("removeCertificateBlanko", { pin: currentAdminPin, eventId: certState.event.idKegiatan, side: "BELAKANG" });
+      if (res && res.success) {
+        certState.back = null;
+        document.getElementById("certStatusBelakang").textContent = "Tidak ada (sertifikat 1 halaman)";
+        Swal.fire({ toast: true, position: "top-end", icon: "success", title: res.message, showConfirmButton: false, timer: 2000 });
+      } else {
+        Swal.fire({ icon: "error", title: "Gagal", text: (res && res.message) || "Gagal menghapus blanko." });
+      }
+    }
+
+    function certPdfFor(nama, unit) {
+      return CertEngine.buildPdf({
+        orient: certOrient(),
+        front: certState.front,
+        back: certState.back,
+        layout: certState.layout,
+        texts: { nomor: document.getElementById("certNomor").value.trim(), nama, unit }
+      });
+    }
+
+    function certRequireFront() {
+      if (!certState.front) {
+        Swal.fire({ icon: "warning", title: "Blanko Depan Belum Ada", text: "Silakan unggah Blanko Halaman Depan terlebih dahulu di menu Sertifikat." });
+        return false;
+      }
+      return true;
+    }
+
+    async function certPreviewSample() {
+      if (!(await certLoad())) return;
+      if (!certRequireFront()) return;
+      await CertEngine.ensureFonts(certState.layout);
+      const doc = certPdfFor(CERT_SAMPLE.nama, CERT_SAMPLE.unit);
+      window.open(doc.output("bloburl"), "_blank");
+    }
+
+    async function certDownloadOne(regId) {
+      const p = (currentDashboardData?.participants || []).find(x => String(x.regId) === String(regId));
+      if (!p) return;
+      if (!(await certLoad())) return;
+      if (!certRequireFront()) return;
+      await CertEngine.ensureFonts(certState.layout);
+      const doc = certPdfFor(p.namaLengkap, p.namaSekolah);
+      doc.save(`Sertifikat_${CertEngine.safeName(p.namaLengkap)}.pdf`);
+    }
+
+    async function certDownloadAllZip() {
+      if (!(await certLoad())) return;
+      if (!certRequireFront()) return;
+      const kriteria = document.getElementById("certKriteria").value;
+      const list = (currentDashboardData?.participants || []).filter(p =>
+        kriteria === "SEMUA" ? true : String(p.statusKehadiran).toUpperCase() === "HADIR"
+      );
+      if (list.length === 0) {
+        Swal.fire({ icon: "info", title: "Tidak Ada Peserta", text: kriteria === "SEMUA" ? "Belum ada peserta terdaftar." : "Belum ada peserta berstatus HADIR." });
+        return;
+      }
+      await CertEngine.ensureFonts(certState.layout);
+      Swal.fire({
+        title: "Membuat Sertifikat...",
+        html: `<div id="certZipProgress">0 / ${list.length}</div>`,
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+      });
+      try {
+        const zip = new JSZip();
+        const used = {};
+        for (let i = 0; i < list.length; i++) {
+          const p = list[i];
+          let base = `Sertifikat_${CertEngine.safeName(p.namaLengkap)}`;
+          used[base] = (used[base] || 0) + 1;
+          if (used[base] > 1) base += `_${used[base]}`;
+          const doc = certPdfFor(p.namaLengkap, p.namaSekolah);
+          zip.file(`${base}.pdf`, doc.output("blob"));
+          const prog = document.getElementById("certZipProgress");
+          if (prog) prog.textContent = `${i + 1} / ${list.length}`;
+          await new Promise(r => setTimeout(r, 0));
+        }
+        const blob = await zip.generateAsync({ type: "blob" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `Sertifikat_${CertEngine.safeName(certState.event?.namaKegiatan || "Kegiatan")}.zip`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+        Swal.fire({ icon: "success", title: "Selesai!", text: `${list.length} sertifikat berhasil dikemas dalam 1 file ZIP.` });
+      } catch (err) {
+        console.error(err);
+        Swal.fire({ icon: "error", title: "Gagal", text: "Terjadi kesalahan saat membuat ZIP sertifikat." });
+      }
+    }
+
+    /**
      * TAB 6: DATA SELURUH PESERTA
      */
     function renderParticipantsTable(participants) {
@@ -3804,6 +4397,9 @@
             <div class="d-inline-flex gap-1">
               <button class="btn btn-outline-primary btn-sm rounded-pill p-1 px-2" onclick="printOrDownloadParticipantBiodata('${escapeHtml(p.regId)}')" title="Cetak / Unduh Biodata Peserta (PDF A4)">
                 <i class="bi bi-file-earmark-person-fill"></i>
+              </button>
+              <button class="btn btn-outline-warning btn-sm rounded-pill p-1 px-2" onclick="certDownloadOne('${escapeHtml(p.regId)}')" title="Unduh E-Sertifikat Peserta (PDF A4)">
+                <i class="bi bi-award-fill"></i>
               </button>
               <button class="btn btn-outline-danger btn-sm rounded-pill p-1 px-2" onclick="confirmDeleteParticipant('${escapeHtml(p.regId)}')" title="Hapus Data Peserta">
                 <i class="bi bi-trash"></i>
