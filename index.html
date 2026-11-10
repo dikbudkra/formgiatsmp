@@ -1263,7 +1263,9 @@
       // Ambil data kuota sekolah terdaftar untuk kegiatan ini
       try {
         const resRegistered = await callGasApi("getRegisteredSchools", { eventName: ev.namaKegiatan });
-        if (resRegistered && resRegistered.success) {
+        if (Array.isArray(resRegistered)) {
+          registeredSchoolList = resRegistered;
+        } else if (resRegistered && resRegistered.success) {
           registeredSchoolList = resRegistered.data || [];
         }
       } catch (e) {
@@ -1417,7 +1419,7 @@
       }
 
       container.innerHTML = filtered.map(s => `
-        <div class="school-item" onclick="selectSchool('${escapeHtml(s.npsn)}')">
+        <div class="school-item" onclick="selectSchool('${escapeHtml(s.npsn)}', '${encodeURIComponent(s.nama)}')">
           <div class="fw-bold text-dark">${escapeHtml(s.nama)}</div>
           <div class="small text-muted">NPSN: ${escapeHtml(s.npsn)} | ${escapeHtml(s.status)} | Kec. ${escapeHtml(s.kecamatan)}</div>
         </div>
@@ -1475,14 +1477,33 @@
       if (drop) drop.style.display = "none";
     }
 
-    function selectSchool(npsn) {
-      const sch = masterSchoolList.find(s => s.npsn === npsn);
+    function selectSchool(npsn, encodedNama = "") {
+      const targetNama = encodedNama ? decodeURIComponent(encodedNama) : "";
+      const sch = masterSchoolList.find(s => 
+        (npsn && npsn !== "-" && String(s.npsn).trim() === String(npsn).trim()) ||
+        (targetNama && s.nama === targetNama)
+      );
       if (!sch) return;
 
       // Cek Kuota Pendaftaran Sekolah
-      if (activeSelectedEvent && activeSelectedEvent.kuotaPerSekolah !== "bebas") {
+      if (activeSelectedEvent && activeSelectedEvent.kuotaPerSekolah && activeSelectedEvent.kuotaPerSekolah !== "bebas") {
         const maxQuota = parseInt(activeSelectedEvent.kuotaPerSekolah, 10) || 1;
-        const currentRegistered = registeredSchoolList.filter(r => r.npsn === sch.npsn || r.namaSekolah.toLowerCase() === sch.nama.toLowerCase()).length;
+        const cleanSchNama = (sch.nama || "").toLowerCase().trim();
+        const cleanSchNpsn = String(sch.npsn || "").trim();
+
+        // Cari data pendaftaran sekolah ini
+        let currentRegistered = 0;
+        if (Array.isArray(registeredSchoolList)) {
+          const matchSchool = registeredSchoolList.find(r => {
+            const rNpsn = String(r.npsn || "").trim();
+            const rNama = String(r.nama || r.origNama || r.namaSekolah || "").toLowerCase().trim();
+            return (cleanSchNpsn && cleanSchNpsn !== "-" && rNpsn === cleanSchNpsn) ||
+                   (cleanSchNama && cleanSchNama !== "-" && rNama === cleanSchNama);
+          });
+          if (matchSchool) {
+            currentRegistered = typeof matchSchool.count === "number" ? matchSchool.count : (Array.isArray(matchSchool.participants) ? matchSchool.participants.length : 1);
+          }
+        }
 
         if (currentRegistered >= maxQuota) {
           Swal.fire({
