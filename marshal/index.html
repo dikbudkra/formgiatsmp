@@ -1870,7 +1870,7 @@
                         <th style="width: 90px;">JUMLAH</th>
                         <th style="width: 85px;">PPH 21</th>
                         <th style="width: 95px;">PENERIMAAN</th>
-                        <th style="width: 140px;">TANDA TANGAN</th>
+                        <th colspan="2" style="width: 220px; text-align: center;">TANDA TANGAN</th>
                       </tr>
                     </thead>
                     <tbody id="tbodyPreviewSpj">
@@ -1883,7 +1883,7 @@
                         <td class="text-end" id="tdSpjTotalKotor">Rp 0</td>
                         <td class="text-end text-danger" id="tdSpjTotalPajak">Rp 0</td>
                         <td class="text-end text-success" id="tdSpjTotalBersih">Rp 0</td>
-                        <td></td>
+                        <td colspan="2"></td>
                       </tr>
                     </tfoot>
                   </table>
@@ -3926,7 +3926,7 @@
           headerRow: 3,         // Row 4
           sampleDataRow: 5,     // Row 6 (Row 5 adalah baris header gabungan B4:B5)
           minCol: 1,            // Kolom B (NO)
-          maxCol: 12,           // Kolom M (TANDA TANGAN)
+          maxCol: 13,           // Kolom N (TANDA TANGAN Zig-zag 2 Kolom M & N)
           colMap: {
             no: 1,              // Kolom B
             nama: 2,            // Kolom C
@@ -3940,12 +3940,14 @@
             bruto: 9,           // Kolom J (JUMLAH 200,000)
             pph: 10,            // Kolom K (PPH 21 30,000)
             netto: 11,          // Kolom L (PENERIMAAN 170,000)
-            ttd: 12             // Kolom M (TANDA TANGAN 1)
+            ttd: 12             // Kolom M & N (TANDA TANGAN 2 Kolom)
           },
+          isTwoColTtd: true,
           satuanVal: "hari",
           hasRpPrefix: true,
           currencyPrefix: "Rp",
-          ttdStyle: "number_only",
+          ttdStyle: "zigzag_left",
+          ttdHasDots: true,
           cleanGolongan: true,
           footer: {
             hasTotalRow: true,
@@ -3953,7 +3955,7 @@
             totalLabelCol: 2,   // Kolom C ("Jumlah ")
             sumCols: [8, 9, 10, 11] // Kolom I, J, K, L
           },
-          summary: "Struktur Presisi: Kolom B-M (12 Kolom), Hari di Kolom G, Satuan di Kolom H, Uang di Kolom I-L, TTD Kolom M (Nomor Polos)"
+          summary: "Struktur Presisi: Kolom B-N (13 Kolom), Uang di Kolom I-L, Tanda Tangan Zig-zag 2 Kolom M & N (Rata Kiri)"
         };
       } else if (name.includes("hadir") || name.includes("presensi")) {
         return {
@@ -3961,7 +3963,7 @@
           headerRow: 13,        // Row 14
           sampleDataRow: 14,    // Row 15
           minCol: 1,            // Kolom B (NO)
-          maxCol: 5,            // Kolom F (TANDA TANGAN E & F)
+          maxCol: 5,            // Kolom F (TANDA TANGAN Zig-zag E & F)
           colMap: {
             no: 1,              // Kolom B
             nama: 2,            // Kolom C
@@ -3970,9 +3972,9 @@
             ttd: 4              // Kolom E & F
           },
           isTwoColTtd: true,
-          ttdStyle: "zigzag",
-          ttdHasDots: false,
-          summary: "Struktur Presisi: Presensi 5 Kolom (B-F), Tanda Tangan Zig-zag Kolom E & F"
+          ttdStyle: "zigzag_left",
+          ttdHasDots: true,
+          summary: "Struktur Presisi: Presensi 5 Kolom (B-F), Tanda Tangan Zig-zag 2 Kolom E & F (Rata Kiri)"
         };
       }
 
@@ -4070,7 +4072,9 @@
         }
       }
 
-      if (colMap.ttd !== -1 && colMap.ttd > maxCol) maxCol = colMap.ttd;
+      if (colMap.ttd !== -1) {
+        maxCol = colMap.ttd + 1;
+      }
 
       return {
         scanned: true,
@@ -4079,17 +4083,19 @@
         minCol: minCol,
         maxCol: maxCol,
         colMap: colMap,
+        isTwoColTtd: true,
         satuanVal: "hari",
         hasRpPrefix: true,
         currencyPrefix: "Rp",
-        ttdStyle: "number_only",
+        ttdStyle: "zigzag_left",
+        ttdHasDots: true,
         cleanGolongan: true,
         footer: {
           hasTotalRow: true,
           totalLabelCol: colMap.nama,
           sumCols: [colMap.tarif, colMap.bruto, colMap.pph, colMap.netto].filter(c => c >= 0)
         },
-        summary: `Struktur Presisi: Kolom ${String.fromCharCode(65 + minCol)} sampai ${String.fromCharCode(65 + maxCol)} terpetakan presisi.`
+        summary: `Struktur Presisi: Kolom ${String.fromCharCode(65 + minCol)} sampai ${String.fromCharCode(65 + maxCol)} terpetakan presisi (Tanda Tangan 2 Kolom Zig-zag Rata Kiri).`
       };
     }
 
@@ -5132,7 +5138,7 @@
               <th style="width: 90px;">JUMLAH</th>
               <th style="width: 85px;">PPH 21</th>
               <th style="width: 95px;">PENERIMAAN</th>
-              <th style="width: 140px;">TANDA TANGAN</th>
+              <th colspan="2" style="width: 220px; text-align: center;">TANDA TANGAN</th>
             </tr>
           `;
         }
@@ -5399,7 +5405,7 @@
       if (!participantList || participantList.length === 0) {
         if (containerRealExcel) containerRealExcel.classList.add("d-none");
         if (boxStandardLayout) boxStandardLayout.classList.remove("d-none");
-        const colSpan = isNonFin ? 6 : 13;
+        const colSpan = isNonFin ? 6 : 14;
         tbody.innerHTML = `<tr><td colspan="${colSpan}" class="text-center py-4 text-muted">Tidak ada peserta yang cocok dengan filter.</td></tr>`;
         const elKotor = document.getElementById("tdSpjTotalKotor");
         const elPajak = document.getElementById("tdSpjTotalPajak");
@@ -5443,7 +5449,7 @@
         if (rowClass) tr.className = rowClass;
 
         if (isNonFin) {
-          // Format 100% Sesuai Daftar Hadir.xlsx: NO | NAMA | UNIT KERJA | TANDA TANGAN (2 Kolom Zig-Zag: Ganjil Kiri, Genap Kanan)
+          // Format 100% Sesuai Daftar Hadir.xlsx: NO | NAMA | UNIT KERJA | TANDA TANGAN (2 Kolom Zig-Zag Rata Kiri: Ganjil Kiri, Genap Kanan)
           const isOdd = (runningNo % 2 !== 0);
           tr.innerHTML = `
             <td class="no-print text-center">
@@ -5452,11 +5458,12 @@
             <td class="text-center">${isSelected ? runningNo : '-'}</td>
             <td>${escapeHtml(p.nama)}</td>
             <td>${escapeHtml(p.unitKerja || '-')}</td>
-            <td style="width: 120px; height: 38px; vertical-align: middle; text-align: left; padding-left: 6px;">${isSelected && isOdd ? runningNo : ''}</td>
-            <td style="width: 120px; height: 38px; vertical-align: middle; text-align: center;">${isSelected && !isOdd ? runningNo : ''}</td>
+            <td style="width: 110px; height: 38px; vertical-align: middle; text-align: left; padding-left: 8px;">${isSelected && isOdd ? runningNo + '. ....................' : ''}</td>
+            <td style="width: 110px; height: 38px; vertical-align: middle; text-align: left; padding-left: 8px;">${isSelected && !isOdd ? runningNo + '. ....................' : ''}</td>
           `;
         } else {
-          // Format Keuangan (Uang Saku & Transport)
+          // Format Keuangan (Uang Saku & Transport) - Tanda Tangan 2 Kolom Zig-Zag Rata Kiri
+          const isOdd = (runningNo % 2 !== 0);
           tr.innerHTML = `
             <td class="no-print text-center">
               <input type="checkbox" class="form-check-input cursor-pointer" ${isSelected ? 'checked' : ''} onchange="toggleParticipantSelection('${p.regId}')">
@@ -5480,7 +5487,8 @@
               Rp ${p.pph21.toLocaleString('id-ID')}
             </td>
             <td class="text-end fw-bold text-success">Rp ${p.netto.toLocaleString('id-ID')}</td>
-            <td style="height: 48px; vertical-align: middle;">${sigCellHtml}</td>
+            <td style="width: 110px; height: 48px; vertical-align: middle; text-align: left; padding-left: 8px;">${isSelected && isOdd ? runningNo + '. ....................' : ''}</td>
+            <td style="width: 110px; height: 48px; vertical-align: middle; text-align: left; padding-left: 8px;">${isSelected && !isOdd ? runningNo + '. ....................' : ''}</td>
           `;
         }
         tbody.appendChild(tr);
@@ -5525,6 +5533,14 @@
             if (tblInj) {
               tblInj.className = "table table-bordered table-sm spj-table align-middle w-100 mb-0";
               tblInj.style.fontSize = "9.5pt";
+              const tdList = tblInj.querySelectorAll("td");
+              tdList.forEach(td => {
+                if (td.textContent && td.textContent.includes("....")) {
+                  td.style.textAlign = "left";
+                  td.style.paddingLeft = "8px";
+                  td.style.whiteSpace = "nowrap";
+                }
+              });
             }
             containerRealExcel.classList.remove("d-none");
             boxStandardLayout.classList.add("d-none");
@@ -5555,7 +5571,7 @@
               <td class="text-end" id="tdSpjTotalKotor">Rp ${totBruto.toLocaleString('id-ID')}</td>
               <td class="text-end text-danger" id="tdSpjTotalPajak">Rp ${totPajak.toLocaleString('id-ID')}</td>
               <td class="text-end text-success" id="tdSpjTotalBersih">Rp ${totNetto.toLocaleString('id-ID')}</td>
-              <td></td>
+              <td colspan="2"></td>
             </tr>
           `;
         }
@@ -5851,28 +5867,13 @@
         }
       }
 
-      // 3. Deteksi apakah kolom TANDA TANGAN menggunakan 2 kolom terpisah (zig-zag ganjil di colMap.ttd, genap di colMap.ttd + 1, seperti Daftar Hadir.xlsx E14:F14)
-      let isTwoColTtd = false;
-      let ttdHasDots = false;
-      if (colMap.ttd !== -1) {
-        const merges = ws['!merges'] || [];
-        merges.forEach(m => {
-          if (m.s.r <= headerRow && m.e.r >= headerRow && m.s.c === colMap.ttd && m.e.c > colMap.ttd) {
-            isTwoColTtd = true;
-          }
-        });
-        const r1Left = ws[XLSX.utils.encode_cell({ r: startDataRow, c: colMap.ttd })];
-        const r2Right = ws[XLSX.utils.encode_cell({ r: startDataRow + 1, c: colMap.ttd + 1 })];
-        if (r2Right && r2Right.v !== undefined && String(r2Right.v).trim() !== "") {
-          isTwoColTtd = true;
-        }
-        if (r1Left && r1Left.v !== undefined && String(r1Left.v).includes(".")) {
-          ttdHasDots = true;
-        }
-      }
+      // 3. Kolom TANDA TANGAN: SELALU 2 kolom terpisah (zig-zag ganjil di colMap.ttd, genap di colMap.ttd + 1), format rata kiri
+      const isTwoColTtd = true;
+      const ttdColLeft = colMap.ttd;
+      const ttdColRight = colMap.ttd !== -1 ? colMap.ttd + 1 : -1;
 
       const minTemplateCol = (aiMemory && aiMemory.minCol !== undefined) ? aiMemory.minCol : (colMap.no !== -1 ? colMap.no : 1);
-      const maxTemplateCol = (aiMemory && aiMemory.maxCol !== undefined) ? aiMemory.maxCol : (colMap.ttd !== -1 ? colMap.ttd + (isTwoColTtd ? 1 : 0) : 12);
+      const maxTemplateCol = ttdColRight !== -1 ? ttdColRight : ((aiMemory && aiMemory.maxCol !== undefined) ? aiMemory.maxCol : 13);
 
       // Ambil contoh formatting ganjil & genap dari baris data asli dalam template
       const sampleStylesOdd = {};
@@ -5882,6 +5883,32 @@
         const scEven = ws[XLSX.utils.encode_cell({ r: startDataRow + 1, c: C })] || scOdd;
         if (scOdd && scOdd.s) sampleStylesOdd[C] = JSON.parse(JSON.stringify(scOdd.s));
         if (scEven && scEven.s) sampleStylesEven[C] = JSON.parse(JSON.stringify(scEven.s));
+      }
+
+      // Pastikan kolom TTD kanan memiliki style border dan font yang sama persis dengan kolom TTD kiri
+      if (ttdColLeft !== -1 && ttdColRight !== -1) {
+        if (!sampleStylesOdd[ttdColRight] && sampleStylesOdd[ttdColLeft]) {
+          sampleStylesOdd[ttdColRight] = JSON.parse(JSON.stringify(sampleStylesOdd[ttdColLeft]));
+        }
+        if (!sampleStylesEven[ttdColRight] && sampleStylesEven[ttdColLeft]) {
+          sampleStylesEven[ttdColRight] = JSON.parse(JSON.stringify(sampleStylesEven[ttdColLeft]));
+        }
+      }
+
+      // Format Header TANDA TANGAN: pastikan kolom kanan memiliki style header yang sama
+      if (ttdColLeft !== -1 && ttdColRight !== -1) {
+        for (let R = headerRow; R < startDataRow; ++R) {
+          const lAddr = XLSX.utils.encode_cell({ r: R, c: ttdColLeft });
+          const rAddr = XLSX.utils.encode_cell({ r: R, c: ttdColRight });
+          const leftCell = ws[lAddr];
+          if (leftCell) {
+            ws[rAddr] = {
+              t: "s",
+              v: "",
+              s: leftCell.s ? JSON.parse(JSON.stringify(leftCell.s)) : undefined
+            };
+          }
+        }
       }
 
       // 4. Cari tahu sampai baris mana slot tabel kosong/dummy di file template asli berakhir,
@@ -5924,21 +5951,37 @@
       }
 
       // Bersihkan seluruh sel mulai dari startDataRow hingga akhir sheet agar baris kosong berlebih dari template terhapus bersih!
-      for (let R = startDataRow; R <= range.e.r + 20; ++R) {
+      for (let R = startDataRow; R <= range.e.r + 30; ++R) {
         for (let C = minTemplateCol; C <= maxTemplateCol; ++C) {
           delete ws[XLSX.utils.encode_cell({ r: R, c: C })];
         }
       }
-      // Hapus kolom bocor di sebelah kanan tabel (kolom > maxTemplateCol)
-      for (let R = headerRow; R <= range.e.r + 20; ++R) {
-        for (let C = maxTemplateCol + 1; C <= range.e.c; ++C) {
+      // Hapus kolom bocor di sebelah kanan tabel (kolom > maxTemplateCol) di seluruh baris
+      for (let R = 0; R <= range.e.r + 30; ++R) {
+        for (let C = maxTemplateCol + 1; C <= Math.max(range.e.c, 30); ++C) {
           delete ws[XLSX.utils.encode_cell({ r: R, c: C })];
         }
       }
 
       // Bersihkan merge cells yang berada di bawah headerRow (nanti merge footer akan dipasang kembali di posisi baru)
       const oldMerges = ws['!merges'] || [];
-      const keptMerges = oldMerges.filter(m => m.e.r <= headerRow);
+      let keptMerges = oldMerges.filter(m => m.e.r <= (startDataRow - 1));
+
+      // Pasang merge 2 kolom untuk Header TANDA TANGAN (ttdColLeft s/d ttdColRight)
+      if (ttdColLeft !== -1 && ttdColRight !== -1) {
+        keptMerges = keptMerges.filter(m => !(m.s.r >= headerRow && m.e.r <= (startDataRow - 1) && m.s.c >= ttdColLeft && m.e.c <= ttdColRight));
+        keptMerges.push({
+          s: { r: headerRow, c: ttdColLeft },
+          e: { r: Math.max(headerRow, startDataRow - 1), c: ttdColRight }
+        });
+
+        // Perpanjang merge judul utama di atas tabel (misal B1:M1 menjadi B1:N1) agar judul membentang penuh
+        keptMerges.forEach(m => {
+          if (m.s.c === minTemplateCol && m.e.c === ttdColLeft) {
+            m.e.c = ttdColRight;
+          }
+        });
+      }
 
       let totalBruto = 0, totalPajak = 0, totalNetto = 0;
 
@@ -6037,23 +6080,15 @@
         if (colMap.pph !== -1) setMoneyCell(colMap.pph, p.pph21 || 0);
         if (colMap.netto !== -1) setMoneyCell(colMap.netto, p.netto || (p.bruto - p.pph21));
 
-        // Kolom Tanda Tangan
-        if (colMap.ttd !== -1) {
-          if (aiMemory.ttdStyle === "number_only") {
-            setCell(colMap.ttd, rowNo, "n", null, "center");
-          } else if (isTwoColTtd) {
-            const ttdFormatted = ttdHasDots ? (rowNo + ". ....................") : rowNo;
-            const ttdType = ttdHasDots ? "s" : "n";
-            if (isOdd) {
-              setCell(colMap.ttd, ttdFormatted, ttdType, null, "center");
-              setCell(colMap.ttd + 1, "", "s", null, "center");
-            } else {
-              setCell(colMap.ttd, "", "s", null, "center");
-              setCell(colMap.ttd + 1, ttdFormatted, ttdType, null, "center");
-            }
+        // Kolom Tanda Tangan: SELALU 2 Kolom Zig-Zag Rata Kiri
+        if (ttdColLeft !== -1 && ttdColRight !== -1) {
+          const ttdFormatted = rowNo + ". ....................";
+          if (isOdd) {
+            setCell(ttdColLeft, ttdFormatted, "s", null, "left");
+            setCell(ttdColRight, "", "s", null, "left");
           } else {
-            const ttdVal = isOdd ? (rowNo + ". .......................") : ("                 " + rowNo + ". .......................");
-            setCell(colMap.ttd, ttdVal, "s", null, "left");
+            setCell(ttdColLeft, "", "s", null, "left");
+            setCell(ttdColRight, ttdFormatted, "s", null, "left");
           }
         }
       });
@@ -6077,6 +6112,24 @@
             if (cellText.includes("JUMLAH") || cellText.includes("TOTAL")) isTotalRow = true;
             ws[XLSX.utils.encode_cell({ r: targetR, c: cIdx })] = cellCopy;
           });
+
+          // Pastikan kolom TTD (kiri & kanan) di baris total memiliki border rapi
+          if (isTotalRow && ttdColLeft !== -1 && ttdColRight !== -1) {
+            [ttdColLeft, ttdColRight].forEach(cIdx => {
+              const addr = XLSX.utils.encode_cell({ r: targetR, c: cIdx });
+              if (!ws[addr]) {
+                const borderStyle = (sampleStylesOdd[cIdx] && sampleStylesOdd[cIdx].border)
+                  ? sampleStylesOdd[cIdx].border
+                  : {
+                      top: { style: "thin", color: { rgb: "000000" } },
+                      bottom: { style: "thin", color: { rgb: "000000" } },
+                      left: { style: "thin", color: { rgb: "000000" } },
+                      right: { style: "thin", color: { rgb: "000000" } }
+                    };
+                ws[addr] = { t: "s", v: "", s: { border: borderStyle } };
+              }
+            });
+          }
 
           if (isTotalRow && hasFinancialColumns) {
             function setTotalCell(colIdx, val) {
@@ -6151,9 +6204,28 @@
         }
       }
 
+      ws['!cols'] = ws['!cols'] || [];
+      if (ttdColLeft !== -1) ws['!cols'][ttdColLeft] = { wch: 15 };
+      if (ttdColRight !== -1) ws['!cols'][ttdColRight] = { wch: 15 };
+
+      // Hapus kolom bocor di sebelah kanan tabel (kolom > maxTemplateCol) di SELURUH baris
+      for (let R = 0; R <= finalMaxRow + 50; ++R) {
+        for (let C = maxTemplateCol + 1; C <= Math.max(range.e.c, 30); ++C) {
+          delete ws[XLSX.utils.encode_cell({ r: R, c: C })];
+        }
+      }
+
+      // Pastikan baris kosong di bawah finalMaxRow bersih
+      for (let R = finalMaxRow + 1; R <= range.e.r + 30; ++R) {
+        for (let C = 0; C <= maxTemplateCol; ++C) {
+          delete ws[XLSX.utils.encode_cell({ r: R, c: C })];
+        }
+      }
+
       ws['!merges'] = keptMerges;
+      // Perbarui cakupan area lembar kerja PERSIS sampai baris terakhir (tanpa ekor baris/kolom kosong!)
       ws['!ref'] = XLSX.utils.encode_range({
-        s: { r: 0, c: minTemplateCol },
+        s: { r: range.s.r, c: range.s.c },
         e: { r: finalMaxRow, c: maxTemplateCol }
       });
 
@@ -6161,12 +6233,6 @@
       if (Array.isArray(ws['!rows']) && ws['!rows'].length > finalMaxRow + 1) {
         ws['!rows'] = ws['!rows'].slice(0, finalMaxRow + 1);
       }
-
-      // Perbarui cakupan area lembar kerja PERSIS sampai baris terakhir (tanpa ekor baris kosong!)
-      ws['!ref'] = XLSX.utils.encode_range({
-        s: { r: range.s.r, c: range.s.c },
-        e: { r: finalMaxRow, c: maxTemplateCol }
-      });
 
       return wb;
     }
@@ -6288,8 +6354,8 @@
             rowNo,
             p ? p.nama : "",
             p ? (p.unitKerja || "-") : "",
-            isOdd ? rowNo : "",
-            !isOdd ? rowNo : ""
+            isOdd ? (rowNo + ". ....................") : "",
+            !isOdd ? (rowNo + ". ....................") : ""
           ]);
         }
 
@@ -6347,8 +6413,7 @@
                 border: borderThin
               };
               if (C === 1) cell.s.alignment.horizontal = "center";
-              else if (C === 4) cell.s.alignment.horizontal = "left";
-              else if (C === 5) cell.s.alignment.horizontal = "center";
+              else if (C === 4 || C === 5) cell.s.alignment.horizontal = "left";
               else cell.s.alignment.horizontal = "left";
             }
           }
@@ -6378,13 +6443,13 @@
         });
 
       } else {
-        // CABANG 2: GENERATOR FORMAT BAKU SPJ KEUANGAN (13 Kolom)
+        // CABANG 2: GENERATOR FORMAT BAKU SPJ KEUANGAN (14 Kolom - Tanda Tangan Zig-zag 2 Kolom Rata Kiri)
         const wsData = [
-          ["", "DAFTAR PENERIMAAN UANG SAKU & TRANSPORT PESERTA", "", "", "", "", "", "", "", "", "", "", "", ""],
-          ["", eventName, "", "", "", "", "", "", "", "", "", "", "", ""],
-          ["", subName, "", "", "", "", "", "", "", "", "", "", "", ""],
+          ["", "DAFTAR PENERIMAAN UANG SAKU & TRANSPORT PESERTA", "", "", "", "", "", "", "", "", "", "", "", "", ""],
+          ["", eventName, "", "", "", "", "", "", "", "", "", "", "", "", ""],
+          ["", subName, "", "", "", "", "", "", "", "", "", "", "", "", ""],
           [],
-          ["", "NO", "NAMA LENGKAP & GELAR", "NIP", "GOL", "JABATAN", "UNIT KERJA / SEKOLAH", "JML", "SATUAN", "TARIF (RP)", "JUMLAH (RP)", "PPH 21 (RP)", "PENERIMAAN (RP)", "TANDA TANGAN"]
+          ["", "NO", "NAMA LENGKAP & GELAR", "NIP", "GOL", "JABATAN", "UNIT KERJA / SEKOLAH", "JML", "SATUAN", "TARIF (RP)", "JUMLAH (RP)", "PPH 21 (RP)", "PENERIMAAN (RP)", "TANDA TANGAN", ""]
         ];
 
         let totalBruto = 0, totalPajak = 0, totalNetto = 0;
@@ -6396,7 +6461,6 @@
           totalNetto += (p.netto || 0);
 
           const isOdd = (rowNo % 2 !== 0);
-          const ttdExcel = isOdd ? (rowNo + ". .......................") : ("                 " + rowNo + ". .......................");
 
           wsData.push([
             "",
@@ -6412,7 +6476,8 @@
             p.bruto,
             p.pph21,
             p.netto,
-            ttdExcel
+            isOdd ? (rowNo + ". ....................") : "",
+            !isOdd ? (rowNo + ". ....................") : ""
           ]);
         });
 
@@ -6431,15 +6496,16 @@
           totalBruto,
           totalPajak,
           totalNetto,
+          "",
           ""
         ]);
 
         // Tanda Tangan 3 Pejabat di Bagian Bawah
         wsData.push([]);
-        wsData.push(["", "", "", "", "", "", "", "", "", "", d.tanggalSpj || "Karanganyar", "", "", ""]);
-        wsData.push(["", "", "Setuju Dibayar,", "", "", "Mengetahui,", "", "", "", "", "Yang Membayarkan,", "", "", ""]);
-        wsData.push(["", "", "Kepala Bidang SMP", "", "", "Pejabat Pelaksana Teknis Kegiatan", "", "", "", "", "Bendahara Pengeluaran Pembantu,", "", "", ""]);
-        wsData.push(["", "", "selaku Kuasa Pengguna Anggaran", "", "", "(PPTK)", "", "", "", "", "", "", "", ""]);
+        wsData.push(["", "", "", "", "", "", "", "", "", "", d.tanggalSpj || "Karanganyar", "", "", "", ""]);
+        wsData.push(["", "", "Setuju Dibayar,", "", "", "Mengetahui,", "", "", "", "", "Yang Membayarkan,", "", "", "", ""]);
+        wsData.push(["", "", "Kepala Bidang SMP", "", "", "Pejabat Pelaksana Teknis Kegiatan", "", "", "", "", "Bendahara Pengeluaran Pembantu,", "", "", "", ""]);
+        wsData.push(["", "", "selaku Kuasa Pengguna Anggaran", "", "", "(PPTK)", "", "", "", "", "", "", "", "", ""]);
         wsData.push([]);
         wsData.push([]);
         wsData.push([]);
@@ -6455,6 +6521,7 @@
           "",
           "",
           d.pejabat?.bendahara?.nama || "-",
+          "",
           "",
           "",
           ""
@@ -6473,10 +6540,16 @@
           "NIP. " + (d.pejabat?.bendahara?.nip || "-"),
           "",
           "",
+          "",
           ""
         ]);
 
         const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+        // Merge Header TANDA TANGAN Kolom 13 dan 14 (N & O)
+        ws['!merges'] = [
+          { s: { r: 4, c: 13 }, e: { r: 4, c: 14 } }
+        ];
 
         // Beri style pada Judul Header Surat (B1, B2, B3)
         ["B1", "B2", "B3"].forEach(addr => {
@@ -6491,9 +6564,9 @@
         const headerRowIdx = 4;
         const totalRowIdx = headerRowIdx + selectedList.length + 1;
 
-        // Terapkan border ke seluruh sel tabel SPJ (Kolom 1 s.d. 13)
+        // Terapkan border ke seluruh sel tabel SPJ (Kolom 1 s.d. 14)
         for (let R = headerRowIdx; R <= totalRowIdx; ++R) {
-          for (let C = 1; C <= 13; ++C) {
+          for (let C = 1; C <= 14; ++C) {
             const cellRef = XLSX.utils.encode_cell({ r: R, c: C });
             if (!ws[cellRef]) ws[cellRef] = { t: "s", v: "" };
             const cell = ws[cellRef];
@@ -6530,7 +6603,7 @@
               } else if (C >= 9 && C <= 12) {
                 cell.s.alignment.horizontal = "right";
                 cell.z = "#,##0";
-              } else if (C === 13) {
+              } else if (C === 13 || C === 14) {
                 cell.s.alignment.horizontal = "left";
               }
             }
@@ -6551,7 +6624,8 @@
           { wch: 15 }, // K: JUMLAH (RP)
           { wch: 14 }, // L: PPH 21 (RP)
           { wch: 16 }, // M: PENERIMAAN (RP)
-          { wch: 25 }  // N: TANDA TANGAN
+          { wch: 15 }, // N: TANDA TANGAN (KIRI)
+          { wch: 15 }  // O: TANDA TANGAN (KANAN)
         ];
 
         const wb = XLSX.utils.book_new();

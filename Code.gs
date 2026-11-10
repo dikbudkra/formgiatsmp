@@ -3383,7 +3383,7 @@ function scanSpjTemplateWithGemini(templateId, docName, fileType, cellGrid, pin)
       "   - ttd: kolom tanda tangan\n" +
       "3. Perhatikan jika ada kolom 'JUMLAH' gabungan (misal kolom F = 1 dan kolom G = 'hari', lalu kolom H = JASA, kolom I = JUMLAH). Jangan tertukar!\n" +
       "4. Format angka uang: apakah menggunakan awalan 'Rp' (hasRpPrefix: true/false).\n" +
-      "5. Gaya tanda tangan: 'number_only' (angka 1, 2, 3 polos), 'dots' (1. ......), atau 'zigzag'.\n" +
+      "5. Aturan Baku Tanda Tangan: Tanda tangan SELALU 2 kolom zig-zag rata kiri (ganjil kiri, genap kanan, format: 1. ..................). Set 'isTwoColTtd': true dan 'ttdStyle': 'zigzag_left'.\n" +
       "6. Format golongan: apakah cukup angka romawi sederhana seperti 'IV' / 'III' (cleanGolongan: true).\n" +
       "7. Baris footer Jumlah/Total dan kolom-kolom yang dijumlahkan.\n\n" +
       "Kembalikan HANYA JSON murni tanpa markdown dengan format persis:\n" +
@@ -3405,10 +3405,11 @@ function scanSpjTemplateWithGemini(templateId, docName, fileType, cellGrid, pin)
       "    \"netto\": 10,\n" +
       "    \"ttd\": 11\n" +
       "  },\n" +
+      "  \"isTwoColTtd\": true,\n" +
       "  \"satuanVal\": \"hari\",\n" +
       "  \"hasRpPrefix\": true,\n" +
       "  \"currencyPrefix\": \"Rp\",\n" +
-      "  \"ttdStyle\": \"number_only\",\n" +
+      "  \"ttdStyle\": \"zigzag_left\",\n" +
       "  \"cleanGolongan\": true,\n" +
       "  \"footer\": {\n" +
       "    \"hasTotalRow\": true,\n" +
