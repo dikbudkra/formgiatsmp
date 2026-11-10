@@ -863,30 +863,35 @@
     let lastTicketData = null;
 
     /**
-     * Helper Komunikasi API Asinkron (Mengutamakan GET untuk pembacaan data, fallback POST)
+     * Helper Komunikasi API Asinkron:
+     * - Aksi TULIS / SIMPAN (submitRegistration, dsb) SELALU MENGGUNAKAN POST
+     * - Aksi BACA (init, searchParticipantForBiodata, dsb) MENGGUNAKAN GET (fallback POST)
      */
     async function callGasApi(action, data = {}) {
       const payload = { action, ...data };
-      
-      const queryParams = new URLSearchParams();
-      for (const key in payload) {
-        if (payload[key] !== undefined && payload[key] !== null) {
-          if (typeof payload[key] === "object") {
-            queryParams.append(key, JSON.stringify(payload[key]));
-          } else {
-            queryParams.append(key, String(payload[key]));
+      const isWriteAction = ["submitRegistration", "register", "saveSettings", "saveEvent", "deleteEvent", "deleteParticipant", "checkInParticipant"].includes(action);
+
+      if (!isWriteAction) {
+        const queryParams = new URLSearchParams();
+        for (const key in payload) {
+          if (payload[key] !== undefined && payload[key] !== null) {
+            if (typeof payload[key] === "object") {
+              queryParams.append(key, JSON.stringify(payload[key]));
+            } else {
+              queryParams.append(key, String(payload[key]));
+            }
           }
         }
-      }
-      const getUrl = GAS_API_URL + (GAS_API_URL.includes("?") ? "&" : "?") + queryParams.toString();
+        const getUrl = GAS_API_URL + (GAS_API_URL.includes("?") ? "&" : "?") + queryParams.toString();
 
-      try {
-        const res = await fetch(getUrl, { method: "GET" });
-        if (res.ok) {
-          return await res.json();
+        try {
+          const res = await fetch(getUrl, { method: "GET" });
+          if (res.ok) {
+            return await res.json();
+          }
+        } catch (errGet) {
+          console.warn("callGasApi GET gagal, beralih ke POST:", errGet);
         }
-      } catch (errGet) {
-        console.warn("callGasApi GET gagal, beralih ke POST:", errGet);
       }
 
       const res = await fetch(GAS_API_URL, {
@@ -1534,8 +1539,8 @@
 
       // Kumpulkan Payload Form
       const formData = {
-        idKegiatan: document.getElementById("formEventId").value,
-        namaKegiatan: document.getElementById("formEventName").value,
+        idKegiatan: document.getElementById("formEventId")?.value || activeSelectedEvent?.idKegiatan || "",
+        namaKegiatan: document.getElementById("formEventName")?.value || activeSelectedEvent?.namaKegiatan || "",
         namaSekolah: schoolName,
         npsn: document.getElementById("selectedSchoolNpsn").value || "-",
         statusSekolah: document.getElementById("selectedSchoolStatus").value || (isOpd ? "OPD / Tamu Undangan" : "SMP"),

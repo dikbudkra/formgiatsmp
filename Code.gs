@@ -560,8 +560,17 @@ function handleApiRequest_(action, payload) {
       return deleteEvent(payload.eventId, payload.pin);
 
     case "submitRegistration":
-    case "register":
-      return submitRegistration(payload.formData || payload);
+    case "register": {
+      let fData = payload.formData || payload;
+      if (typeof fData === "string") {
+        try {
+          fData = JSON.parse(fData);
+        } catch (e) {
+          Logger.log("Error JSON.parse payload.formData: " + e.toString());
+        }
+      }
+      return submitRegistration(fData);
+    }
 
     case "searchParticipantForBiodata":
     case "searchParticipant":
@@ -1637,6 +1646,15 @@ function getInitialFormData(targetEventIdOrName) {
  * --------------------------------------------------------------------------
  */
 function submitRegistration(formData) {
+  if (typeof formData === "string") {
+    try {
+      formData = JSON.parse(formData);
+    } catch (e) {
+      Logger.log("Error JSON.parse formData: " + e.toString());
+    }
+  }
+  formData = formData || {};
+
   const lock = LockService.getScriptLock();
   let hasLock = false;
   try {
@@ -1651,30 +1669,38 @@ function submitRegistration(formData) {
     let settings = getAppSettings();
 
     // Bind event setting jika dikirimkan dari frontend
-    const targetEventId = String(formData.idKegiatan || "").trim();
-    const targetEventName = String(formData.namaKegiatan || "").trim();
+    const targetEventId = String(formData.idKegiatan || formData.eventId || "").trim();
+    const targetEventName = String(formData.namaKegiatan || formData.eventName || "").trim();
+
+    const allEvents = getAllEventsForAdminInternal_();
+    let matched = null;
 
     if (targetEventId || targetEventName) {
-      const allEvents = getAllEventsForAdminInternal_();
-      const matched = allEvents.find(ev => (targetEventId && ev.idKegiatan === targetEventId) || (targetEventName && ev.namaKegiatan.toLowerCase() === targetEventName.toLowerCase()));
-      if (matched) {
-        settings = {
-          ...settings,
-          ID_KEGIATAN: matched.idKegiatan,
-          NAMA_KEGIATAN: matched.namaKegiatan,
-          SUB_KEGIATAN: matched.subKegiatan,
-          STATUS_FORM: matched.statusForm,
-          KUOTA_PER_SEKOLAH: matched.kuotaPerSekolah,
-          MODUL_KAOS: matched.modulKaos,
-          MODUL_LENGAN: matched.modulLengan,
-          MODUL_GENDER: matched.modulGender,
-          MODUL_KONTAK_DARURAT: matched.modulKontakDarurat,
-          MODUL_KESEHATAN: matched.modulKesehatan,
-          MODUL_ETICKET_PRESENSI: matched.modulEticketPresensi,
-          TANGGAL_PELAKSANAAN: matched.tanggalPelaksanaan,
-          LOKASI_KEGIATAN: matched.lokasiKegiatan
-        };
-      }
+      matched = allEvents.find(ev => (targetEventId && ev.idKegiatan === targetEventId) || (targetEventName && ev.namaKegiatan.toLowerCase() === targetEventName.toLowerCase()));
+    }
+
+    // Fallback cerdas: Jika frontend tidak mengirimkan ID atau tidak cocok, otomatis gunakan kegiatan yang berstatus BUKA!
+    if (!matched && allEvents.length > 0) {
+      matched = allEvents.find(ev => ev.statusForm === "BUKA");
+    }
+
+    if (matched) {
+      settings = {
+        ...settings,
+        ID_KEGIATAN: matched.idKegiatan,
+        NAMA_KEGIATAN: matched.namaKegiatan,
+        SUB_KEGIATAN: matched.subKegiatan,
+        STATUS_FORM: matched.statusForm,
+        KUOTA_PER_SEKOLAH: matched.kuotaPerSekolah,
+        MODUL_KAOS: matched.modulKaos,
+        MODUL_LENGAN: matched.modulLengan,
+        MODUL_GENDER: matched.modulGender,
+        MODUL_KONTAK_DARURAT: matched.modulKontakDarurat,
+        MODUL_KESEHATAN: matched.modulKesehatan,
+        MODUL_ETICKET_PRESENSI: matched.modulEticketPresensi,
+        TANGGAL_PELAKSANAAN: matched.tanggalPelaksanaan,
+        LOKASI_KEGIATAN: matched.lokasiKegiatan
+      };
     }
 
     // 1. Cek status form & kegiatan standby
