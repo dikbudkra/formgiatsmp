@@ -4563,11 +4563,22 @@
      */
 
     function calculateHMinusOneDate(tglString) {
-      if (!tglString || tglString === "-" || tglString === "Menyesuaikan Jadwal Panitia") {
+      if (!tglString || tglString === "-" || tglString === "Menyesuaikan Jadwal Panitia" || tglString === "Jadwal Pelaksanaan") {
         const now = new Date();
         return formatIndonesianDate(now);
       }
 
+      // 1. Cek jika Date object atau string format Date JS (misal "Sun Nov 08 2026..." atau ISO "2026-11-08")
+      let str = String(tglString).trim();
+      if (/^[A-Za-z]{3}\s+[A-Za-z]{3}\s+\d{1,2}\s+\d{4}/.test(str) || /^\d{4}-\d{2}-\d{2}/.test(str)) {
+        const parsed = new Date(str);
+        if (!isNaN(parsed.getTime())) {
+          parsed.setDate(parsed.getDate() - 1);
+          return formatIndonesianDate(parsed);
+        }
+      }
+
+      // 2. Format Indonesia (misal: "23-24 November 2026" atau "8 November 2026")
       const bulanMap = {
         januari: 0, jan: 0,
         februari: 1, feb: 1,
@@ -4583,7 +4594,6 @@
         desember: 11, des: 11
       };
 
-      const str = String(tglString).trim();
       const regex = /(\d{1,2})(?:[^\d\w]+(?:\d{1,2}))?\s+([a-zA-Z]+)\s+(\d{4})/;
       const match = str.match(regex);
 
@@ -4600,7 +4610,8 @@
         }
       }
 
-      return str;
+      const fallback = new Date();
+      return formatIndonesianDate(fallback);
     }
 
     function formatIndonesianDate(d) {
@@ -4611,6 +4622,12 @@
       return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
     }
 
+    /**
+     * Membuat Objek Dokumen PDF Biodata A4 Menggunakan jsPDF
+     * Spesifikasi:
+     * - Font keseluruhan: Arial (helvetica) 12pt
+     * - Judul BIODATA dan Nama Kegiatan: Arial (helvetica) 14pt (bold)
+     */
     function generateBiodataPdf(participantData) {
       const { jsPDF } = window.jspdf || {};
       if (!jsPDF) {
@@ -4624,27 +4641,28 @@
         format: "a4"
       });
 
-      // 1. JUDUL DOKUMEN: BIODATA
-      doc.setFont("times", "bold");
+      // 1. JUDUL DOKUMEN: BIODATA (Arial 14 Bold)
+      doc.setFont("helvetica", "bold");
       doc.setFontSize(14);
       doc.text("BIODATA", 105, 36, { align: "center" });
 
-      // 2. JUDUL DOKUMEN: NAMA KEGIATAN
+      // 2. JUDUL DOKUMEN: NAMA KEGIATAN (Arial 14 Bold)
       const activeEvent = (allEventsList && allEventsList.find(e => e.idKegiatan === activeEventId));
       const eventTitle = String(p.namaKegiatan || activeEvent?.namaKegiatan || currentDashboardData?.settings?.NAMA_KEGIATAN || "KEGIATAN KEDINASAN").toUpperCase().trim();
-      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(14);
       const splitKegiatan = doc.splitTextToSize(eventTitle, 150);
       let curY = 44;
       splitKegiatan.forEach(line => {
         doc.text(line, 105, curY, { align: "center" });
-        curY += 6;
+        curY += 6.5;
       });
 
-      curY += 14;
+      curY += 12;
 
-      // 3. TABEL DATA DIRI PESERTA (AUTO-FILLED)
-      doc.setFont("times", "normal");
-      doc.setFontSize(11);
+      // 3. TABEL DATA DIRI PESERTA (Arial 12)
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(12);
 
       let pangkatGol = "-";
       if (p.pangkat && p.pangkat !== "-" && p.golongan && p.golongan !== "-") {
@@ -4669,37 +4687,44 @@
       const colValueX = 78;
 
       fieldRows.forEach(f => {
-        doc.setFont("times", "bold");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
         doc.text(f.label, colLabelX, curY);
         doc.text(":", colColonX, curY);
 
-        doc.setFont("times", "normal");
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(12);
         const valLines = doc.splitTextToSize(String(f.value), 102);
         doc.text(valLines, colValueX, curY);
 
-        curY += Math.max(valLines.length * 5.5, 9);
+        curY += Math.max(valLines.length * 6, 9.5);
       });
 
-      // 4. BAGIAN TANDA TANGAN PESERTA (KANAN BAWAH)
-      curY = Math.max(curY + 18, 145);
+      // 4. BAGIAN TANDA TANGAN PESERTA (KANAN BAWAH - Arial 12)
+      curY = Math.max(curY + 16, 145);
 
       const tglPelaksanaan = p.tanggalPelaksanaan || activeEvent?.tanggalPelaksanaan || currentDashboardData?.settings?.TANGGAL_PELAKSANAAN || "";
       const tglH1 = calculateHMinusOneDate(tglPelaksanaan);
       const ttdX = 125;
 
-      doc.setFont("times", "normal");
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(12);
       doc.text(`Karanganyar,   ${tglH1}`, ttdX, curY);
 
-      curY += 28;
+      curY += 26;
 
-      doc.setFont("times", "bold");
+      // Nama Terang Peserta (Arial 12 Bold)
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
       const namaPeserta = String(p.namaLengkap || p.nama || "-");
       doc.text(namaPeserta, ttdX, curY);
 
+      // NIP Peserta (Arial 12 Normal)
       const nipClean = String(p.nip || "").replace(/^'/, "").trim();
       if (nipClean && nipClean !== "-" && nipClean !== "undefined" && nipClean.length > 4) {
-        doc.setFont("times", "normal");
-        curY += 5.5;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(12);
+        curY += 6;
         doc.text(`NIP. ${nipClean}`, ttdX, curY);
       }
 
