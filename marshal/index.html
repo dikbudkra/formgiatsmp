@@ -7129,15 +7129,29 @@
     }
 
     function previewPopupAnnouncement() {
-      const judul = document.getElementById("inputPopupJudul")?.value.trim() || "Pengumuman Penting Panitia";
-      const pesan = document.getElementById("inputPopupPesan")?.value.trim() || "Selamat datang di formulir pendaftaran kegiatan Dinas Pendidikan dan Kebudayaan Kabupaten Karanganyar.";
+      const inJudul = document.getElementById("inputPopupJudul");
+      const inPesan = document.getElementById("inputPopupPesan");
+      const judul = inJudul && inJudul.value.trim() ? inJudul.value.trim() : "Pengumuman Penting Panitia";
+      const pesan = inPesan && inPesan.value.trim() ? inPesan.value.trim() : "Selamat datang di formulir pendaftaran kegiatan Dinas Pendidikan dan Kebudayaan Kabupaten Karanganyar.";
+
+      const formattedPesan = escapeHtml(pesan).replace(/\n/g, "<br>");
 
       Swal.fire({
-        title: judul,
-        text: pesan,
+        title: `<div class="d-flex align-items-center justify-content-center gap-2 mb-1">
+                  <i class="bi bi-megaphone-fill text-primary fs-3"></i>
+                  <span class="fw-bold text-dark fs-5">${escapeHtml(judul)}</span>
+                </div>`,
+        html: `<div class="text-start bg-light p-3 rounded-3 border" style="font-size: 0.95rem; line-height: 1.6; max-height: 60vh; overflow-y: auto;">
+                ${formattedPesan}
+               </div>
+               <div class="text-muted small mt-2 fst-italic">Pratinjau: Tampilan ini yang akan muncul di layar HP / laptop peserta saat membuka formulir.</div>`,
         icon: "info",
-        confirmButtonText: "Saya Mengerti",
-        confirmButtonColor: "#1e3a8a"
+        iconColor: "#0284c7",
+        confirmButtonText: '<i class="bi bi-check2-circle me-1"></i> Saya Mengerti',
+        confirmButtonColor: "#1e3a8a",
+        customClass: {
+          popup: 'rounded-4 shadow-lg border-0'
+        }
       });
     }
 
@@ -7169,6 +7183,15 @@
       const isChecked = sw ? sw.checked : false;
       const judul = inJudul ? inJudul.value.trim() : "Pengumuman Penting Panitia";
       const pesan = inPesan ? inPesan.value.trim() : "";
+
+      if (isChecked && !pesan) {
+        Swal.fire({
+          icon: "warning",
+          title: "Pesan Masih Kosong",
+          text: "Silakan isi pesan pengumuman sebelum mengaktifkannya agar peserta tidak melihat jendela pengumuman kosong."
+        });
+        return;
+      }
 
       const btn = document.getElementById("btnSavePopupSettings");
       if (btn) {

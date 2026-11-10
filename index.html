@@ -373,6 +373,20 @@
   <!-- ==================== MAIN CONTENT ==================== -->
   <main class="container my-4 my-md-5 flex-grow-1">
 
+    <!-- Banner Pengumuman Panitia (Tampil jika Pop-up Pengumuman Aktif) -->
+    <div id="bannerAnnouncementAlert" class="alert alert-info border-info d-flex align-items-center justify-content-between gap-3 mb-4 rounded-3 shadow-sm d-none" style="background-color: #f0f9ff; border-left: 5px solid #0284c7 !important;">
+      <div class="d-flex align-items-center gap-2.5 small text-dark">
+        <i class="bi bi-megaphone-fill fs-4 text-primary flex-shrink-0"></i>
+        <div>
+          <strong id="bannerAnnouncementTitle" class="fw-bold text-primary">Pengumuman: </strong>
+          <span id="bannerAnnouncementText" class="text-secondary"></span>
+        </div>
+      </div>
+      <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 py-1.5 flex-shrink-0 fw-bold shadow-sm" onclick="checkAndShowAnnouncementPopup(true)">
+        <i class="bi bi-eye-fill me-1"></i>Baca Pengumuman
+      </button>
+    </div>
+
     <!-- 1. MULTI-EVENT CARDS (TAMPIL DIAWAL WALAU HANYA 1 KEGIATAN) -->
     <div id="sectionMultiEventSelector">
       <div class="card card-modern p-4 p-md-5">
@@ -842,10 +856,32 @@
     let lastTicketData = null;
 
     /**
-     * Helper Komunikasi API Asinkron (POST tanpa Preflight CORS OPTIONS)
+     * Helper Komunikasi API Asinkron (Mengutamakan GET untuk pembacaan data, fallback POST)
      */
     async function callGasApi(action, data = {}) {
       const payload = { action, ...data };
+      
+      const queryParams = new URLSearchParams();
+      for (const key in payload) {
+        if (payload[key] !== undefined && payload[key] !== null) {
+          if (typeof payload[key] === "object") {
+            queryParams.append(key, JSON.stringify(payload[key]));
+          } else {
+            queryParams.append(key, String(payload[key]));
+          }
+        }
+      }
+      const getUrl = GAS_API_URL + (GAS_API_URL.includes("?") ? "&" : "?") + queryParams.toString();
+
+      try {
+        const res = await fetch(getUrl, { method: "GET" });
+        if (res.ok) {
+          return await res.json();
+        }
+      } catch (errGet) {
+        console.warn("callGasApi GET gagal, beralih ke POST:", errGet);
+      }
+
       const res = await fetch(GAS_API_URL, {
         method: "POST",
         headers: {
@@ -880,16 +916,8 @@
           // Render Kartu Kegiatan di Beranda Utama
           renderMultiEventCards(availableActiveEvents);
 
-          // Cek Pengumuman Pop-up
-          if (currentSettings.MODUL_POPUP_INFO === "ON" && currentSettings.POPUP_INFO_PESAN) {
-            Swal.fire({
-              title: currentSettings.POPUP_INFO_JUDUL || "Pengumuman",
-              text: currentSettings.POPUP_INFO_PESAN,
-              icon: "info",
-              confirmButtonText: "Saya Mengerti",
-              confirmButtonColor: "#1e3a8a"
-            });
-          }
+          // Update banner pengumuman jika saklar aktif
+          updateAnnouncementBanner(currentSettings.MODUL_POPUP_INFO === "ON", currentSettings.POPUP_INFO_JUDUL, currentSettings.POPUP_INFO_PESAN);
         } else {
           showErrorAlert("Gagal memuat data dari server: " + (response.message || "Unknown error"));
         }
@@ -900,8 +928,77 @@
         if (splash) {
           setTimeout(() => {
             splash.classList.add("fade-out");
+            // Tampilkan pop-up pengumuman resmi setelah splash screen benar-benar selesai memudar
+            setTimeout(() => {
+              checkAndShowAnnouncementPopup(false);
+            }, 450);
           }, 350);
+        } else {
+          checkAndShowAnnouncementPopup(false);
         }
+      }
+    }
+
+    /**
+     * Memeriksa dan Menampilkan Pop-up Pengumuman Informasi Awal untuk Peserta
+     */
+    function checkAndShowAnnouncementPopup(force = false) {
+      if (!currentSettings) return;
+      const isAktif = (currentSettings.MODUL_POPUP_INFO === "ON");
+      const judul = currentSettings.POPUP_INFO_JUDUL || "Pengumuman Penting Panitia";
+      const pesan = currentSettings.POPUP_INFO_PESAN || "";
+
+      updateAnnouncementBanner(isAktif, judul, pesan);
+
+      if (!isAktif || !pesan) return;
+
+      const sessionKey = "announcement_seen_" + (currentSettings.ID_KEGIATAN || "general");
+      if (!force && sessionStorage.getItem(sessionKey)) {
+        return;
+      }
+
+      const formattedPesan = escapeHtml(pesan).replace(/\n/g, "<br>");
+
+      Swal.fire({
+        title: `<div class="d-flex align-items-center justify-content-center gap-2 mb-1">
+                  <i class="bi bi-megaphone-fill text-primary fs-3"></i>
+                  <span class="fw-bold text-dark fs-5">${escapeHtml(judul)}</span>
+                </div>`,
+        html: `<div class="text-start bg-light p-3 rounded-3 border" style="font-size: 0.95rem; line-height: 1.6; max-height: 60vh; overflow-y: auto;">
+                ${formattedPesan}
+               </div>
+               <div class="text-muted small mt-2 fst-italic">Harap membaca informasi di atas dengan seksama sebelum mengisi formulir pendaftaran.</div>`,
+        icon: "info",
+        iconColor: "#0284c7",
+        confirmButtonText: '<i class="bi bi-check2-circle me-1"></i> Saya Mengerti',
+        confirmButtonColor: "#1e3a8a",
+        allowOutsideClick: false,
+        customClass: {
+          popup: 'rounded-4 shadow-lg border-0'
+        }
+      }).then(() => {
+        sessionStorage.setItem(sessionKey, "true");
+      });
+    }
+
+    /**
+     * Banner Pengumuman di atas halaman / formulir agar peserta bisa membaca ulang kapan saja
+     */
+    function updateAnnouncementBanner(isAktif, judul, pesan) {
+      const banner = document.getElementById("bannerAnnouncementAlert");
+      const titleEl = document.getElementById("bannerAnnouncementTitle");
+      const textEl = document.getElementById("bannerAnnouncementText");
+      if (!banner) return;
+
+      if (isAktif && pesan) {
+        banner.classList.remove("d-none");
+        if (titleEl) titleEl.textContent = (judul || "Pengumuman") + ": ";
+        if (textEl) {
+          const previewText = pesan.length > 110 ? pesan.substring(0, 110) + "..." : pesan;
+          textEl.textContent = previewText;
+        }
+      } else {
+        banner.classList.add("d-none");
       }
     }
 

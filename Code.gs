@@ -518,8 +518,17 @@ function handleApiRequest_(action, payload) {
       return { success: true, settings: getAppSettings() };
 
     case "saveAppSettings":
-    case "saveSettings":
-      return saveAppSettings(payload.newSettings || payload.settings || {}, payload.pin);
+    case "saveSettings": {
+      let rawSettings = payload.newSettings || payload.settings || {};
+      if (typeof rawSettings === "string") {
+        try {
+          rawSettings = JSON.parse(rawSettings);
+        } catch (e) {
+          Logger.log("Error parsing rawSettings JSON: " + e.toString());
+        }
+      }
+      return saveAppSettings(rawSettings, payload.pin);
+    }
 
     case "verifyAdminPin":
     case "checkPin":
@@ -621,6 +630,8 @@ function getAppSettings() {
       for (let i = 1; i < data.length; i++) {
         const k = String(data[i][0]).trim();
         const v = String(data[i][1]).trim();
+        // Lewati kunci numerik sampah akibat stringifikasi JSON masa lalu
+        if (/^\d+$/.test(k)) continue;
         if (k && !sensitiveKeys.includes(k.toUpperCase())) {
           settings[k] = v;
         }
@@ -637,6 +648,20 @@ function saveAppSettings(newSettings, pin) {
     return { success: false, message: "Akses ditolak: PIN Panitia tidak valid." };
   }
 
+  // Jika newSettings dikirim sebagai string JSON (misal via parameter GET), parse ke objek
+  if (typeof newSettings === "string") {
+    try {
+      newSettings = JSON.parse(newSettings);
+    } catch (e) {
+      Logger.log("saveAppSettings parse error: " + e.toString());
+      newSettings = {};
+    }
+  }
+
+  if (!newSettings || typeof newSettings !== "object") {
+    return { success: false, message: "Format pengaturan tidak valid." };
+  }
+
   try {
     const ss = getSpreadsheet_();
     let sheet = ss.getSheetByName(SHEET_CONFIG);
@@ -648,15 +673,27 @@ function saveAppSettings(newSettings, pin) {
     const data = sheet.getDataRange().getValues();
     const keyRowMap = {};
     for (let i = 1; i < data.length; i++) {
-      keyRowMap[String(data[i][0]).trim()] = i + 1; // 1-based row index
+      const k = String(data[i][0]).trim();
+      keyRowMap[k] = i + 1; // 1-based row index
+    }
+
+    // Bersihkan baris sampah berindeks angka numerik (misal "0", "1", "2") jika ada
+    for (let r = data.length - 1; r >= 1; r--) {
+      const k = String(data[r][0]).trim();
+      if (/^\d+$/.test(k)) {
+        sheet.deleteRow(r + 1);
+        delete keyRowMap[k];
+      }
     }
 
     Object.keys(newSettings).forEach(k => {
+      if (/^\d+$/.test(k)) return; // Jangan izinkan indeks angka masuk
       const val = String(newSettings[k]).trim();
       if (keyRowMap[k]) {
         sheet.getRange(keyRowMap[k], 2).setValue(val);
       } else {
         sheet.appendRow([k, val, "Pengaturan " + k]);
+        keyRowMap[k] = sheet.getLastRow();
       }
     });
 
