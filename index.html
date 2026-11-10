@@ -360,7 +360,11 @@
           </div>
         </div>
 
-        <div>
+        <div class="d-flex align-items-center gap-2">
+          <button type="button" class="btn btn-warning btn-sm rounded-pill px-3 py-1.5 fw-bold text-dark d-inline-flex align-items-center gap-1.5 shadow-sm" onclick="openModalCariBiodata()" title="Cari Data Pendaftaran & Cetak Lembar Biodata Resmi">
+            <i class="bi bi-file-earmark-person-fill"></i>
+            <span>Cari &amp; Cetak Biodata</span>
+          </button>
           <a href="./marshal.html" class="btn btn-outline-light btn-sm rounded-pill px-3 py-1.5 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-sm">
             <i class="bi bi-shield-lock-fill text-warning"></i>
             <span>Portal Panitia</span>
@@ -802,17 +806,20 @@
           </div>
         </div>
 
-        <div class="modal-footer bg-white border-top p-3 d-flex flex-wrap justify-content-between">
+        <div class="modal-footer bg-white border-top p-3 d-flex flex-wrap justify-content-between align-items-center gap-2">
           <button type="button" class="btn btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">
             Tutup
           </button>
           
-          <div class="d-flex gap-2">
+          <div class="d-flex flex-wrap gap-2">
+            <button type="button" class="btn btn-outline-primary rounded-pill px-3.5 fw-bold shadow-sm" onclick="downloadBiodataPdf(lastTicketData)" title="Unduh Lembar Biodata Resmi Format A4">
+              <i class="bi bi-file-earmark-person-fill me-1.5 text-primary"></i> Unduh Biodata (PDF A4)
+            </button>
             <button type="button" class="btn btn-success rounded-pill px-3" onclick="shareTicketToWhatsApp()">
               <i class="bi bi-whatsapp me-1"></i> Kirim ke WhatsApp
             </button>
             <button type="button" class="btn btn-primary rounded-pill px-4" onclick="downloadTicketImage()">
-              <i class="bi bi-download me-1"></i> Unduh Tiket (JPG &amp; PDF)
+              <i class="bi bi-download me-1"></i> Unduh Tiket
             </button>
           </div>
         </div>
@@ -1579,15 +1586,20 @@
           } else {
             Swal.fire({
               title: "Pendaftaran Berhasil!",
-              html: `Data pendaftaran Anda telah berhasil tersimpan resmi ke sistem panitia.<br><br><strong>ID Registrasi:</strong> <span class="badge bg-primary fs-6 px-3 py-1.5">${escapeHtml(lastTicketData.regId || "-")}</span><br><br><span class="text-muted small">Kegiatan ini tidak memerlukan kartu barcode / presensi di lokasi. Simpan ID Registrasi Anda sebagai bukti pendaftaran sah.</span>`,
+              html: `Data pendaftaran Anda telah berhasil tersimpan resmi ke sistem panitia.<br><br><strong>ID Registrasi:</strong> <span class="badge bg-primary fs-6 px-3 py-1.5">${escapeHtml(lastTicketData.regId || "-")}</span><br><br><span class="text-muted small">Silakan unduh lembar Biodata resmi di bawah ini untuk dibawa saat kegiatan.</span>`,
               icon: "success",
               showCancelButton: true,
-              confirmButtonText: '<i class="bi bi-whatsapp me-1"></i> Bagikan Bukti ke WA',
+              showDenyButton: true,
+              confirmButtonText: '<i class="bi bi-file-earmark-person-fill me-1"></i> Unduh Biodata (PDF A4)',
+              denyButtonText: '<i class="bi bi-whatsapp me-1"></i> Bagikan ke WA',
               cancelButtonText: "Tutup",
-              confirmButtonColor: "#22c55e",
+              confirmButtonColor: "#0284c7",
+              denyButtonColor: "#22c55e",
               cancelButtonColor: "#64748b"
             }).then((result) => {
               if (result.isConfirmed) {
+                downloadBiodataPdf(lastTicketData);
+              } else if (result.isDenied) {
                 shareTicketToWhatsApp(false);
               }
             });
@@ -2089,6 +2101,322 @@
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
+    }
+
+    /**
+     * =========================================================================
+     * MODUL GENERATOR BIODATA RESMI PESERTA (FORMAT PDF A4)
+     * =========================================================================
+     */
+
+    /**
+     * Helper Menghitung Tanggal H-1 Pelaksanaan Kegiatan
+     * Contoh: "24 November 2026" -> "23 November 2026"
+     * Contoh: "23-24 November 2026" -> "22 November 2026"
+     */
+    function calculateHMinusOneDate(tglString) {
+      if (!tglString || tglString === "-" || tglString === "Menyesuaikan Jadwal Panitia") {
+        const now = new Date();
+        return formatIndonesianDate(now);
+      }
+
+      const bulanMap = {
+        januari: 0, jan: 0,
+        februari: 1, feb: 1,
+        maret: 2, mar: 2,
+        april: 3, apr: 3,
+        mei: 4, may: 4,
+        juni: 5, jun: 5,
+        juli: 6, jul: 6,
+        agustus: 7, agu: 7, ags: 7,
+        september: 8, sep: 8,
+        oktober: 9, okt: 9,
+        november: 10, nov: 10,
+        desember: 11, des: 11
+      };
+
+      const str = String(tglString).trim();
+      const regex = /(\d{1,2})(?:[^\d\w]+(?:\d{1,2}))?\s+([a-zA-Z]+)\s+(\d{4})/;
+      const match = str.match(regex);
+
+      if (match) {
+        const day = parseInt(match[1], 10);
+        const monthName = match[2].toLowerCase();
+        const year = parseInt(match[3], 10);
+
+        const monthIndex = bulanMap[monthName];
+        if (monthIndex !== undefined) {
+          const eventDate = new Date(year, monthIndex, day);
+          eventDate.setDate(eventDate.getDate() - 1);
+          return formatIndonesianDate(eventDate);
+        }
+      }
+
+      return str;
+    }
+
+    function formatIndonesianDate(d) {
+      const months = [
+        "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+        "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+      ];
+      return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+    }
+
+    /**
+     * Membuat Objek Dokumen PDF Biodata A4 Menggunakan jsPDF
+     */
+    function generateBiodataPdf(participantData) {
+      const { jsPDF } = window.jspdf || {};
+      if (!jsPDF) {
+        throw new Error("Pustaka PDF (jsPDF) belum siap di peramban Anda. Muat ulang halaman.");
+      }
+
+      const p = participantData || {};
+      const doc = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4"
+      });
+
+      // 1. JUDUL DOKUMEN: BIODATA
+      doc.setFont("times", "bold");
+      doc.setFontSize(14);
+      doc.text("BIODATA", 105, 36, { align: "center" });
+
+      // 2. JUDUL DOKUMEN: NAMA KEGIATAN
+      const eventTitle = String(p.namaKegiatan || activeSelectedEvent?.namaKegiatan || currentSettings?.NAMA_KEGIATAN || "KEGIATAN KEDINASAN").toUpperCase().trim();
+      doc.setFontSize(12);
+      const splitKegiatan = doc.splitTextToSize(eventTitle, 150);
+      let curY = 44;
+      splitKegiatan.forEach(line => {
+        doc.text(line, 105, curY, { align: "center" });
+        curY += 6;
+      });
+
+      curY += 14; // Ruang pemisah setelah judul
+
+      // 3. TABEL DATA DIRI PESERTA (AUTO-FILLED)
+      doc.setFont("times", "normal");
+      doc.setFontSize(11);
+
+      let pangkatGol = "-";
+      if (p.pangkat && p.pangkat !== "-" && p.golongan && p.golongan !== "-") {
+        pangkatGol = `${p.pangkat} / ${p.golongan}`;
+      } else if (p.golongan && p.golongan !== "-") {
+        pangkatGol = p.golongan;
+      } else if (p.pangkat && p.pangkat !== "-") {
+        pangkatGol = p.pangkat;
+      }
+
+      const fieldRows = [
+        { label: "NAMA", value: p.namaLengkap || p.nama || "-" },
+        { label: "NIP", value: (p.nip && p.nip !== "-" && p.nip !== "undefined") ? p.nip : "-" },
+        { label: "PANGKAT/GOL", value: pangkatGol },
+        { label: "UNIT KERJA", value: p.namaSekolah || p.sekolah || p.unitKerja || "-" },
+        { label: "JABATAN", value: p.jabatan || "-" },
+        { label: "NO HP", value: p.noWa || p.noHp || "-" }
+      ];
+
+      const colLabelX = 32;
+      const colColonX = 74;
+      const colValueX = 78;
+
+      fieldRows.forEach(f => {
+        doc.setFont("times", "bold");
+        doc.text(f.label, colLabelX, curY);
+        doc.text(":", colColonX, curY);
+
+        doc.setFont("times", "normal");
+        const valLines = doc.splitTextToSize(String(f.value), 102);
+        doc.text(valLines, colValueX, curY);
+
+        curY += Math.max(valLines.length * 5.5, 9);
+      });
+
+      // 4. BAGIAN TANDA TANGAN PESERTA (KANAN BAWAH)
+      curY = Math.max(curY + 18, 145);
+
+      const tglPelaksanaan = p.tanggalPelaksanaan || activeSelectedEvent?.tanggalPelaksanaan || currentSettings?.TANGGAL_PELAKSANAAN || "";
+      const tglH1 = calculateHMinusOneDate(tglPelaksanaan);
+      const ttdX = 125;
+
+      doc.setFont("times", "normal");
+      doc.text(`Karanganyar,   ${tglH1}`, ttdX, curY);
+
+      // Ruang kosong untuk tanda tangan basah peserta
+      curY += 28;
+
+      // Nama Terang Peserta
+      doc.setFont("times", "bold");
+      const namaPeserta = String(p.namaLengkap || p.nama || "-");
+      doc.text(namaPeserta, ttdX, curY);
+
+      // NIP Peserta (Hanya tampil jika ada NIP / bukan ASN tanpa NIP)
+      const nipClean = String(p.nip || "").replace(/^'/, "").trim();
+      if (nipClean && nipClean !== "-" && nipClean !== "undefined" && nipClean.length > 4) {
+        doc.setFont("times", "normal");
+        curY += 5.5;
+        doc.text(`NIP. ${nipClean}`, ttdX, curY);
+      }
+
+      return doc;
+    }
+
+    /**
+     * Unduh File Biodata Resmi Format PDF A4
+     */
+    function downloadBiodataPdf(participantData) {
+      if (!participantData) {
+        showErrorAlert("Data peserta tidak ditemukan.");
+        return;
+      }
+
+      Swal.fire({
+        title: "Menyiapkan Biodata A4...",
+        text: "Sedang menyusun lembar biodata resmi berformat PDF...",
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+      });
+
+      setTimeout(() => {
+        try {
+          const doc = generateBiodataPdf(participantData);
+          const safeName = String(participantData.namaLengkap || participantData.nama || "Peserta").replace(/[^a-zA-Z0-9_-]/g, "_");
+          doc.save(`Biodata_${safeName}.pdf`);
+
+          Swal.close();
+          Swal.fire({
+            title: "Biodata Berhasil Diunduh!",
+            html: `Lembar Biodata resmi format <strong>PDF A4</strong> untuk <strong>${escapeHtml(participantData.namaLengkap || participantData.nama || "")}</strong> telah disimpan.<br><span class="text-muted small">Cetak lembar ini dan bubuhkan tanda tangan basah sebelum diserahkan ke panitia.</span>`,
+            icon: "success",
+            timer: 3200,
+            showConfirmButton: false
+          });
+        } catch (err) {
+          Swal.close();
+          console.error("Gagal generate Biodata PDF:", err);
+          showErrorAlert("Gagal membuat berkas PDF Biodata: " + err.message);
+        }
+      }, 150);
+    }
+
+    /**
+     * JALUR 2: Modal Pencarian Biodata untuk Cetak Ulang Kapan Saja
+     */
+    function openModalCariBiodata() {
+      Swal.fire({
+        title: `<div class="d-flex align-items-center justify-content-center gap-2 mb-0">
+                  <i class="bi bi-file-earmark-person-fill text-warning fs-3"></i>
+                  <span class="fw-bold fs-5 text-dark">Cari & Cetak Lembar Biodata</span>
+                </div>`,
+        html: `
+          <div class="text-start mt-2">
+            <p class="text-secondary small mb-3">
+              Masukkan <strong>NIP</strong>, <strong>Nomor WhatsApp / HP</strong>, <strong>Nama Lengkap</strong>, atau <strong>ID Registrasi</strong> Anda:
+            </p>
+            <div class="input-group mb-3 shadow-sm rounded-3 overflow-hidden">
+              <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+              <input type="text" id="inputCariBiodataQuery" class="form-control border-start-0" placeholder="Contoh: 19800101... atau 08123456..." onkeydown="if(event.key==='Enter') executeSearchBiodata()">
+              <button class="btn btn-primary px-3 fw-bold" type="button" onclick="executeSearchBiodata()">
+                <i class="bi bi-search me-1"></i> Cari
+              </button>
+            </div>
+            <div id="containerHasilCariBiodata" class="mt-3" style="max-height: 52vh; overflow-y: auto; overflow-x: hidden;">
+              <div class="text-center py-4 text-muted small">
+                <i class="bi bi-keyboard fs-3 d-block mb-1 text-secondary"></i>
+                Ketik data Anda pada kolom di atas lalu tekan tombol <strong>Cari</strong>.
+              </div>
+            </div>
+          </div>
+        `,
+        showConfirmButton: false,
+        showCancelButton: true,
+        cancelButtonText: '<i class="bi bi-x-circle me-1"></i> Tutup',
+        cancelButtonColor: "#64748b",
+        width: "600px",
+        customClass: {
+          popup: 'rounded-4 shadow-lg border-0'
+        }
+      });
+    }
+
+    async function executeSearchBiodata() {
+      const inputEl = document.getElementById("inputCariBiodataQuery");
+      const container = document.getElementById("containerHasilCariBiodata");
+      if (!inputEl || !container) return;
+
+      const q = inputEl.value.trim();
+      if (q.length < 3) {
+        container.innerHTML = `
+          <div class="alert alert-warning py-2 small mb-0 rounded-3">
+            <i class="bi bi-exclamation-triangle-fill me-1"></i> Ketik minimal 3 karakter untuk melakukan pencarian.
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="text-center py-4 text-muted small">
+          <div class="spinner-border spinner-border-sm text-primary mb-2" role="status"></div>
+          <div>Mencari data pendaftaran Anda...</div>
+        </div>
+      `;
+
+      try {
+        const res = await callGasApi("searchParticipantForBiodata", { query: q });
+        if (res && res.success && Array.isArray(res.participants) && res.participants.length > 0) {
+          window._searchedBiodataList = res.participants;
+
+          container.innerHTML = `
+            <div class="small text-muted mb-2 fw-semibold">
+              <i class="bi bi-check2-circle text-success me-1"></i> Ditemukan <strong>${res.participants.length}</strong> data peserta:
+            </div>
+            <div class="d-flex flex-column gap-2">
+              ${res.participants.map((p, idx) => `
+                <div class="card p-3 border rounded-3 bg-white shadow-sm text-start">
+                  <div class="d-flex justify-content-between align-items-start gap-2">
+                    <div class="min-w-0 flex-grow-1">
+                      <div class="fw-bold text-dark fs-6 text-truncate">${escapeHtml(p.namaLengkap)}</div>
+                      <div class="text-primary small fw-semibold mb-1 text-truncate">${escapeHtml(p.namaKegiatan)}</div>
+                      <div class="text-secondary small d-flex flex-wrap gap-x-2 gap-y-1">
+                        <span><i class="bi bi-building me-1"></i>${escapeHtml(p.namaSekolah || '-')}</span>
+                        <span>&bull;</span>
+                        <span><i class="bi bi-person-badge me-1"></i>NIP: ${escapeHtml(p.nip || '-')}</span>
+                      </div>
+                    </div>
+                    <div class="flex-shrink-0">
+                      <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 py-1.5 fw-bold shadow-sm" onclick="downloadBiodataFromSearchResult(${idx})">
+                        <i class="bi bi-file-earmark-arrow-down-fill me-1"></i> Cetak PDF A4
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              `).join("")}
+            </div>
+          `;
+        } else {
+          container.innerHTML = `
+            <div class="alert alert-light border py-4 text-center text-muted small mb-0 rounded-3">
+              <i class="bi bi-person-x fs-2 d-block mb-1 text-secondary"></i>
+              Data tidak ditemukan untuk kata kunci "<strong>${escapeHtml(q)}</strong>".<br>
+              Pastikan NIP, Nomor WA, atau Nama yang Anda masukkan sesuai saat pengisian formulir.
+            </div>
+          `;
+        }
+      } catch (err) {
+        console.error("Error executeSearchBiodata:", err);
+        container.innerHTML = `
+          <div class="alert alert-danger py-2 small mb-0 rounded-3">
+            <i class="bi bi-x-circle-fill me-1"></i> Gagal menghubungi server: ${escapeHtml(err.message)}
+          </div>
+        `;
+      }
+    }
+
+    function downloadBiodataFromSearchResult(idx) {
+      if (!window._searchedBiodataList || !window._searchedBiodataList[idx]) return;
+      downloadBiodataPdf(window._searchedBiodataList[idx]);
     }
 
     // Registrasi PWA Service Worker (Instalasi dapat dilakukan manual via menu browser)

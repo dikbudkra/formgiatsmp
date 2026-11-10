@@ -28,6 +28,7 @@
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 
   <style>
@@ -3800,9 +3801,14 @@
             </span>
           </td>
           <td class="text-center">
-            <button class="btn btn-outline-danger btn-sm rounded-pill p-1 px-2" onclick="confirmDeleteParticipant('${escapeHtml(p.regId)}')">
-              <i class="bi bi-trash"></i>
-            </button>
+            <div class="d-inline-flex gap-1">
+              <button class="btn btn-outline-primary btn-sm rounded-pill p-1 px-2" onclick="printOrDownloadParticipantBiodata('${escapeHtml(p.regId)}')" title="Cetak / Unduh Biodata Peserta (PDF A4)">
+                <i class="bi bi-file-earmark-person-fill"></i>
+              </button>
+              <button class="btn btn-outline-danger btn-sm rounded-pill p-1 px-2" onclick="confirmDeleteParticipant('${escapeHtml(p.regId)}')" title="Hapus Data Peserta">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
           </td>
         </tr>
       `).join("");
@@ -3852,6 +3858,174 @@
           console.error(e);
           Swal.fire({ title: "Error", text: "Terjadi kesalahan saat menghapus peserta.", icon: "error" });
         }
+      }
+    }
+
+    /**
+     * =========================================================================
+     * MODUL GENERATOR BIODATA RESMI PESERTA (FORMAT PDF A4) - DASHBOARD PANITIA
+     * =========================================================================
+     */
+
+    function calculateHMinusOneDate(tglString) {
+      if (!tglString || tglString === "-" || tglString === "Menyesuaikan Jadwal Panitia") {
+        const now = new Date();
+        return formatIndonesianDate(now);
+      }
+
+      const bulanMap = {
+        januari: 0, jan: 0,
+        februari: 1, feb: 1,
+        maret: 2, mar: 2,
+        april: 3, apr: 3,
+        mei: 4, may: 4,
+        juni: 5, jun: 5,
+        juli: 6, jul: 6,
+        agustus: 7, agu: 7, ags: 7,
+        september: 8, sep: 8,
+        oktober: 9, okt: 9,
+        november: 10, nov: 10,
+        desember: 11, des: 11
+      };
+
+      const str = String(tglString).trim();
+      const regex = /(\d{1,2})(?:[^\d\w]+(?:\d{1,2}))?\s+([a-zA-Z]+)\s+(\d{4})/;
+      const match = str.match(regex);
+
+      if (match) {
+        const day = parseInt(match[1], 10);
+        const monthName = match[2].toLowerCase();
+        const year = parseInt(match[3], 10);
+
+        const monthIndex = bulanMap[monthName];
+        if (monthIndex !== undefined) {
+          const eventDate = new Date(year, monthIndex, day);
+          eventDate.setDate(eventDate.getDate() - 1);
+          return formatIndonesianDate(eventDate);
+        }
+      }
+
+      return str;
+    }
+
+    function formatIndonesianDate(d) {
+      const months = [
+        "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+        "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+      ];
+      return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+    }
+
+    function generateBiodataPdf(participantData) {
+      const { jsPDF } = window.jspdf || {};
+      if (!jsPDF) {
+        throw new Error("Pustaka PDF (jsPDF) belum siap di peramban Anda.");
+      }
+
+      const p = participantData || {};
+      const doc = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4"
+      });
+
+      // 1. JUDUL DOKUMEN: BIODATA
+      doc.setFont("times", "bold");
+      doc.setFontSize(14);
+      doc.text("BIODATA", 105, 36, { align: "center" });
+
+      // 2. JUDUL DOKUMEN: NAMA KEGIATAN
+      const activeEvent = (allEventsList && allEventsList.find(e => e.idKegiatan === activeEventId));
+      const eventTitle = String(p.namaKegiatan || activeEvent?.namaKegiatan || currentDashboardData?.settings?.NAMA_KEGIATAN || "KEGIATAN KEDINASAN").toUpperCase().trim();
+      doc.setFontSize(12);
+      const splitKegiatan = doc.splitTextToSize(eventTitle, 150);
+      let curY = 44;
+      splitKegiatan.forEach(line => {
+        doc.text(line, 105, curY, { align: "center" });
+        curY += 6;
+      });
+
+      curY += 14;
+
+      // 3. TABEL DATA DIRI PESERTA (AUTO-FILLED)
+      doc.setFont("times", "normal");
+      doc.setFontSize(11);
+
+      let pangkatGol = "-";
+      if (p.pangkat && p.pangkat !== "-" && p.golongan && p.golongan !== "-") {
+        pangkatGol = `${p.pangkat} / ${p.golongan}`;
+      } else if (p.golongan && p.golongan !== "-") {
+        pangkatGol = p.golongan;
+      } else if (p.pangkat && p.pangkat !== "-") {
+        pangkatGol = p.pangkat;
+      }
+
+      const fieldRows = [
+        { label: "NAMA", value: p.namaLengkap || p.nama || "-" },
+        { label: "NIP", value: (p.nip && p.nip !== "-" && p.nip !== "undefined") ? p.nip : "-" },
+        { label: "PANGKAT/GOL", value: pangkatGol },
+        { label: "UNIT KERJA", value: p.namaSekolah || p.sekolah || p.unitKerja || "-" },
+        { label: "JABATAN", value: p.jabatan || "-" },
+        { label: "NO HP", value: p.noWa || p.noHp || "-" }
+      ];
+
+      const colLabelX = 32;
+      const colColonX = 74;
+      const colValueX = 78;
+
+      fieldRows.forEach(f => {
+        doc.setFont("times", "bold");
+        doc.text(f.label, colLabelX, curY);
+        doc.text(":", colColonX, curY);
+
+        doc.setFont("times", "normal");
+        const valLines = doc.splitTextToSize(String(f.value), 102);
+        doc.text(valLines, colValueX, curY);
+
+        curY += Math.max(valLines.length * 5.5, 9);
+      });
+
+      // 4. BAGIAN TANDA TANGAN PESERTA (KANAN BAWAH)
+      curY = Math.max(curY + 18, 145);
+
+      const tglPelaksanaan = p.tanggalPelaksanaan || activeEvent?.tanggalPelaksanaan || currentDashboardData?.settings?.TANGGAL_PELAKSANAAN || "";
+      const tglH1 = calculateHMinusOneDate(tglPelaksanaan);
+      const ttdX = 125;
+
+      doc.setFont("times", "normal");
+      doc.text(`Karanganyar,   ${tglH1}`, ttdX, curY);
+
+      curY += 28;
+
+      doc.setFont("times", "bold");
+      const namaPeserta = String(p.namaLengkap || p.nama || "-");
+      doc.text(namaPeserta, ttdX, curY);
+
+      const nipClean = String(p.nip || "").replace(/^'/, "").trim();
+      if (nipClean && nipClean !== "-" && nipClean !== "undefined" && nipClean.length > 4) {
+        doc.setFont("times", "normal");
+        curY += 5.5;
+        doc.text(`NIP. ${nipClean}`, ttdX, curY);
+      }
+
+      return doc;
+    }
+
+    function printOrDownloadParticipantBiodata(regId) {
+      const participants = currentDashboardData?.participants || [];
+      const p = participants.find(x => x.regId === regId);
+      if (!p) {
+        Swal.fire({ icon: "error", title: "Data Tidak Ditemukan", text: "Data peserta dengan ID tersebut tidak ditemukan." });
+        return;
+      }
+
+      try {
+        const doc = generateBiodataPdf(p);
+        const safeName = String(p.namaLengkap || "Peserta").replace(/[^a-zA-Z0-9_-]/g, "_");
+        doc.save(`Biodata_${safeName}.pdf`);
+      } catch (err) {
+        console.error("Gagal generate Biodata PDF:", err);
+        Swal.fire({ icon: "error", title: "Gagal Mengunduh", text: err.message });
       }
     }
 

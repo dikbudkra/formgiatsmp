@@ -563,6 +563,10 @@ function handleApiRequest_(action, payload) {
     case "register":
       return submitRegistration(payload.formData || payload);
 
+    case "searchParticipantForBiodata":
+    case "searchParticipant":
+      return searchParticipantForBiodata(payload.query || payload.q, payload.targetEventIdOrName || payload.eventId);
+
     case "checkInParticipant":
     case "checkIn":
       return checkInParticipant(payload.regId, payload.pin, payload.eventId);
@@ -1896,6 +1900,94 @@ function submitRegistration(formData) {
     if (hasLock) {
       try { lock.releaseLock(); } catch (e) {}
     }
+  }
+}
+
+/**
+ * --------------------------------------------------------------------------
+ * 4.1 PENCARIAN PESERTA UNTUK CETAK / UNDUH BIODATA RESMI (PDF A4)
+ * --------------------------------------------------------------------------
+ */
+function searchParticipantForBiodata(query, targetEventIdOrName) {
+  try {
+    ensureDatabaseReady_();
+    const cleanQ = String(query || "").trim().toLowerCase();
+    if (!cleanQ || cleanQ.length < 3) {
+      return { success: false, message: "Ketik minimal 3 karakter (NIP, No HP/WA, Nama, atau ID Registrasi) untuk mencari data." };
+    }
+
+    const ss = getSpreadsheet_();
+    const sheet = ss.getSheetByName(SHEET_PESERTA);
+    if (!sheet) return { success: true, participants: [] };
+
+    const data = sheet.getDataRange().getValues();
+    if (data.length <= 1) return { success: true, participants: [] };
+
+    const headerRow = data[0].map(h => String(h).trim().toLowerCase());
+    const hasKegiatanCol = headerRow.includes("nama kegiatan");
+    const offset = hasKegiatanCol ? 1 : 0;
+
+    // Ambil master kegiatan untuk lookup tanggal dan lokasi pelaksanaan
+    const allEvents = getAllEventsForAdminInternal_();
+    const eventMap = {};
+    allEvents.forEach(ev => {
+      if (ev.namaKegiatan) eventMap[ev.namaKegiatan.toLowerCase().trim()] = ev;
+      if (ev.idKegiatan) eventMap[ev.idKegiatan.toLowerCase().trim()] = ev;
+    });
+
+    const matches = [];
+    const qDigitsOnly = cleanQ.replace(/[^0-9]/g, "");
+
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      const rowKeg = hasKegiatanCol ? String(row[2] || "-").trim() : "";
+      const regId = String(row[1] || "").trim();
+      const namaSekolah = String(row[2 + offset] || "-").trim();
+      const namaLengkap = String(row[6 + offset] || "-").trim();
+      const nip = String(row[8 + offset] || "-").replace(/^'/, "").trim();
+      const golongan = String(row[9 + offset] || "-").trim();
+      const pangkat = String(row[10 + offset] || "-").trim();
+      const jabatan = String(row[11 + offset] || "-").trim();
+      const noWa = String(row[hasKegiatanCol ? 16 : 14] || "-").replace(/^'/, "").trim();
+      const noWaDigits = noWa.replace(/[^0-9]/g, "");
+
+      // Pencocokan fleksibel (NIP, No WA/HP, Nama Lengkap, atau ID Registrasi)
+      const isMatch = (
+        (nip && nip !== "-" && nip.toLowerCase().includes(cleanQ)) ||
+        (qDigitsOnly.length >= 4 && noWaDigits.includes(qDigitsOnly)) ||
+        (namaLengkap && namaLengkap.toLowerCase().includes(cleanQ)) ||
+        (regId && regId.toLowerCase().includes(cleanQ))
+      );
+
+      if (isMatch) {
+        const evData = eventMap[rowKeg.toLowerCase()] || {};
+        matches.push({
+          regId: regId,
+          namaKegiatan: rowKeg || (evData.namaKegiatan || "Kegiatan Kedinasan"),
+          namaLengkap: namaLengkap,
+          nip: nip,
+          pangkat: pangkat,
+          golongan: golongan,
+          namaSekolah: namaSekolah,
+          jabatan: jabatan,
+          noWa: noWa,
+          tanggalPelaksanaan: evData.tanggalPelaksanaan || "-",
+          lokasiKegiatan: evData.lokasiKegiatan || "Kabupaten Karanganyar"
+        });
+
+        if (matches.length >= 10) break;
+      }
+    }
+
+    return {
+      success: true,
+      query: query,
+      totalFound: matches.length,
+      participants: matches
+    };
+  } catch (err) {
+    Logger.log("Error searchParticipantForBiodata: " + err.toString());
+    return { success: false, message: "Terjadi kesalahan pencarian data: " + err.toString() };
   }
 }
 
