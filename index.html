@@ -378,20 +378,6 @@
   <!-- ==================== MAIN CONTENT ==================== -->
   <main class="container my-4 my-md-5 flex-grow-1">
 
-    <!-- Banner Pengumuman Panitia (Tampil jika Pop-up Pengumuman Aktif) -->
-    <div id="bannerAnnouncementAlert" class="alert alert-info border-info d-flex align-items-center justify-content-between gap-3 mb-4 rounded-3 shadow-sm d-none" style="background-color: #f0f9ff; border-left: 5px solid #0284c7 !important;">
-      <div class="d-flex align-items-center gap-2.5 small text-dark">
-        <i class="bi bi-megaphone-fill fs-4 text-primary flex-shrink-0"></i>
-        <div>
-          <strong id="bannerAnnouncementTitle" class="fw-bold text-primary">Pengumuman: </strong>
-          <span id="bannerAnnouncementText" class="text-secondary"></span>
-        </div>
-      </div>
-      <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 py-1.5 flex-shrink-0 fw-bold shadow-sm" onclick="checkAndShowAnnouncementPopup(true)">
-        <i class="bi bi-eye-fill me-1"></i>Baca Pengumuman
-      </button>
-    </div>
-
     <!-- 1. MULTI-EVENT CARDS (TAMPIL DIAWAL WALAU HANYA 1 KEGIATAN) -->
     <div id="sectionMultiEventSelector">
       <div class="card card-modern p-4 p-md-5">
@@ -488,15 +474,26 @@
         </span>
       </div>
 
-      <!-- TOMBOL RAMPING E-SERTIFIKAT (HANYA MUNCUL DI FORMULIR JIKA KEGIATAN MENGAKTIFKAN MODUL SERTIFIKAT) -->
-      <div id="wrapperFormCertCompact" class="mb-3 d-none">
-        <div class="d-flex justify-content-end">
-          <button type="button" class="btn btn-outline-warning btn-sm rounded-pill px-3.5 py-1.5 fw-bold text-dark d-inline-flex align-items-center gap-1.5 shadow-sm" id="btnToggleFormCert" onclick="toggleFormCertDrawer()">
-            <i class="bi bi-award-fill text-warning"></i>
-            <span>Unduh E-Sertifikat Kegiatan Ini</span>
-            <i class="bi bi-chevron-down ms-1" id="iconToggleFormCert"></i>
-          </button>
+      <!-- DUAL BUTTON RAMPING: BACA PENGUMUMAN & UNDUH E-SERTIFIKAT (SEPARUH - SEPARUH) -->
+      <div id="wrapperFormQuickButtons" class="mb-3">
+        <div class="row g-2">
+          <!-- Separuh Kiri: Tombol Baca Pengumuman -->
+          <div class="col-6" id="wrapperFormAnnouncementBtn">
+            <button type="button" class="btn btn-outline-primary btn-sm rounded-pill w-100 py-2 fw-bold d-inline-flex align-items-center justify-content-center gap-1.5 shadow-sm text-truncate" onclick="checkAndShowAnnouncementPopup(true)" title="Baca Pengumuman Panitia">
+              <i class="bi bi-megaphone-fill text-primary"></i>
+              <span>Baca Pengumuman</span>
+            </button>
+          </div>
+          <!-- Separuh Kanan: Tombol Unduh E-Sertifikat -->
+          <div class="col-6" id="wrapperFormCertCompact">
+            <button type="button" class="btn btn-outline-warning btn-sm rounded-pill w-100 py-2 fw-bold text-dark d-inline-flex align-items-center justify-content-center gap-1.5 shadow-sm text-truncate" id="btnToggleFormCert" onclick="toggleFormCertDrawer()" title="Unduh E-Sertifikat Kegiatan Ini">
+              <i class="bi bi-award-fill text-warning"></i>
+              <span>Unduh E-Sertifikat Kegiatan Ini</span>
+              <i class="bi bi-chevron-down ms-1" id="iconToggleFormCert"></i>
+            </button>
+          </div>
         </div>
+        <!-- Panel Pencarian E-Sertifikat (Collapsible) -->
         <div id="drawerFormCert" class="mt-2.5 d-none"></div>
       </div>
 
@@ -1075,23 +1072,44 @@
     }
 
     /**
-     * Banner Pengumuman di atas halaman / formulir agar peserta bisa membaca ulang kapan saja
+     * Tombol Pengumuman di atas formulir agar peserta bisa membaca ulang kapan saja
      */
     function updateAnnouncementBanner(isAktif, judul, pesan) {
-      const banner = document.getElementById("bannerAnnouncementAlert");
-      const titleEl = document.getElementById("bannerAnnouncementTitle");
-      const textEl = document.getElementById("bannerAnnouncementText");
-      if (!banner) return;
+      const annWrapper = document.getElementById("wrapperFormAnnouncementBtn");
+      if (!annWrapper) return;
 
       if (isAktif && pesan) {
-        banner.classList.remove("d-none");
-        if (titleEl) titleEl.textContent = (judul || "Pengumuman") + ": ";
-        if (textEl) {
-          const previewText = pesan.length > 110 ? pesan.substring(0, 110) + "..." : pesan;
-          textEl.textContent = previewText;
-        }
+        annWrapper.classList.remove("d-none");
       } else {
-        banner.classList.add("d-none");
+        annWrapper.classList.add("d-none");
+      }
+      updateQuickButtonsLayout();
+    }
+
+    /**
+     * Menjaga proporsi seimbang 50% - 50% antara tombol Pengumuman dan E-Sertifikat
+     */
+    function updateQuickButtonsLayout() {
+      const annWrapper = document.getElementById("wrapperFormAnnouncementBtn");
+      const certWrapper = document.getElementById("wrapperFormCertCompact");
+      const quickBox = document.getElementById("wrapperFormQuickButtons");
+      if (!annWrapper || !certWrapper || !quickBox) return;
+
+      const isAnnVisible = !annWrapper.classList.contains("d-none");
+      const isCertVisible = !certWrapper.classList.contains("d-none");
+
+      if (isAnnVisible && isCertVisible) {
+        quickBox.classList.remove("d-none");
+        annWrapper.className = "col-6";
+        certWrapper.className = "col-6";
+      } else if (isAnnVisible) {
+        quickBox.classList.remove("d-none");
+        annWrapper.className = "col-12 col-md-6 mx-auto";
+      } else if (isCertVisible) {
+        quickBox.classList.remove("d-none");
+        certWrapper.className = "col-12 col-md-6 mx-auto";
+      } else {
+        quickBox.classList.add("d-none");
       }
     }
 
@@ -1189,6 +1207,7 @@
       closeFormCertDrawer();
       const wrapCompact = document.getElementById("wrapperFormCertCompact");
       if (wrapCompact) wrapCompact.classList.add("d-none");
+      updateQuickButtonsLayout();
 
       document.getElementById("sectionMultiEventSelector").classList.remove("d-none");
       document.getElementById("boxFormAktif").classList.add("d-none");
@@ -1270,6 +1289,7 @@
         drawer.classList.add("d-none");
         cardSec.classList.add("d-none");
       }
+      updateQuickButtonsLayout();
     }
 
     function toggleFormCertDrawer() {
