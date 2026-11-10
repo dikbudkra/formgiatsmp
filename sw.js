@@ -3,7 +3,7 @@
  * PWA Offline Cache & Background Engine
  */
 
-const CACHE_NAME = 'formgiatsmp-v1.4.2';
+const CACHE_NAME = 'formgiatsmp-v1.4.3';
 
 // Daftar aset inti yang di-cache saat instalasi
 const PRECACHE_ASSETS = [

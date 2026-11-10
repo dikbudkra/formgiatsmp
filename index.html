@@ -510,7 +510,7 @@
             <div class="d-flex flex-wrap gap-3 text-secondary small mt-2">
               <div class="d-flex align-items-center gap-1.5">
                 <i class="bi bi-calendar-event text-primary"></i>
-                <span id="formEventDate">Jadwal Resmi</span>
+                <span id="formEventDate">Jadwal Pelaksanaan</span>
               </div>
               <div class="d-flex align-items-center gap-1.5">
                 <i class="bi bi-geo-alt-fill text-danger"></i>
@@ -1113,6 +1113,19 @@
       }
     }
 
+    function formatTanggalDisplay(val) {
+      if (!val || val === "-" || val === "undefined") return "Jadwal Pelaksanaan";
+      let str = String(val).trim();
+      if (/^[A-Za-z]{3}\s+[A-Za-z]{3}\s+\d{1,2}\s+\d{4}/.test(str) || /^\d{4}-\d{2}-\d{2}/.test(str)) {
+        const parsed = new Date(str);
+        if (!isNaN(parsed.getTime())) {
+          const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+          return `${parsed.getDate()} ${months[parsed.getMonth()]} ${parsed.getFullYear()}`;
+        }
+      }
+      return str;
+    }
+
     /**
      * Render Kartu Kegiatan (Selalu tampil di awal, walau 1 kegiatan)
      */
@@ -1158,7 +1171,7 @@
                 <div class="space-y-2 mb-4">
                   <div class="d-flex align-items-center gap-2 small text-secondary mb-1.5">
                     <i class="bi bi-calendar-week text-primary"></i>
-                    <span>${escapeHtml(ev.tanggalPelaksanaan || 'Jadwal Resmi')}</span>
+                    <span>${escapeHtml(formatTanggalDisplay(ev.tanggalPelaksanaan))}</span>
                   </div>
                   <div class="d-flex align-items-center gap-2 small text-secondary mb-1.5">
                     <i class="bi bi-geo-alt-fill text-danger"></i>
@@ -1232,7 +1245,7 @@
       document.getElementById("formEventIdBadge").textContent = ev.idKegiatan;
       document.getElementById("formEventTitle").textContent = ev.namaKegiatan;
       document.getElementById("formEventSubtitle").textContent = ev.subKegiatan || "Bidang SMP DISDIKBUD Karanganyar";
-      document.getElementById("formEventDate").textContent = ev.tanggalPelaksanaan || "Jadwal Pelaksanaan";
+      document.getElementById("formEventDate").textContent = formatTanggalDisplay(ev.tanggalPelaksanaan);
       document.getElementById("formEventLocation").textContent = ev.lokasiKegiatan || "Kabupaten Karanganyar";
       document.getElementById("formEventQuota").textContent = (ev.kuotaPerSekolah === "bebas" ? "Bebas" : ev.kuotaPerSekolah + " Peserta");
 
@@ -1931,7 +1944,7 @@
       document.getElementById("ticketSekolahPeserta").textContent = data.namaSekolah || data.sekolah || "-";
       document.getElementById("ticketRegId").textContent = data.regId || "-";
       document.getElementById("ticketNamaKegiatan").textContent = data.namaKegiatan || activeSelectedEvent?.namaKegiatan || "-";
-      document.getElementById("ticketTanggal").textContent = activeSelectedEvent?.tanggalPelaksanaan || "Jadwal Resmi";
+      document.getElementById("ticketTanggal").textContent = formatTanggalDisplay(activeSelectedEvent?.tanggalPelaksanaan);
       document.getElementById("ticketKaos").textContent = (data.ukuranKaos || "-") + (data.panjangLengan ? ` (${data.panjangLengan})` : "");
       document.getElementById("ticketQrIdText").textContent = data.regId || "-";
 
@@ -2035,7 +2048,7 @@
       const namaSekolah = String(data?.namaSekolah || data?.sekolah || document.getElementById("ticketSekolahPeserta")?.textContent || "-");
       const regId = String(data?.regId || document.getElementById("ticketRegId")?.textContent || "-");
       const namaKegiatan = String(data?.namaKegiatan || activeSelectedEvent?.namaKegiatan || document.getElementById("ticketNamaKegiatan")?.textContent || "-");
-      const tanggal = String(activeSelectedEvent?.tanggalPelaksanaan || document.getElementById("ticketTanggal")?.textContent || "Jadwal Resmi");
+      const tanggal = String(formatTanggalDisplay(activeSelectedEvent?.tanggalPelaksanaan || document.getElementById("ticketTanggal")?.textContent));
       const kaos = String(document.getElementById("ticketKaos")?.textContent || ((data?.ukuranKaos || "-") + (data?.panjangLengan ? ` (${data.panjangLengan})` : "")));
 
       ctx.save();

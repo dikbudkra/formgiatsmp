@@ -1132,7 +1132,7 @@ function getAllEventsForAdminInternal_() {
           modulKontakDarurat: String(row[8] || "ON").trim().toUpperCase(),
           modulKesehatan: String(row[9] || "ON").trim().toUpperCase(),
           modulEticketPresensi: String(row[10] || "ON").trim().toUpperCase(),
-          tanggalPelaksanaan: String(row[11] || "-").trim(),
+          tanggalPelaksanaan: formatTanggalPelaksanaan_(row[11]),
           lokasiKegiatan: String(row[12] || "-").trim(),
           waktuDibuat: row[13] ? Utilities.formatDate(new Date(row[13]), Session.getScriptTimeZone() || "GMT+7", "dd/MM/yyyy HH:mm") : "-",
           modulSertifikat: String(row[14] || "OFF").trim().toUpperCase(),
@@ -1532,7 +1532,7 @@ function getActiveEventsForPublic() {
         modulKontakDarurat: String(row[8] || "ON").trim().toUpperCase(),
         modulKesehatan: String(row[9] || "ON").trim().toUpperCase(),
         modulEticketPresensi: String(row[10] || "ON").trim().toUpperCase(),
-        tanggalPelaksanaan: String(row[11] || "-").trim(),
+        tanggalPelaksanaan: formatTanggalPelaksanaan_(row[11]),
         lokasiKegiatan: String(row[12] || "-").trim(),
         modulSertifikat: modulCert,
         statusUnduhSertifikat: String(row[15] || "KUNCI").trim().toUpperCase(),
@@ -1561,6 +1561,35 @@ function getActiveEventsForPublic() {
     Logger.log("Error getActiveEventsForPublic: " + err.toString());
     return { success: false, events: [], certificateEvents: [], message: err.message };
   }
+}
+
+/**
+ * Helper Memformat Tanggal Pelaksanaan Kegiatan agar Rapi (Bahasa Indonesia)
+ * Menangani jika Google Sheets mengonversi string ke JavaScript Date object
+ */
+function formatTanggalPelaksanaan_(val) {
+  if (!val) return "-";
+  if (val instanceof Date || Object.prototype.toString.call(val) === "[object Date]") {
+    if (isNaN(val.getTime())) return "-";
+    const d = val.getDate();
+    const m = val.getMonth();
+    const y = val.getFullYear();
+    const bulanIndo = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+    return d + " " + bulanIndo[m] + " " + y;
+  }
+  let str = String(val).trim();
+  // Jika string berbentuk ISO atau date string panjang seperti "Sun Nov 08 2026 00:00:00..."
+  if (/^[A-Za-z]{3}\s+[A-Za-z]{3}\s+\d{1,2}\s+\d{4}/.test(str) || /^\d{4}-\d{2}-\d{2}/.test(str)) {
+    const parsed = new Date(str);
+    if (!isNaN(parsed.getTime())) {
+      const d = parsed.getDate();
+      const m = parsed.getMonth();
+      const y = parsed.getFullYear();
+      const bulanIndo = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+      return d + " " + bulanIndo[m] + " " + y;
+    }
+  }
+  return str;
 }
 
 /**

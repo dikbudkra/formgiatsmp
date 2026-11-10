@@ -2533,6 +2533,19 @@
       }
     }
 
+    function formatTanggalDisplay(val) {
+      if (!val || val === "-" || val === "undefined") return "-";
+      let str = String(val).trim();
+      if (/^[A-Za-z]{3}\s+[A-Za-z]{3}\s+\d{1,2}\s+\d{4}/.test(str) || /^\d{4}-\d{2}-\d{2}/.test(str)) {
+        const parsed = new Date(str);
+        if (!isNaN(parsed.getTime())) {
+          const months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+          return `${parsed.getDate()} ${months[parsed.getMonth()]} ${parsed.getFullYear()}`;
+        }
+      }
+      return str;
+    }
+
     /**
      * Pop-up Modal Pilih Kegiatan (Fungsi sama seperti tombol mata di tabel kegiatan)
      */
@@ -2549,7 +2562,7 @@
       const eventsHtml = allEventsList.map(ev => {
         const isActive = ev.idKegiatan === activeEventId;
         const isBuka = (ev.statusForm === "BUKA");
-        const tglClean = String(ev.tanggalPelaksanaan || '-').replace(/[|]/g, '').trim();
+        const tglClean = formatTanggalDisplay(ev.tanggalPelaksanaan).replace(/[|]/g, '').trim();
         const lokClean = String(ev.lokasiKegiatan || '-').replace(/[|]/g, '').trim();
 
         return `
@@ -2968,7 +2981,7 @@
             <div class="text-muted small">${escapeHtml(ev.subKegiatan || '-')}</div>
           </td>
           <td>
-            <div>${escapeHtml(ev.tanggalPelaksanaan || '-')}</div>
+            <div>${escapeHtml(formatTanggalDisplay(ev.tanggalPelaksanaan))}</div>
             <div class="text-muted small">${escapeHtml(ev.lokasiKegiatan || '-')}</div>
           </td>
           <td><span class="badge bg-light text-dark border">${escapeHtml(ev.kuotaPerSekolah)} / Sekolah</span></td>
@@ -3040,7 +3053,7 @@
       document.getElementById("eventModalSub").value = ev.subKegiatan || "";
       document.getElementById("eventModalStatus").value = ev.statusForm;
       document.getElementById("eventModalKuota").value = ev.kuotaPerSekolah;
-      document.getElementById("eventModalTanggal").value = ev.tanggalPelaksanaan || "";
+      document.getElementById("eventModalTanggal").value = formatTanggalDisplay(ev.tanggalPelaksanaan || "");
       document.getElementById("eventModalLokasi").value = ev.lokasiKegiatan || "";
 
       document.getElementById("switchModulKaos").checked = (ev.modulKaos === "ON");
