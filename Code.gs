@@ -572,8 +572,17 @@ function handleApiRequest_(action, payload) {
     case "getAdminEvents":
       return getAllEventsForAdmin(payload.pin);
 
-    case "saveEvent":
-      return saveEvent(payload.eventData || payload, payload.pin);
+    case "saveEvent": {
+      let evData = payload.eventData || payload;
+      if (typeof evData === "string") {
+        try {
+          evData = JSON.parse(evData);
+        } catch (e) {
+          Logger.log("Error JSON.parse payload.eventData: " + e.toString());
+        }
+      }
+      return saveEvent(evData, payload.pin);
+    }
 
     case "toggleEventStatus":
     case "toggleEvent":
@@ -1165,6 +1174,15 @@ function getAllEventsForAdmin(pin) {
  * Menyimpan kegiatan baru atau memperbarui kegiatan lama dari Dashboard Web
  */
 function saveEvent(eventData, pin) {
+  if (typeof eventData === "string") {
+    try {
+      eventData = JSON.parse(eventData);
+    } catch (e) {
+      Logger.log("Error JSON.parse in saveEvent: " + e.toString());
+    }
+  }
+  eventData = eventData || {};
+
   if (!verifyAdminPin(pin)) {
     return { success: false, message: "Akses ditolak: PIN Panitia tidak valid." };
   }
@@ -1875,7 +1893,7 @@ function searchParticipantForCertificate(query, eventIdOrName) {
       return {
         success: false,
         locked: true,
-        message: "Pengunduhan E-Sertifikat untuk kegiatan ini belum dibuka oleh panitia. Silakan menunggu pengumuman resmi panitia."
+        message: "Pengunduhan E-Sertifikat untuk kegiatan ini belum dibuka oleh panitia. Silakan menunggu pengumuman dari panitia."
       };
     }
 
@@ -1893,7 +1911,11 @@ function searchParticipantForCertificate(query, eventIdOrName) {
 
     const qDigitsOnly = cleanQ.replace(/[^0-9]/g, "");
     const matches = [];
-    const requireHadir = (targetEvent.kriteriaUnduhSertifikat !== "SEMUA");
+    
+    // Cek apakah kegiatan ini menggunakan modul E-Ticket & Presensi QR
+    const isEticketEnabled = (String(targetEvent.modulEticketPresensi || "").trim().toUpperCase() === "ON");
+    // Jika kegiatan tidak menggunakan Presensi QR, kriteria HADIR otomatis gugur (semua peserta terdaftar berhak unduh)
+    const requireHadir = isEticketEnabled && (targetEvent.kriteriaUnduhSertifikat !== "SEMUA");
 
     for (let i = 1; i < data.length; i++) {
       const row = data[i];
@@ -1931,9 +1953,10 @@ function searchParticipantForCertificate(query, eventIdOrName) {
           namaLengkap: namaLengkap,
           namaSekolah: namaSekolah,
           jabatan: jabatan,
-          statusKehadiran: statusHadirVal,
+          isEticketEnabled: isEticketEnabled,
+          statusKehadiran: isEticketEnabled ? statusHadirVal : "TERDAFTAR",
           eligible: isEligible,
-          kriteria: targetEvent.kriteriaUnduhSertifikat
+          kriteria: isEticketEnabled ? targetEvent.kriteriaUnduhSertifikat : "SEMUA"
         });
         if (matches.length >= 10) break;
       }
@@ -1952,7 +1975,8 @@ function searchParticipantForCertificate(query, eventIdOrName) {
         lokasiKegiatan: targetEvent.lokasiKegiatan,
         orientasiSertifikat: targetEvent.orientasiSertifikat,
         nomorSertifikat: targetEvent.nomorSertifikat,
-        kriteriaUnduhSertifikat: targetEvent.kriteriaUnduhSertifikat,
+        modulEticketPresensi: targetEvent.modulEticketPresensi,
+        kriteriaUnduhSertifikat: isEticketEnabled ? targetEvent.kriteriaUnduhSertifikat : "SEMUA",
         layoutSertifikat: targetEvent.layoutSertifikat
       }
     };

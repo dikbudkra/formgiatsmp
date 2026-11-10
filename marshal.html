@@ -1194,10 +1194,11 @@
           <h3 class="h4 fw-bold text-dark mb-0"><i class="bi bi-award-fill text-warning me-1"></i>Pengaturan E-Sertifikat</h3>
           <p class="text-muted small mb-0">Kegiatan: <strong id="certEventName">-</strong></p>
         </div>
-        <div class="d-flex gap-2 flex-wrap">
+        <div class="d-flex gap-2 flex-wrap align-items-center">
+          <span id="certAutoSaveIndicator" class="badge bg-light text-muted border px-2.5 py-1.5 fw-normal small"><i class="bi bi-cloud-check text-success me-1"></i>Tersimpan otomatis</span>
           <button class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold" onclick="certPreviewSample()"><i class="bi bi-eye-fill me-1"></i>Tes Pratinjau Sampel</button>
           <button class="btn btn-success btn-sm rounded-pill px-3 fw-bold" onclick="certDownloadAllZip()"><i class="bi bi-file-earmark-zip-fill me-1"></i>Unduh Semua (ZIP)</button>
-          <button class="btn btn-primary btn-sm rounded-pill px-3 fw-bold" id="btnCertSave" onclick="certSaveSettings()"><i class="bi bi-check-circle-fill me-1"></i>Simpan Pengaturan</button>
+          <button class="btn btn-primary btn-sm rounded-pill px-3 fw-bold d-none" id="btnCertSave" onclick="certSaveSettings()"><i class="bi bi-check-circle-fill me-1"></i>Simpan Pengaturan</button>
         </div>
       </div>
 
@@ -1207,18 +1208,21 @@
           <div class="card card-modern p-3 mb-3">
             <h6 class="fw-bold mb-3"><i class="bi bi-toggles me-1 text-primary"></i>Saklar Kontrol</h6>
             <div class="form-check form-switch mb-2">
-              <input class="form-check-input" type="checkbox" id="certSwModul">
+              <input class="form-check-input" type="checkbox" id="certSwModul" onchange="certAutoSave()">
               <label class="form-check-label small fw-bold" for="certSwModul">Modul Sertifikat (Card tampil di publik)</label>
             </div>
             <div class="form-check form-switch mb-2">
-              <input class="form-check-input" type="checkbox" id="certSwUnduh">
+              <input class="form-check-input" type="checkbox" id="certSwUnduh" onchange="certAutoSave()">
               <label class="form-check-label small fw-bold" for="certSwUnduh">Buka Unduh Sertifikat untuk Peserta</label>
             </div>
             <label class="form-label small fw-bold mt-2 mb-1">Kriteria Peserta yang Berhak</label>
-            <select class="form-select form-select-sm mb-2" id="certKriteria">
-              <option value="HADIR">Hanya Peserta HADIR</option>
-              <option value="SEMUA">Semua Peserta Terdaftar</option>
+            <select class="form-select form-select-sm mb-1" id="certKriteria" onchange="certAutoSave()">
+              <option value="HADIR" id="optCertKriteriaHadir">Hanya Peserta HADIR</option>
+              <option value="SEMUA" id="optCertKriteriaSemua">Semua Peserta Terdaftar</option>
             </select>
+            <div id="certKriteriaHint" class="small text-muted mb-2 d-none" style="font-size: 0.75rem;">
+              <i class="bi bi-info-circle text-primary me-1"></i>Kegiatan ini tidak memakai presensi QR, kriteria otomatis berlaku untuk seluruh peserta terdaftar.
+            </div>
             <label class="form-label small fw-bold mt-2 mb-1">Orientasi Kertas (A4)</label>
             <div class="btn-group w-100" role="group">
               <input type="radio" class="btn-check" name="certOrient" id="certOrientL" value="LANDSCAPE" checked onchange="certOnOrientChange()">
@@ -1227,7 +1231,7 @@
               <label class="btn btn-outline-primary btn-sm" for="certOrientP"><i class="bi bi-file-earmark me-1"></i>Portrait</label>
             </div>
             <label class="form-label small fw-bold mt-3 mb-1">Nomor Sertifikat (1 nomor bersama)</label>
-            <input type="text" class="form-control form-control-sm" id="certNomor" placeholder="Contoh: 421.3 / 125 / SMP / 2026" oninput="certRender()">
+            <input type="text" class="form-control form-control-sm" id="certNomor" placeholder="Contoh: 421.3 / 125 / SMP / 2026" oninput="certRender(); certDebounceAutoSave(600);">
           </div>
 
           <div class="card card-modern p-3 mb-3">
@@ -1565,6 +1569,12 @@
                   <div class="form-check form-switch">
                     <input class="form-check-input" type="checkbox" id="switchModulEticket" checked>
                     <label class="form-check-label" for="switchModulEticket">E-Ticket &amp; Presensi QR</label>
+                  </div>
+                </div>
+                <div class="col-6 col-md-4">
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="switchModulSertifikatModal">
+                    <label class="form-check-label" for="switchModulSertifikatModal">Modul E-Sertifikat</label>
                   </div>
                 </div>
               </div>
@@ -3014,6 +3024,8 @@
       handleSwitchModulKaosChange();
       const swEticket = document.getElementById("switchModulEticket");
       if (swEticket) swEticket.checked = true;
+      const swCert = document.getElementById("switchModulSertifikatModal");
+      if (swCert) swCert.checked = false;
       const modal = new bootstrap.Modal(document.getElementById("modalKegiatan"));
       modal.show();
     }
@@ -3041,6 +3053,8 @@
       document.getElementById("switchModulKesehatan").checked = (ev.modulKesehatan === "ON");
       const swEticket = document.getElementById("switchModulEticket");
       if (swEticket) swEticket.checked = (ev.modulEticketPresensi !== "OFF");
+      const swCert = document.getElementById("switchModulSertifikatModal");
+      if (swCert) swCert.checked = (ev.modulSertifikat === "ON");
 
       const modal = new bootstrap.Modal(document.getElementById("modalKegiatan"));
       modal.show();
@@ -3064,7 +3078,8 @@
         modulGender: document.getElementById("switchModulGender").checked ? "ON" : "OFF",
         modulKontakDarurat: document.getElementById("switchModulDarurat").checked ? "ON" : "OFF",
         modulKesehatan: document.getElementById("switchModulKesehatan").checked ? "ON" : "OFF",
-        modulEticketPresensi: document.getElementById("switchModulEticket")?.checked ? "ON" : "OFF"
+        modulEticketPresensi: document.getElementById("switchModulEticket")?.checked ? "ON" : "OFF",
+        modulSertifikat: document.getElementById("switchModulSertifikatModal")?.checked ? "ON" : "OFF"
       };
 
       Swal.fire({
@@ -4071,6 +4086,7 @@
       certState.guideV = false;
       certState.guideH = false;
       certRender();
+      certDebounceAutoSave(400);
     }
 
     function certSelect(k) {
@@ -4097,6 +4113,7 @@
       certSyncControls();
       if (prop === "fontFamily") await CertEngine.ensureFonts(certState.layout);
       certRender();
+      certDebounceAutoSave(500);
     }
 
     async function certToggleBold() {
@@ -4105,16 +4122,19 @@
       certSyncControls();
       await CertEngine.ensureFonts(certState.layout);
       certRender();
+      certAutoSave();
     }
 
     function certCenterSelected() {
       certState.layout[certState.selected].xPct = 50;
       certRender();
+      certAutoSave();
     }
 
     function certOnOrientChange() {
       certSetupCanvas();
       certRender();
+      certAutoSave();
     }
 
     async function certLoad(force) {
@@ -4144,7 +4164,27 @@
 
         document.getElementById("certSwModul").checked = ev.modulSertifikat === "ON";
         document.getElementById("certSwUnduh").checked = ev.statusUnduhSertifikat === "BUKA";
-        document.getElementById("certKriteria").value = ev.kriteriaUnduhSertifikat === "SEMUA" ? "SEMUA" : "HADIR";
+        
+        // Logika Presensi QR vs Kriteria Unduh
+        const isEticketOn = (ev.modulEticketPresensi !== "OFF");
+        const optHadir = document.getElementById("optCertKriteriaHadir");
+        const hintEl = document.getElementById("certKriteriaHint");
+        if (!isEticketOn) {
+          if (optHadir) {
+            optHadir.disabled = true;
+            optHadir.textContent = "Hanya Peserta HADIR (Nonaktif - Presensi QR OFF)";
+          }
+          document.getElementById("certKriteria").value = "SEMUA";
+          if (hintEl) hintEl.classList.remove("d-none");
+        } else {
+          if (optHadir) {
+            optHadir.disabled = false;
+            optHadir.textContent = "Hanya Peserta HADIR";
+          }
+          document.getElementById("certKriteria").value = (ev.kriteriaUnduhSertifikat === "SEMUA" ? "SEMUA" : "HADIR");
+          if (hintEl) hintEl.classList.add("d-none");
+        }
+
         document.getElementById(ev.orientasiSertifikat === "PORTRAIT" ? "certOrientP" : "certOrientL").checked = true;
         document.getElementById("certNomor").value = ev.nomorSertifikat || "";
 
@@ -4165,6 +4205,52 @@
         console.error(err);
         Swal.fire({ icon: "error", title: "Gangguan Koneksi", text: "Gagal memuat data sertifikat." });
         return false;
+      }
+    }
+
+    let _certAutoSaveTimer = null;
+    function certDebounceAutoSave(ms = 600) {
+      if (_certAutoSaveTimer) clearTimeout(_certAutoSaveTimer);
+      _certAutoSaveTimer = setTimeout(() => certAutoSave(), ms);
+    }
+
+    async function certAutoSave() {
+      if (!certState.event) return;
+      const ind = document.getElementById("certAutoSaveIndicator");
+      if (ind) {
+        ind.className = "badge bg-primary-subtle text-primary border border-primary-subtle px-2.5 py-1.5 fw-normal small";
+        ind.innerHTML = '<span class="spinner-border spinner-border-sm me-1" style="width: 11px; height: 11px;"></span>Menyimpan...';
+      }
+
+      const certConfig = {
+        eventId: certState.event.idKegiatan,
+        modulSertifikat: document.getElementById("certSwModul").checked ? "ON" : "OFF",
+        statusUnduhSertifikat: document.getElementById("certSwUnduh").checked ? "BUKA" : "KUNCI",
+        kriteriaUnduhSertifikat: document.getElementById("certKriteria").value,
+        orientasiSertifikat: certOrient(),
+        nomorSertifikat: document.getElementById("certNomor").value.trim(),
+        layoutSertifikat: certState.layout
+      };
+
+      try {
+        const res = await callGasApi("saveCertificateSettings", { pin: currentAdminPin, certConfig });
+        if (res && res.success) {
+          Object.assign(certState.event, certConfig);
+          if (ind) {
+            ind.className = "badge bg-light text-success border px-2.5 py-1.5 fw-normal small";
+            ind.innerHTML = '<i class="bi bi-cloud-check text-success me-1"></i>Tersimpan otomatis';
+          }
+        } else {
+          if (ind) {
+            ind.className = "badge bg-danger-subtle text-danger border px-2.5 py-1.5 fw-normal small";
+            ind.innerHTML = '<i class="bi bi-exclamation-triangle text-danger me-1"></i>Gagal menyimpan';
+          }
+        }
+      } catch (e) {
+        if (ind) {
+          ind.className = "badge bg-warning-subtle text-dark border px-2.5 py-1.5 fw-normal small";
+          ind.innerHTML = '<i class="bi bi-cloud-slash text-warning me-1"></i>Offline';
+        }
       }
     }
 

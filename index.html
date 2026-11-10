@@ -411,64 +411,66 @@
       </div>
     </div>
 
-    <!-- CARD KHUSUS E-SERTIFIKAT (HANYA MUNCUL JIKA SAKLAR MODUL SERTIFIKAT = ON DI MARSHAL) -->
-    <div id="sectionCardSertifikatPublik" class="mt-4 d-none">
-      <div class="card card-modern p-4 p-md-5 border-warning shadow-sm" style="background: linear-gradient(135deg, #ffffff 0%, #fffdf5 100%); border-width: 2px;">
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
-          <div class="d-flex align-items-center gap-2.5">
-            <div class="bg-warning-subtle text-warning-emphasis p-2.5 rounded-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
-              <i class="bi bi-award-fill fs-3 text-warning"></i>
+    <!-- SLOT HOME E-SERTIFIKAT (HANYA MUNCUL DI BERANDA JIKA SAKLAR MODUL SERTIFIKAT = ON DI MARSHAL) -->
+    <div id="slotCertHome">
+      <div id="sectionCardSertifikatPublik" class="mt-4 d-none">
+        <div class="card card-modern p-4 p-md-5 border-warning shadow-sm" style="background: linear-gradient(135deg, #ffffff 0%, #fffdf5 100%); border-width: 2px;">
+          <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-3">
+            <div class="d-flex align-items-center gap-2.5">
+              <div class="bg-warning-subtle text-warning-emphasis p-2.5 rounded-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                <i class="bi bi-award-fill fs-3 text-warning"></i>
+              </div>
+              <div>
+                <span class="badge bg-warning text-dark px-2.5 py-0.5 rounded-pill fw-bold text-uppercase" style="font-size: 0.7rem;">Layanan Mandiri</span>
+                <h3 class="h4 fw-bold text-dark mb-0">Unduh E-Sertifikat Peserta</h3>
+              </div>
             </div>
+            <div id="certEventSelectorWrapper" class="d-none">
+              <label class="form-label small fw-bold text-muted mb-1">Pilih Kegiatan:</label>
+              <select class="form-select form-select-sm" id="selectCertEvent" onchange="onCertEventSelectChange(this.value)">
+              </select>
+            </div>
+          </div>
+
+          <p class="text-secondary small mb-3" id="lblCertEventInfo">
+            Fasilitas unduh e-sertifikat berformat PDF A4 untuk peserta kegiatan kedinasan Bidang SMP DISDIKBUD Karanganyar.
+          </p>
+
+          <!-- KONDISI A: JIKA SAKLAR UNDUH DARI MARSHAL MASIH KUNCI/TUTUP -->
+          <div id="boxCertLockedNotice" class="alert alert-warning border-warning d-flex align-items-center gap-3 mb-0 rounded-3 shadow-sm d-none">
+            <i class="bi bi-lock-fill fs-2 text-warning flex-shrink-0"></i>
             <div>
-              <span class="badge bg-warning text-dark px-2.5 py-0.5 rounded-pill fw-bold text-uppercase" style="font-size: 0.7rem;">Layanan Mandiri</span>
-              <h3 class="h4 fw-bold text-dark mb-0">Unduh E-Sertifikat Resmi Peserta</h3>
+              <strong class="d-block text-dark fw-bold mb-0.5">Pengunduhan E-Sertifikat Belum Dibuka</strong>
+              <span class="small text-secondary">E-Sertifikat untuk kegiatan <strong id="lblCertLockedEventName">-</strong> saat ini belum dibuka oleh panitia. Tombol unduh akan otomatis aktif setelah kegiatan selesai dan saklar dibuka oleh panitia.</span>
             </div>
           </div>
-          <div id="certEventSelectorWrapper" class="d-none">
-            <label class="form-label small fw-bold text-muted mb-1">Pilih Kegiatan:</label>
-            <select class="form-select form-select-sm" id="selectCertEvent" onchange="onCertEventSelectChange(this.value)">
-            </select>
-          </div>
-        </div>
 
-        <p class="text-secondary small mb-3" id="lblCertEventInfo">
-          Fasilitas unduh e-sertifikat resmi berformat PDF A4 untuk peserta kegiatan kedinasan Bidang SMP DISDIKBUD Karanganyar.
-        </p>
-
-        <!-- KONDISI A: JIKA SAKLAR UNDUH DARI MARSHAL MASIH KUNCI/TUTUP -->
-        <div id="boxCertLockedNotice" class="alert alert-warning border-warning d-flex align-items-center gap-3 mb-0 rounded-3 shadow-sm d-none">
-          <i class="bi bi-lock-fill fs-2 text-warning flex-shrink-0"></i>
-          <div>
-            <strong class="d-block text-dark fw-bold mb-0.5">Pengunduhan E-Sertifikat Belum Dibuka</strong>
-            <span class="small text-secondary">E-Sertifikat untuk kegiatan <strong id="lblCertLockedEventName">-</strong> saat ini belum dibuka oleh panitia. Tombol unduh akan otomatis aktif setelah kegiatan selesai dan saklar dibuka resmi oleh panitia.</span>
-          </div>
-        </div>
-
-        <!-- KONDISI B: JIKA SAKLAR UNDUH SUDAH BUKA/HIDUP DARI MARSHAL -->
-        <div id="boxCertOpenDownload" class="d-none">
-          <div class="p-3 p-md-4 bg-white rounded-3 border">
-            <label class="form-label fw-bold text-dark small mb-1" for="inputCertQuery">
-              <i class="bi bi-search me-1 text-primary"></i> Cari Data Sertifikat Anda
-            </label>
-            <p class="text-muted small mb-3">Masukkan <strong>NIP</strong>, <strong>Nomor WhatsApp</strong>, atau <strong>Nama Lengkap</strong> yang Anda gunakan saat mendaftar:</p>
-            
-            <form onsubmit="handleSearchCertificate(event)" class="row g-2 align-items-center">
-              <div class="col-md-9 col-12">
-                <div class="input-group">
-                  <span class="input-group-text bg-light text-muted"><i class="bi bi-person-bounding-box"></i></span>
-                  <input type="text" class="form-control" id="inputCertQuery" placeholder="Contoh: 19850101... atau 08123456789 atau Nama" required>
+          <!-- KONDISI B: JIKA SAKLAR UNDUH SUDAH BUKA/HIDUP DARI MARSHAL -->
+          <div id="boxCertOpenDownload" class="d-none">
+            <div class="p-3 p-md-4 bg-white rounded-3 border">
+              <label class="form-label fw-bold text-dark small mb-1" for="inputCertQuery">
+                <i class="bi bi-search me-1 text-primary"></i> Cari Data Sertifikat Anda
+              </label>
+              <p class="text-muted small mb-3">Masukkan <strong>NIP</strong>, <strong>Nomor WhatsApp</strong>, atau <strong>Nama Lengkap</strong> yang Anda gunakan saat mendaftar:</p>
+              
+              <form onsubmit="handleSearchCertificate(event)" class="row g-2 align-items-center">
+                <div class="col-md-9 col-12">
+                  <div class="input-group">
+                    <span class="input-group-text bg-light text-muted"><i class="bi bi-person-bounding-box"></i></span>
+                    <input type="text" class="form-control" id="inputCertQuery" placeholder="Contoh: 19850101... atau 08123456789 atau Nama" required>
+                  </div>
                 </div>
-              </div>
-              <div class="col-md-3 col-12">
-                <button type="submit" class="btn btn-primary w-100 fw-bold rounded-pill" id="btnSubmitCertSearch">
-                  <i class="bi bi-search me-1"></i> Cari Sertifikat
-                </button>
-              </div>
-            </form>
-          </div>
+                <div class="col-md-3 col-12">
+                  <button type="submit" class="btn btn-primary w-100 fw-bold rounded-pill" id="btnSubmitCertSearch">
+                    <i class="bi bi-search me-1"></i> Cari Sertifikat
+                  </button>
+                </div>
+              </form>
+            </div>
 
-          <!-- HASIL PENCARIAN SERTIFIKAT -->
-          <div id="containerCertResults" class="mt-3 d-none"></div>
+            <!-- HASIL PENCARIAN SERTIFIKAT -->
+            <div id="containerCertResults" class="mt-3 d-none"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -484,6 +486,18 @@
         <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 rounded-pill fw-semibold small" id="badgeFormStatus">
           Status Form: BUKA
         </span>
+      </div>
+
+      <!-- TOMBOL RAMPING E-SERTIFIKAT (HANYA MUNCUL DI FORMULIR JIKA KEGIATAN MENGAKTIFKAN MODUL SERTIFIKAT) -->
+      <div id="wrapperFormCertCompact" class="mb-3 d-none">
+        <div class="d-flex justify-content-end">
+          <button type="button" class="btn btn-outline-warning btn-sm rounded-pill px-3.5 py-1.5 fw-bold text-dark d-inline-flex align-items-center gap-1.5 shadow-sm" id="btnToggleFormCert" onclick="toggleFormCertDrawer()">
+            <i class="bi bi-award-fill text-warning"></i>
+            <span>Unduh E-Sertifikat Kegiatan Ini</span>
+            <i class="bi bi-chevron-down ms-1" id="iconToggleFormCert"></i>
+          </button>
+        </div>
+        <div id="drawerFormCert" class="mt-2.5 d-none"></div>
       </div>
 
       <!-- Banner Header Info Kegiatan -->
@@ -1161,6 +1175,21 @@
      * Kembali ke Beranda Kartu Kegiatan
      */
     function showDashboardCards() {
+      // Kembalikan card sertifikat ke posisi semula di beranda
+      const slotHome = document.getElementById("slotCertHome");
+      const cardSec = document.getElementById("sectionCardSertifikatPublik");
+      if (slotHome && cardSec) {
+        slotHome.appendChild(cardSec);
+        if (availableCertificateEvents && availableCertificateEvents.length > 0) {
+          cardSec.classList.remove("d-none");
+        } else {
+          cardSec.classList.add("d-none");
+        }
+      }
+      closeFormCertDrawer();
+      const wrapCompact = document.getElementById("wrapperFormCertCompact");
+      if (wrapCompact) wrapCompact.classList.add("d-none");
+
       document.getElementById("sectionMultiEventSelector").classList.remove("d-none");
       document.getElementById("boxFormAktif").classList.add("d-none");
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1184,12 +1213,15 @@
       document.getElementById("formEventIdBadge").textContent = ev.idKegiatan;
       document.getElementById("formEventTitle").textContent = ev.namaKegiatan;
       document.getElementById("formEventSubtitle").textContent = ev.subKegiatan || "Bidang SMP DISDIKBUD Karanganyar";
-      document.getElementById("formEventDate").textContent = ev.tanggalPelaksanaan || "Jadwal Resmi";
+      document.getElementById("formEventDate").textContent = ev.tanggalPelaksanaan || "Jadwal Pelaksanaan";
       document.getElementById("formEventLocation").textContent = ev.lokasiKegiatan || "Kabupaten Karanganyar";
       document.getElementById("formEventQuota").textContent = (ev.kuotaPerSekolah === "bebas" ? "Bebas" : ev.kuotaPerSekolah + " Peserta");
 
       // Terapkan Saklar Modul Dinamis
       applyDynamicModules(ev);
+
+      // Siapkan Modul Sertifikat Ramping di dalam formulir
+      setupFormCertCompact(ev);
 
       // Buka Tampilan Form
       document.getElementById("sectionMultiEventSelector").classList.add("d-none");
@@ -1205,6 +1237,64 @@
       } catch (e) {
         console.warn("Gagal update registeredSchoolList:", e);
       }
+    }
+
+    function setupFormCertCompact(ev) {
+      const wrapCompact = document.getElementById("wrapperFormCertCompact");
+      const drawer = document.getElementById("drawerFormCert");
+      const cardSec = document.getElementById("sectionCardSertifikatPublik");
+      if (!wrapCompact || !drawer || !cardSec) return;
+
+      const isCertOn = (ev && ev.modulSertifikat === "ON");
+      if (isCertOn) {
+        wrapCompact.classList.remove("d-none");
+        drawer.classList.add("d-none");
+        const icon = document.getElementById("iconToggleFormCert");
+        if (icon) icon.className = "bi bi-chevron-down ms-1";
+
+        // Pindahkan card sertifikat ke dalam drawer form
+        drawer.appendChild(cardSec);
+        activeCertEvent = ev;
+        updateCertCardState(ev);
+
+        // Bersihkan hasil pencarian sebelumnya
+        const qInput = document.getElementById("inputCertQuery");
+        if (qInput) qInput.value = "";
+        const resBox = document.getElementById("containerCertResults");
+        if (resBox) {
+          resBox.innerHTML = "";
+          resBox.classList.add("d-none");
+        }
+      } else {
+        wrapCompact.classList.add("d-none");
+        drawer.classList.add("d-none");
+        cardSec.classList.add("d-none");
+      }
+    }
+
+    function toggleFormCertDrawer() {
+      const drawer = document.getElementById("drawerFormCert");
+      const icon = document.getElementById("iconToggleFormCert");
+      const cardSec = document.getElementById("sectionCardSertifikatPublik");
+      if (!drawer) return;
+
+      const isHidden = drawer.classList.contains("d-none");
+      if (isHidden) {
+        drawer.classList.remove("d-none");
+        if (cardSec) cardSec.classList.remove("d-none");
+        if (icon) icon.className = "bi bi-chevron-up ms-1";
+        drawer.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      } else {
+        drawer.classList.add("d-none");
+        if (icon) icon.className = "bi bi-chevron-down ms-1";
+      }
+    }
+
+    function closeFormCertDrawer() {
+      const drawer = document.getElementById("drawerFormCert");
+      const icon = document.getElementById("iconToggleFormCert");
+      if (drawer) drawer.classList.add("d-none");
+      if (icon) icon.className = "bi bi-chevron-down ms-1";
     }
 
     /**
@@ -2611,10 +2701,20 @@
               </div>
               <div class="d-flex flex-column gap-2">
                 ${res.participants.map((p, idx) => {
+                  const isEticketOn = (p.isEticketEnabled !== false) && (window._activeCertMeta?.modulEticketPresensi !== "OFF");
                   const isHadir = (String(p.statusKehadiran).toUpperCase() === "HADIR");
-                  const badgeHadir = isHadir
-                    ? '<span class="badge bg-success"><i class="bi bi-check2 me-1"></i>HADIR</span>'
-                    : '<span class="badge bg-secondary">BELUM HADIR</span>';
+                  
+                  // Hanya tampilkan badge kehadiran jika kegiatan menggunakan modul presensi
+                  const badgeHadir = isEticketOn
+                    ? (isHadir
+                        ? '<span class="badge bg-success"><i class="bi bi-check2 me-1"></i>HADIR</span>'
+                        : '<span class="badge bg-secondary">BELUM HADIR</span>')
+                    : '';
+
+                  // Icon QR hanya tampil jika kegiatan menggunakan E-Ticket
+                  const regIdHtml = isEticketOn
+                    ? `<span class="font-monospace"><i class="bi bi-qr-code me-1"></i>${escapeHtml(p.regId || '-')}</span>`
+                    : `<span class="font-monospace"><i class="bi bi-card-text me-1"></i>${escapeHtml(p.regId || '-')}</span>`;
 
                   return `
                     <div class="card p-3 border rounded-3 bg-light text-start">
@@ -2627,7 +2727,7 @@
                           <div class="text-secondary small">
                             <span><i class="bi bi-building me-1"></i>${escapeHtml(p.namaSekolah || '-')}</span>
                             <span class="mx-1.5">&bull;</span>
-                            <span class="font-monospace"><i class="bi bi-qr-code me-1"></i>${escapeHtml(p.regId || '-')}</span>
+                            ${regIdHtml}
                           </div>
                         </div>
                         <div class="flex-shrink-0">
@@ -2677,7 +2777,7 @@
 
       Swal.fire({
         title: "Menerbitkan E-Sertifikat...",
-        text: "Sedang memuat blanko desain resmi dan merender lembar sertifikat...",
+        text: "Sedang memuat blanko desain dan merender lembar sertifikat...",
         allowOutsideClick: false,
         didOpen: () => Swal.showLoading()
       });
@@ -2726,6 +2826,21 @@
         const fileName = `Sertifikat_${CertEngine.safeName(p.namaLengkap)}.pdf`;
         doc.save(fileName);
 
+        // Permasalahan 1: Reset otomatis pasca-unduh (bersihkan input dan sembunyikan hasil pencarian)
+        const qInput = document.getElementById("inputCertQuery");
+        if (qInput) qInput.value = "";
+        const resultsContainer = document.getElementById("containerCertResults");
+        if (resultsContainer) {
+          resultsContainer.innerHTML = "";
+          resultsContainer.classList.add("d-none");
+        }
+        window._searchedCertList = [];
+
+        // Permasalahan 2 tambahan: Jika di dalam formulir pendaftaran, tutup kembali (ramping lagi)
+        if (!document.getElementById("boxFormAktif").classList.contains("d-none")) {
+          closeFormCertDrawer();
+        }
+
         Swal.close();
         Swal.fire({
           toast: true,
@@ -2733,7 +2848,7 @@
           icon: "success",
           title: "E-Sertifikat berhasil diunduh!",
           showConfirmButton: false,
-          timer: 3000
+          timer: 2500
         });
       } catch (err) {
         console.error("Gagal download sertifikat:", err);
