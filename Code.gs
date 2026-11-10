@@ -290,6 +290,13 @@ function JALANKAN_SETUP_DATABASE_MULTI_KEGIATAN() {
 }
 
 function ensureDatabaseReady_() {
+  const cache = CacheService.getScriptCache();
+  try {
+    if (cache.get("db_ready_v1")) {
+      return;
+    }
+  } catch (e) {}
+
   const ss = getSpreadsheet_();
 
   // 1. Sheet Config (Penyimpanan Key-Value Dinamis)
@@ -438,6 +445,10 @@ function ensureDatabaseReady_() {
       sheetMaster.appendRow(["'" + s.npsn, s.nama, s.status, s.kecamatan]);
     });
   }
+
+  try {
+    cache.put("db_ready_v1", "true", 21600);
+  } catch (e) {}
 }
 
 /**
@@ -453,16 +464,16 @@ function ensureDatabaseReady_() {
  */
 function doGet(e) {
   try {
-    ensureDatabaseReady_();
-  } catch (err) {
-    Logger.log("doGet ensureDatabase notice: " + err.toString());
-  }
-
-  try {
     const params = (e && e.parameter) ? e.parameter : {};
     const action = params.action || "";
 
     if (!action) {
+      try {
+        ensureDatabaseReady_();
+      } catch (err) {
+        Logger.log("doGet ensureDatabase notice: " + err.toString());
+      }
+
       // Direct browser visit to GAS Web App URL
       const info = {
         success: true,
@@ -1898,7 +1909,6 @@ function getCertificateAssets(eventIdOrName) {
  */
 function searchParticipantForCertificate(query, eventIdOrName) {
   try {
-    ensureDatabaseReady_();
     const cleanQ = String(query || "").trim().toLowerCase();
     if (!cleanQ || cleanQ.length < 3) {
       return { success: false, message: "Ketik minimal 3 karakter (NIP, Nomor WhatsApp, atau Nama Lengkap) untuk mencari sertifikat Anda." };
@@ -2582,7 +2592,6 @@ function submitRegistration(formData) {
  */
 function searchParticipantForBiodata(query, targetEventIdOrName) {
   try {
-    ensureDatabaseReady_();
     const cleanQ = String(query || "").trim().toLowerCase();
     if (!cleanQ || cleanQ.length < 3) {
       return { success: false, message: "Ketik minimal 3 karakter (NIP, No HP/WA, Nama, atau ID Registrasi) untuk mencari data." };
@@ -2598,14 +2607,6 @@ function searchParticipantForBiodata(query, targetEventIdOrName) {
     const headerRow = data[0].map(h => String(h).trim().toLowerCase());
     const hasKegiatanCol = headerRow.includes("nama kegiatan");
     const offset = hasKegiatanCol ? 1 : 0;
-
-    // Ambil master kegiatan untuk lookup tanggal dan lokasi pelaksanaan
-    const allEvents = getAllEventsForAdminInternal_();
-    const eventMap = {};
-    allEvents.forEach(ev => {
-      if (ev.namaKegiatan) eventMap[ev.namaKegiatan.toLowerCase().trim()] = ev;
-      if (ev.idKegiatan) eventMap[ev.idKegiatan.toLowerCase().trim()] = ev;
-    });
 
     const matches = [];
     const qDigitsOnly = cleanQ.replace(/[^0-9]/g, "");
@@ -2632,23 +2633,37 @@ function searchParticipantForBiodata(query, targetEventIdOrName) {
       );
 
       if (isMatch) {
-        const evData = eventMap[rowKeg.toLowerCase()] || {};
         matches.push({
           regId: regId,
-          namaKegiatan: rowKeg || (evData.namaKegiatan || "Kegiatan Kedinasan"),
+          namaKegiatan: rowKeg,
           namaLengkap: namaLengkap,
           nip: nip,
           pangkat: pangkat,
           golongan: golongan,
           namaSekolah: namaSekolah,
           jabatan: jabatan,
-          noWa: noWa,
-          tanggalPelaksanaan: evData.tanggalPelaksanaan || "-",
-          lokasiKegiatan: evData.lokasiKegiatan || "Kabupaten Karanganyar"
+          noWa: noWa
         });
 
         if (matches.length >= 10) break;
       }
+    }
+
+    // Hanya ambil data master kegiatan jika ada peserta yang cocok ditemukan
+    if (matches.length > 0) {
+      const allEvents = getAllEventsForAdminInternal_();
+      const eventMap = {};
+      allEvents.forEach(ev => {
+        if (ev.namaKegiatan) eventMap[ev.namaKegiatan.toLowerCase().trim()] = ev;
+        if (ev.idKegiatan) eventMap[ev.idKegiatan.toLowerCase().trim()] = ev;
+      });
+
+      matches.forEach(p => {
+        const evData = eventMap[(p.namaKegiatan || "").toLowerCase().trim()] || {};
+        p.namaKegiatan = p.namaKegiatan || evData.namaKegiatan || "Kegiatan Kedinasan";
+        p.tanggalPelaksanaan = evData.tanggalPelaksanaan || "-";
+        p.lokasiKegiatan = evData.lokasiKegiatan || "Kabupaten Karanganyar";
+      });
     }
 
     return {
