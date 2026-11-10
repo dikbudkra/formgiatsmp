@@ -2410,46 +2410,64 @@
 
       const eventsHtml = allEventsList.map(ev => {
         const isActive = ev.idKegiatan === activeEventId;
-        const isBuka = ev.statusForm === "BUKA";
+        const isBuka = (ev.statusForm === "BUKA");
+        const tglClean = String(ev.tanggalPelaksanaan || '-').replace(/[|]/g, '').trim();
+        const lokClean = String(ev.lokasiKegiatan || '-').replace(/[|]/g, '').trim();
+
         return `
-          <div class="card p-3 mb-2.5 text-start border rounded-3 event-card-picker ${isActive ? 'border-primary bg-primary-subtle shadow-sm' : 'border-light-subtle bg-white'}" 
-               style="cursor: pointer; transition: all 0.15s ease-in-out;"
+          <div class="card p-3 mb-2 text-start rounded-3 shadow-none ${isActive ? 'border-primary bg-primary-subtle' : 'border bg-white'}" 
+               style="cursor: pointer; border-width: ${isActive ? '2px' : '1px'} !important; transition: all 0.2s ease-in-out;"
+               onmouseover="if(!${isActive}) { this.style.borderColor='#0284c7'; this.style.backgroundColor='#f8fafc'; }"
+               onmouseout="if(!${isActive}) { this.style.borderColor='#dee2e6'; this.style.backgroundColor='#ffffff'; }"
                onclick="Swal.close(); handleEventSwitch('${escapeHtml(ev.idKegiatan)}');">
             <div class="d-flex align-items-center justify-content-between gap-3">
+              
+              <!-- Kolom Kiri: Info Kegiatan -->
               <div class="min-w-0 flex-grow-1">
-                <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
-                  <span class="fw-bold text-dark fs-6 text-truncate">${escapeHtml(ev.namaKegiatan)}</span>
-                  ${isActive ? '<span class="badge bg-primary text-white rounded-pill small"><i class="bi bi-check2-circle me-1"></i>Sedang Tampil</span>' : ''}
+                <div class="d-flex align-items-center gap-2 mb-1.5 flex-wrap">
+                  <span class="fw-bold text-dark fs-6" style="word-break: break-word; line-height: 1.35;">${escapeHtml(ev.namaKegiatan)}</span>
+                  ${isActive ? '<span class="badge bg-primary text-white rounded-pill px-2 py-0.5" style="font-size: 0.72rem;"><i class="bi bi-check2-circle me-1"></i>Sedang Tampil</span>' : ''}
                 </div>
-                <div class="text-muted small">
-                  <span class="me-2"><i class="bi bi-calendar3 me-1"></i>${escapeHtml(ev.tanggalPelaksanaan || '-')}</span>
-                  <span><i class="bi bi-geo-alt me-1"></i>${escapeHtml(ev.lokasiKegiatan || '-')}</span>
+                <div class="d-flex align-items-center gap-3 text-secondary small flex-wrap" style="font-size: 0.83rem;">
+                  <span><i class="bi bi-calendar3 me-1.5 text-primary"></i>${escapeHtml(tglClean || '-')}</span>
+                  <span><i class="bi bi-geo-alt-fill me-1.5 text-danger"></i>${escapeHtml(lokClean || '-')}</span>
                 </div>
               </div>
-              <div class="d-flex flex-column align-items-end gap-1.5 flex-shrink-0">
-                <span class="badge ${isBuka ? 'bg-success' : 'bg-danger'} rounded-pill">${ev.statusForm}</span>
-                <button type="button" class="btn btn-sm ${isActive ? 'btn-primary text-white' : 'btn-outline-primary'} rounded-pill px-3 py-1 small fw-semibold">
+
+              <!-- Kolom Kanan: Status & Tombol Aksi -->
+              <div class="d-flex flex-column align-items-end justify-content-center gap-1.5 flex-shrink-0" style="min-width: 95px;">
+                <span class="badge ${isBuka ? 'bg-success' : 'bg-danger'} rounded-pill px-2.5 py-1" style="font-size: 0.73rem;">
+                  <i class="bi ${isBuka ? 'bi-door-open-fill' : 'bi-door-closed-fill'} me-1"></i>${isBuka ? 'BUKA' : 'TUTUP'}
+                </span>
+                <button type="button" class="btn btn-sm ${isActive ? 'btn-primary text-white shadow-sm' : 'btn-outline-primary'} rounded-pill px-2.5 py-1 fw-semibold w-100" style="font-size: 0.78rem;">
                   <i class="bi bi-eye-fill me-1"></i>${isActive ? 'Aktif' : 'Tampilkan'}
                 </button>
               </div>
+
             </div>
           </div>
         `;
       }).join("");
 
       Swal.fire({
-        title: "Pilih Kegiatan",
+        title: `<div class="d-flex align-items-center justify-content-center gap-2 mb-0">
+                  <i class="bi bi-collection-play-fill text-primary fs-4"></i>
+                  <span class="fw-bold fs-5 text-dark">Pilih Kegiatan</span>
+                </div>`,
         html: `
-          <p class="text-muted small mb-3">Pilih kegiatan di bawah ini untuk menampilkan dashboard, presensi, dan rekap pesertanya:</p>
-          <div class="overflow-auto text-start px-1" style="max-height: 420px;">
+          <p class="text-secondary small mb-3 text-center">Pilih kegiatan di bawah ini untuk menampilkan dashboard, presensi, dan rekap pesertanya:</p>
+          <div class="d-flex flex-column text-start px-1" style="max-height: 60vh; overflow-y: auto; overflow-x: hidden;">
             ${eventsHtml}
           </div>
         `,
         showConfirmButton: false,
         showCancelButton: true,
-        cancelButtonText: "Tutup",
-        cancelButtonColor: "#6c757d",
-        width: "560px"
+        cancelButtonText: '<i class="bi bi-x-circle me-1"></i> Tutup',
+        cancelButtonColor: "#64748b",
+        width: "600px",
+        customClass: {
+          popup: 'rounded-4 shadow-lg border-0'
+        }
       });
     }
 
