@@ -2119,6 +2119,9 @@
     let html5QrScanner = null;
     let availableCameras = [];
     let currentCameraIndex = 0;
+    let isProcessingScan = false;
+    let lastScannedText = "";
+    let lastScannedTime = 0;
 
     /**
      * Helper API Asinkron (Mengutamakan GET untuk menghindari batasan POST Google Apps Script)
@@ -2444,7 +2447,7 @@
     /**
      * Memuat Data Dashboard Awal
      */
-    async function loadDashboardInitial(showLoadingModal = false) {
+    async function loadDashboardInitial(showLoadingModal = false, targetEvId = null) {
       if (showLoadingModal) {
         Swal.fire({
           title: "Memuat Dashboard Panitia...",
@@ -2455,13 +2458,22 @@
       }
 
       try {
-        const res = await callGasApi("getAdminDashboard", { pin: currentAdminPin });
+        const reqEventId = targetEvId || activeEventId || currentDashboardData?.settings?.ID_KEGIATAN || "";
+        const apiPayload = { pin: currentAdminPin };
+        if (reqEventId) {
+          apiPayload.targetEventIdOrName = reqEventId;
+        }
+        const res = await callGasApi("getAdminDashboard", apiPayload);
         if (showLoadingModal) Swal.close();
         if (res && res.success) {
           currentDashboardData = res;
           allEventsList = res.allEvents || [];
           
-          populateTopbarEvents(allEventsList, res.settings?.ID_KEGIATAN);
+          if (res.settings?.ID_KEGIATAN) {
+            activeEventId = res.settings.ID_KEGIATAN;
+          }
+          
+          populateTopbarEvents(allEventsList, activeEventId);
           if (res.settings?.NAMA_KEGIATAN) {
             updateTopbarActiveEventDisplay(res.settings.NAMA_KEGIATAN, res.settings.STATUS_FORM);
             const lblAi = document.getElementById("lblAiEventActive");
@@ -2483,22 +2495,24 @@
       }
     }
 
-    async function refreshCurrentDashboard() {
+    async function refreshCurrentDashboard(showToast = true) {
       const btn = document.querySelector('button[onclick="refreshCurrentDashboard()"]');
       const icon = btn ? btn.querySelector('i') : null;
       if (icon) icon.classList.add("fa-spin");
       if (btn) btn.disabled = true;
 
       try {
-        await loadDashboardInitial();
-        Swal.fire({
-          toast: true,
-          position: 'top-end',
-          icon: 'success',
-          title: 'Data berhasil disegarkan!',
-          showConfirmButton: false,
-          timer: 1500
-        });
+        await loadDashboardInitial(false, activeEventId);
+        if (showToast) {
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: 'Data berhasil disegarkan!',
+            showConfirmButton: false,
+            timer: 1500
+          });
+        }
       } finally {
         if (icon) icon.classList.remove("fa-spin");
         if (btn) btn.disabled = false;
@@ -2798,7 +2812,7 @@
         html5QrScanner = new Html5Qrcode("qrReader");
       }
 
-      const config = { fps: 15, qrbox: { width: 250, height: 250 } };
+      const config = { fps: 10, qrbox: { width: 250, height: 250 } };
 
       try {
         if (cameraId) {
@@ -2883,43 +2897,68 @@
         });
     }
 
-    async function onQrScanSuccess(decodedText) {
+    async function onQrScanSuccess(decodedText, isManual = false) {
+      if (!decodedText) return;
+      const cleanId = String(decodedText).trim();
+      if (!cleanId) return;
+
+      const now = Date.now();
+      // Cegah scan berulang untuk kode QR yang sama dalam jeda waktu 3.5 detik (kecuali jika manual)
+      if (!isManual && cleanId === lastScannedText && (now - lastScannedTime < 3500)) {
+        return;
+      }
+
+      // Cegah eksekusi tumpang tindih jika sedang memproses scan sebelumnya
+      if (isProcessingScan) return;
+      isProcessingScan = true;
+      lastScannedText = cleanId;
+      lastScannedTime = now;
+
       try {
         const beep = document.getElementById("beepSuccess");
-        if (beep) beep.play();
+        if (beep) {
+          beep.currentTime = 0;
+          beep.play().catch(() => {});
+        }
       } catch (e) {}
 
       // Eksekusi Check-In ke Server
       try {
         const res = await callGasApi("checkInParticipant", {
-          regId: decodedText,
+          regId: cleanId,
           pin: currentAdminPin,
           eventId: activeEventId
         });
 
         if (res && res.success) {
           addRecentScanHistory(res.data, res.alreadyCheckedIn);
+          const namaTampil = res.data?.nama || res.data?.namaLengkap || cleanId;
           Swal.fire({
             toast: true,
             position: 'top-end',
             icon: res.alreadyCheckedIn ? 'warning' : 'success',
-            title: res.alreadyCheckedIn ? 'Sudah Presensi Sebelumnya' : 'Presensi Berhasil: ' + (res.data?.nama || decodedText),
+            title: res.alreadyCheckedIn ? `Sudah Presensi: ${namaTampil}` : `Presensi Berhasil: ${namaTampil}`,
             showConfirmButton: false,
             timer: 2000
           });
-          refreshCurrentDashboard();
+          refreshCurrentDashboard(false);
         } else {
-          Swal.fire({ title: "Gagal Presensi", text: res.message || "Peserta tidak ditemukan.", icon: "error" });
+          Swal.fire({ title: "Gagal Presensi", text: res?.message || "Peserta tidak ditemukan.", icon: "error" });
         }
       } catch (err) {
-        console.error(err);
+        console.error("Gagal onQrScanSuccess:", err);
+      } finally {
+        // Beri jeda 1.2 detik sebelum mengizinkan scan kartu/peserta berikutnya
+        setTimeout(() => {
+          isProcessingScan = false;
+        }, 1200);
       }
     }
 
     async function executeManualCheckIn() {
       const input = document.getElementById("inputManualCheckIn");
       const btn = document.querySelector('button[onclick="executeManualCheckIn()"]');
-      const val = input.value.trim();
+      const val = input ? input.value.trim() : "";
       if (!val) {
         Swal.fire({
           icon: "warning",
@@ -2935,8 +2974,8 @@
       }
 
       try {
-        await onQrScanSuccess(val);
-        input.value = "";
+        await onQrScanSuccess(val, true);
+        if (input) input.value = "";
       } finally {
         if (btn) {
           btn.disabled = false;
@@ -2949,13 +2988,17 @@
       const box = document.getElementById("recentCheckInList");
       if (!box) return;
 
+      const namaPeserta = data?.nama || data?.namaLengkap || 'Peserta';
+      const sekolahPeserta = data?.sekolah || data?.namaSekolah || '-';
+      const regIdPeserta = data?.regId || '-';
+
       const card = `
         <div class="p-2.5 rounded-3 border mb-2 ${already ? 'bg-warning-subtle border-warning' : 'bg-success-subtle border-success'}">
           <div class="d-flex justify-content-between align-items-center">
-            <strong class="text-dark">${escapeHtml(data?.nama || 'Peserta')}</strong>
+            <strong class="text-dark">${escapeHtml(namaPeserta)}</strong>
             <span class="badge ${already ? 'bg-warning text-dark' : 'bg-success text-white'}">${already ? 'Sudah Hadir' : 'Baru Hadir'}</span>
           </div>
-          <div class="small text-muted">${escapeHtml(data?.sekolah || '-')} | ID: ${escapeHtml(data?.regId || '-')}</div>
+          <div class="small text-muted">${escapeHtml(sekolahPeserta)} | ID: ${escapeHtml(regIdPeserta)}</div>
         </div>
       `;
       box.insertAdjacentHTML("afterbegin", card);
