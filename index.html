@@ -942,7 +942,7 @@
     /**
      * Memeriksa dan Menampilkan Pop-up Pengumuman Informasi Awal untuk Peserta
      */
-    function checkAndShowAnnouncementPopup(force = false) {
+    function checkAndShowAnnouncementPopup() {
       if (!currentSettings) return;
       const isAktif = (currentSettings.MODUL_POPUP_INFO === "ON");
       const judul = currentSettings.POPUP_INFO_JUDUL || "Pengumuman Penting Panitia";
@@ -951,11 +951,6 @@
       updateAnnouncementBanner(isAktif, judul, pesan);
 
       if (!isAktif || !pesan) return;
-
-      const sessionKey = "announcement_seen_" + (currentSettings.ID_KEGIATAN || "general");
-      if (!force && sessionStorage.getItem(sessionKey)) {
-        return;
-      }
 
       const formattedPesan = escapeHtml(pesan).replace(/\n/g, "<br>");
 
@@ -966,8 +961,7 @@
                 </div>`,
         html: `<div class="text-start bg-light p-3 rounded-3 border" style="font-size: 0.95rem; line-height: 1.6; max-height: 60vh; overflow-y: auto;">
                 ${formattedPesan}
-               </div>
-               <div class="text-muted small mt-2 fst-italic">Harap membaca informasi di atas dengan seksama sebelum mengisi formulir pendaftaran.</div>`,
+               </div>`,
         icon: "info",
         iconColor: "#0284c7",
         confirmButtonText: '<i class="bi bi-check2-circle me-1"></i> Saya Mengerti',
@@ -976,8 +970,6 @@
         customClass: {
           popup: 'rounded-4 shadow-lg border-0'
         }
-      }).then(() => {
-        sessionStorage.setItem(sessionKey, "true");
       });
     }
 
