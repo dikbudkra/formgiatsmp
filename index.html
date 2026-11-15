@@ -598,10 +598,38 @@
           <input type="hidden" id="selectedSchoolStatus" name="statusSekolah">
           <input type="hidden" id="selectedSchoolKecamatan" name="kecamatan">
 
-          <!-- SEKSI 2: STATUS KEPEGAWAIAN -->
+          <!-- SEKSI 2: IDENTITAS LENGKAP PESERTA -->
+          <div class="step-banner">
+            <i class="bi bi-person-circle"></i>
+            <span>2. Identitas Lengkap Peserta</span>
+          </div>
+
+          <div class="row g-3 mb-4">
+            <div class="col-md-7">
+              <label class="form-label" for="inputNamaLengkap">
+                Nama Lengkap &amp; Gelar <span class="text-danger">*</span>
+              </label>
+              <input type="text" class="form-control" id="inputNamaLengkap" name="namaLengkap" required>
+              <div class="form-text">Tuliskan nama lengkap beserta gelar resmi untuk keperluan sertifikat &amp; administrasi SPJ.</div>
+            </div>
+
+            <!-- Modul Gender (Dinamis ON/OFF) -->
+            <div class="col-md-5" id="modulGenderContainer">
+              <label class="form-label">Jenis Kelamin <span class="text-danger">*</span></label>
+              <div class="pill-selector">
+                <input type="radio" class="pill-radio" id="genderL" name="jenisKelamin" value="Laki-laki" checked>
+                <label class="pill-label" for="genderL"><i class="bi bi-gender-male"></i> Laki-laki</label>
+
+                <input type="radio" class="pill-radio" id="genderP" name="jenisKelamin" value="Perempuan">
+                <label class="pill-label" for="genderP"><i class="bi bi-gender-female"></i> Perempuan</label>
+              </div>
+            </div>
+          </div>
+
+          <!-- SEKSI 3: STATUS KEPEGAWAIAN & JABATAN -->
           <div class="step-banner">
             <i class="bi bi-person-badge"></i>
-            <span>2. Status Kepegawaian &amp; Jabatan</span>
+            <span>3. Status Kepegawaian &amp; Jabatan</span>
           </div>
 
           <div class="row g-3 mb-4">
@@ -681,34 +709,6 @@
             </div>
 
             <input type="hidden" id="inputPangkat" name="pangkat" value="">
-          </div>
-
-          <!-- SEKSI 3: DATA PRIBADI PESERTA -->
-          <div class="step-banner">
-            <i class="bi bi-person-circle"></i>
-            <span>3. Identitas Lengkap Peserta</span>
-          </div>
-
-          <div class="row g-3 mb-4">
-            <div class="col-md-7">
-              <label class="form-label" for="inputNamaLengkap">
-                Nama Lengkap &amp; Gelar <span class="text-danger">*</span>
-              </label>
-              <input type="text" class="form-control" id="inputNamaLengkap" name="namaLengkap" required>
-              <div class="form-text">Tuliskan nama lengkap beserta gelar resmi untuk keperluan sertifikat &amp; administrasi SPJ.</div>
-            </div>
-
-            <!-- Modul Gender (Dinamis ON/OFF) -->
-            <div class="col-md-5" id="modulGenderContainer">
-              <label class="form-label">Jenis Kelamin <span class="text-danger">*</span></label>
-              <div class="pill-selector">
-                <input type="radio" class="pill-radio" id="genderL" name="jenisKelamin" value="Laki-laki" checked>
-                <label class="pill-label" for="genderL"><i class="bi bi-gender-male"></i> Laki-laki</label>
-
-                <input type="radio" class="pill-radio" id="genderP" name="jenisKelamin" value="Perempuan">
-                <label class="pill-label" for="genderP"><i class="bi bi-gender-female"></i> Perempuan</label>
-              </div>
-            </div>
           </div>
 
           <!-- SEKSI 4: MODUL KAOS & LOGISTIK (DINAMIS ON/OFF) -->
