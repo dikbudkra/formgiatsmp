@@ -1595,6 +1595,12 @@
                     <label class="form-check-label" for="switchModulSertifikatModal">Modul E-Sertifikat</label>
                   </div>
                 </div>
+                <div class="col-6 col-md-4">
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="switchModulBiodata" checked>
+                    <label class="form-check-label" for="switchModulBiodata">Modul Biodata (PDF)</label>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -3101,6 +3107,8 @@
       if (swEticket) swEticket.checked = true;
       const swCert = document.getElementById("switchModulSertifikatModal");
       if (swCert) swCert.checked = false;
+      const swBiodata = document.getElementById("switchModulBiodata");
+      if (swBiodata) swBiodata.checked = true;
       const modal = new bootstrap.Modal(document.getElementById("modalKegiatan"));
       modal.show();
     }
@@ -3130,6 +3138,8 @@
       if (swEticket) swEticket.checked = (ev.modulEticketPresensi !== "OFF");
       const swCert = document.getElementById("switchModulSertifikatModal");
       if (swCert) swCert.checked = (ev.modulSertifikat === "ON");
+      const swBiodata = document.getElementById("switchModulBiodata");
+      if (swBiodata) swBiodata.checked = (ev.modulBiodata !== "OFF");
 
       const modal = new bootstrap.Modal(document.getElementById("modalKegiatan"));
       modal.show();
@@ -3154,7 +3164,8 @@
         modulKontakDarurat: document.getElementById("switchModulDarurat").checked ? "ON" : "OFF",
         modulKesehatan: document.getElementById("switchModulKesehatan").checked ? "ON" : "OFF",
         modulEticketPresensi: document.getElementById("switchModulEticket")?.checked ? "ON" : "OFF",
-        modulSertifikat: document.getElementById("switchModulSertifikatModal")?.checked ? "ON" : "OFF"
+        modulSertifikat: document.getElementById("switchModulSertifikatModal")?.checked ? "ON" : "OFF",
+        modulBiodata: document.getElementById("switchModulBiodata")?.checked ? "ON" : "OFF"
       };
 
       Swal.fire({

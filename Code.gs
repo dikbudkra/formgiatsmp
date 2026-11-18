@@ -177,7 +177,8 @@ function JALANKAN_SETUP_DATABASE_MULTI_KEGIATAN() {
     "Nomor Sertifikat",
     "Blanko Depan ID",
     "Blanko Belakang ID",
-    "Konfigurasi Layout Sertifikat"
+    "Konfigurasi Layout Sertifikat",
+    "Modul Biodata"
   ];
 
   let sheetKegiatan = ss.getSheetByName(SHEET_MASTER_KEGIATAN);
@@ -292,7 +293,7 @@ function JALANKAN_SETUP_DATABASE_MULTI_KEGIATAN() {
 function ensureDatabaseReady_() {
   const cache = CacheService.getScriptCache();
   try {
-    if (cache.get("db_ready_v1")) {
+    if (cache.get("db_ready_v2")) {
       return;
     }
   } catch (e) {}
@@ -420,7 +421,8 @@ function ensureDatabaseReady_() {
     "Nomor Sertifikat",
     "Blanko Depan ID",
     "Blanko Belakang ID",
-    "Konfigurasi Layout Sertifikat"
+    "Konfigurasi Layout Sertifikat",
+    "Modul Biodata"
   ];
   let sheetKegiatan = ss.getSheetByName(SHEET_MASTER_KEGIATAN);
   if (!sheetKegiatan) {
@@ -447,7 +449,7 @@ function ensureDatabaseReady_() {
   }
 
   try {
-    cache.put("db_ready_v1", "true", 21600);
+    cache.put("db_ready_v2", "true", 21600);
   } catch (e) {}
 }
 
@@ -1153,7 +1155,8 @@ function getAllEventsForAdminInternal_() {
           nomorSertifikat: String(row[18] || "").trim(),
           blankoDepanId: String(row[19] || "").trim(),
           blankoBelakangId: String(row[20] || "").trim(),
-          layoutSertifikat: parseCertLayoutJson_(row[21])
+          layoutSertifikat: parseCertLayoutJson_(row[21]),
+          modulBiodata: String(row[22] || "ON").trim().toUpperCase()
         });
       }
     }
@@ -1257,6 +1260,9 @@ function saveEvent(eventData, pin) {
     const finalLayoutJson = eventData.layoutSertifikat !== undefined
       ? (typeof eventData.layoutSertifikat === "string" ? eventData.layoutSertifikat : JSON.stringify(eventData.layoutSertifikat))
       : (existingRow[21] ? String(existingRow[21]) : JSON.stringify(getDefaultCertificateLayout_()));
+    const finalModulBiodata = eventData.modulBiodata !== undefined
+      ? (String(eventData.modulBiodata).trim().toUpperCase() === "OFF" ? "OFF" : "ON")
+      : String(existingRow[22] || "ON").trim().toUpperCase();
 
     const finalStatusForm = String(eventData.statusForm || "BUKA").trim().toUpperCase();
 
@@ -1282,7 +1288,8 @@ function saveEvent(eventData, pin) {
       finalNomorSertifikat,
       finalBlankoDepanId,
       finalBlankoBelakangId,
-      finalLayoutJson
+      finalLayoutJson,
+      finalModulBiodata
     ];
 
     if (targetRow !== -1) {
@@ -1552,7 +1559,8 @@ function getActiveEventsForPublic() {
         nomorSertifikat: String(row[18] || "").trim(),
         hasBlankoDepan: Boolean(String(row[19] || "").trim()),
         hasBlankoBelakang: Boolean(String(row[20] || "").trim()),
-        layoutSertifikat: parseCertLayoutJson_(row[21])
+        layoutSertifikat: parseCertLayoutJson_(row[21]),
+        modulBiodata: String(row[22] || "ON").trim().toUpperCase()
       };
 
       if (status === "BUKA") {
@@ -2236,6 +2244,7 @@ function getInitialFormData(targetEventIdOrName) {
           MODUL_KONTAK_DARURAT: matched.modulKontakDarurat,
           MODUL_KESEHATAN: matched.modulKesehatan,
           MODUL_ETICKET_PRESENSI: matched.modulEticketPresensi,
+          MODUL_BIODATA: matched.modulBiodata || "ON",
           TANGGAL_PELAKSANAAN: matched.tanggalPelaksanaan,
           LOKASI_KEGIATAN: matched.lokasiKegiatan
         };
@@ -2255,6 +2264,7 @@ function getInitialFormData(targetEventIdOrName) {
         MODUL_KONTAK_DARURAT: ev.modulKontakDarurat,
         MODUL_KESEHATAN: ev.modulKesehatan,
         MODUL_ETICKET_PRESENSI: ev.modulEticketPresensi,
+        MODUL_BIODATA: ev.modulBiodata || "ON",
         TANGGAL_PELAKSANAAN: ev.tanggalPelaksanaan,
         LOKASI_KEGIATAN: ev.lokasiKegiatan
       };
@@ -2354,6 +2364,7 @@ function submitRegistration(formData) {
         MODUL_KONTAK_DARURAT: matched.modulKontakDarurat,
         MODUL_KESEHATAN: matched.modulKesehatan,
         MODUL_ETICKET_PRESENSI: matched.modulEticketPresensi,
+        MODUL_BIODATA: matched.modulBiodata || "ON",
         TANGGAL_PELAKSANAAN: matched.tanggalPelaksanaan,
         LOKASI_KEGIATAN: matched.lokasiKegiatan
       };
@@ -2569,6 +2580,7 @@ function submitRegistration(formData) {
         lokasiKegiatan: settings.LOKASI_KEGIATAN || "Kabupaten Karanganyar",
         modulEticket: settings.MODUL_ETICKET_PRESENSI || "ON",
         modulEticketPresensi: settings.MODUL_ETICKET_PRESENSI || "ON",
+        modulBiodata: settings.MODUL_BIODATA || "ON",
         timestamp: timestamp
       }
     };
@@ -2715,6 +2727,7 @@ function getAdminDashboardData(pin, targetEventIdOrName) {
         MODUL_KONTAK_DARURAT: selectedEvent.modulKontakDarurat,
         MODUL_KESEHATAN: selectedEvent.modulKesehatan,
         MODUL_ETICKET_PRESENSI: selectedEvent.modulEticketPresensi,
+        MODUL_BIODATA: selectedEvent.modulBiodata || "ON",
         TANGGAL_PELAKSANAAN: selectedEvent.tanggalPelaksanaan,
         LOKASI_KEGIATAN: selectedEvent.lokasiKegiatan,
         MODUL_SERTIFIKAT: selectedEvent.modulSertifikat || "OFF",

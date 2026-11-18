@@ -890,7 +890,7 @@
           </button>
           
           <div class="d-flex flex-wrap gap-2">
-            <button type="button" class="btn btn-outline-primary rounded-pill px-3.5 fw-bold shadow-sm" onclick="downloadBiodataPdf(lastTicketData)" title="Unduh Lembar Biodata Resmi Format A4">
+            <button type="button" id="btnModalUnduhBiodata" class="btn btn-outline-primary rounded-pill px-3.5 fw-bold shadow-sm" onclick="downloadBiodataPdf(lastTicketData)" title="Unduh Lembar Biodata Resmi Format A4">
               <i class="bi bi-file-earmark-person-fill me-1.5 text-primary"></i> Unduh Biodata (PDF A4)
             </button>
             <button type="button" class="btn btn-success rounded-pill px-3" onclick="shareTicketToWhatsApp()">
@@ -1802,20 +1802,31 @@
           Swal.close();
           lastTicketData = response.data || {};
 
-          // Cek apakah kegiatan ini mengaktifkan modul E-Ticket & Presensi
+          // Cek apakah kegiatan ini mengaktifkan modul E-Ticket & Presensi dan Modul Biodata
           const backendEticket = String(response.data?.modulEticket || "").toUpperCase();
           const eventEticket = activeSelectedEvent ? String(activeSelectedEvent.modulEticketPresensi || "").toUpperCase() : "";
           const isEticketOn = (backendEticket === "OFF" || eventEticket === "OFF") ? false : true;
 
+          const backendBiodata = String(response.data?.modulBiodata || "").toUpperCase();
+          const eventBiodata = activeSelectedEvent ? String(activeSelectedEvent.modulBiodata || "").toUpperCase() : "";
+          const isBiodataOn = (backendBiodata === "OFF" || eventBiodata === "OFF") ? false : true;
+
           if (isEticketOn) {
             showETicketModal(lastTicketData);
           } else {
+            const namaPeserta = escapeHtml(lastTicketData.namaLengkap || "-");
+            const namaSekolah = escapeHtml(lastTicketData.namaSekolah || "-");
+            const biodataHint = isBiodataOn
+              ? `<br><br><span class="text-muted small">Silakan unduh lembar Biodata resmi di bawah ini untuk dibawa saat kegiatan.</span>`
+              : "";
+
             Swal.fire({
               title: "Pendaftaran Berhasil!",
-              html: `Data pendaftaran Anda telah berhasil tersimpan resmi ke sistem panitia.<br><br><strong>ID Registrasi:</strong> <span class="badge bg-primary fs-6 px-3 py-1.5">${escapeHtml(lastTicketData.regId || "-")}</span><br><br><span class="text-muted small">Silakan unduh lembar Biodata resmi di bawah ini untuk dibawa saat kegiatan.</span>`,
+              html: `Data pendaftaran atas nama <strong>${namaPeserta}</strong> (${namaSekolah}) telah berhasil tersimpan resmi ke sistem panitia.${biodataHint}`,
               icon: "success",
-              showCancelButton: true,
+              showConfirmButton: isBiodataOn,
               showDenyButton: true,
+              showCancelButton: true,
               confirmButtonText: '<i class="bi bi-file-earmark-person-fill me-1"></i> Unduh Biodata (PDF A4)',
               denyButtonText: '<i class="bi bi-whatsapp me-1"></i> Bagikan ke WA',
               cancelButtonText: "Tutup",
@@ -1823,7 +1834,7 @@
               denyButtonColor: "#22c55e",
               cancelButtonColor: "#64748b"
             }).then((result) => {
-              if (result.isConfirmed) {
+              if (result.isConfirmed && isBiodataOn) {
                 downloadBiodataPdf(lastTicketData);
               } else if (result.isDenied) {
                 shareTicketToWhatsApp(false);
@@ -1972,6 +1983,13 @@
       // Render QR Code langsung ke canvas
       const regCode = String(data.regId || "REG-UNKNOWN");
       renderTicketQr(regCode);
+
+      // Tampilkan / Sembunyikan tombol Unduh Biodata sesuai Modul Biodata
+      const btnBiodata = document.getElementById("btnModalUnduhBiodata");
+      const backendBiodata = String(data?.modulBiodata || "").toUpperCase();
+      const eventBiodata = activeSelectedEvent ? String(activeSelectedEvent.modulBiodata || "").toUpperCase() : "";
+      const isBiodataOn = (backendBiodata === "OFF" || eventBiodata === "OFF") ? false : true;
+      if (btnBiodata) btnBiodata.classList.toggle("d-none", !isBiodataOn);
 
       const modalEl = document.getElementById("modalETicket");
       const modal = new bootstrap.Modal(modalEl);
@@ -2294,16 +2312,25 @@
       const isEticketOn = (withEticket !== false) && (!activeSelectedEvent || activeSelectedEvent.modulEticketPresensi !== "OFF");
       const penutup = isEticketOn
         ? `_Simpan pesan ini dan bawa E-Ticket saat registrasi presensi di lokasi._`
-        : `_Simpan pesan ini sebagai bukti pendaftaran sah kegiatan._`;
+        : `_Simpan pesan ini sebagai bukti pendaftaran kegiatan._`;
 
-      const text = `*BUKTI PENDAFTARAN KEGIATAN KEDINASAN*\n` +
-        `Bidang SMP DISDIKBUD Karanganyar\n\n` +
-        `*ID Registrasi:* ${lastTicketData.regId || "-"}\n` +
-        `*Nama Peserta:* ${lastTicketData.namaLengkap || "-"}\n` +
+      let text = `*BUKTI PENDAFTARAN KEGIATAN KEDINASAN*\n` +
+        `Bidang SMP DISDIKBUD Karanganyar\n\n`;
+
+      if (isEticketOn) {
+        text += `*ID Registrasi:* ${lastTicketData.regId || "-"}\n`;
+      }
+
+      text += `*Nama Peserta:* ${lastTicketData.namaLengkap || "-"}\n` +
         `*Satuan Pendidikan:* ${lastTicketData.namaSekolah || "-"}\n` +
-        `*Kegiatan:* ${lastTicketData.namaKegiatan || "-"}\n` +
-        `*Ukuran Kaos:* ${lastTicketData.ukuranKaos || "-"}\n\n` +
-        penutup;
+        `*Kegiatan:* ${lastTicketData.namaKegiatan || "-"}\n`;
+
+      const isKaosOn = !activeSelectedEvent || activeSelectedEvent.modulKaos !== "OFF";
+      if (isKaosOn && lastTicketData.ukuranKaos && lastTicketData.ukuranKaos !== "-") {
+        text += `*Ukuran Kaos:* ${lastTicketData.ukuranKaos}\n`;
+      }
+
+      text += `\n` + penutup;
 
       const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
       window.open(url, "_blank");
@@ -2785,10 +2812,10 @@
                         : '<span class="badge bg-secondary">BELUM HADIR</span>')
                     : '';
 
-                  // Icon QR hanya tampil jika kegiatan menggunakan E-Ticket
+                  // ID Registrasi & Icon QR hanya tampil jika kegiatan menggunakan E-Ticket
                   const regIdHtml = isEticketOn
-                    ? `<span class="font-monospace"><i class="bi bi-qr-code me-1"></i>${escapeHtml(p.regId || '-')}</span>`
-                    : `<span class="font-monospace"><i class="bi bi-card-text me-1"></i>${escapeHtml(p.regId || '-')}</span>`;
+                    ? `<span class="mx-1.5">&bull;</span><span class="font-monospace"><i class="bi bi-qr-code me-1"></i>${escapeHtml(p.regId || '-')}</span>`
+                    : '';
 
                   return `
                     <div class="card p-3 border rounded-3 bg-light text-start">
@@ -2800,7 +2827,6 @@
                           </div>
                           <div class="text-secondary small">
                             <span><i class="bi bi-building me-1"></i>${escapeHtml(p.namaSekolah || '-')}</span>
-                            <span class="mx-1.5">&bull;</span>
                             ${regIdHtml}
                           </div>
                         </div>
