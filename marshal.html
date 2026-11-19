@@ -1928,23 +1928,56 @@
                 </div>
               </div>
 
-              <div class="row g-2 mb-3">
-                <div class="col-md-4 col-sm-6 col-12">
-                  <label class="form-label small fw-semibold mb-1">Uang Saku / Jasa per Hari (Rp)</label>
-                  <div class="input-group input-group-sm">
-                    <span class="input-group-text">Rp</span>
-                    <input type="number" id="inputSpjNominal" class="form-control" value="200000" min="0" step="5000" oninput="recalculateAndRenderSpjPreview()">
+              <!-- Pengaturan Uang Saku / Jasa per Hari Berdasarkan Status Kepegawaian -->
+              <div class="p-3 bg-light border rounded mb-3">
+                <div class="d-flex flex-wrap align-items-center justify-content-between mb-2">
+                  <span class="small fw-bold text-dark">
+                    <i class="bi bi-cash-stack text-success me-1"></i> Uang Saku / Jasa per Hari (Rp)
+                  </span>
+                  <span class="badge bg-white text-secondary border small">Per Status Kepegawaian</span>
+                </div>
+                <div class="row g-2 pt-2 border-top">
+                  <div class="col-md-3 col-sm-6 col-6">
+                    <label class="form-label small text-muted mb-0" style="font-size:0.75rem;">PNS (Rp/hari)</label>
+                    <div class="input-group input-group-sm">
+                      <span class="input-group-text">Rp</span>
+                      <input type="number" id="inputSpjNominalPns" class="form-control fw-bold" value="100000" min="0" step="5000" oninput="recalculateAndRenderSpjPreview()">
+                    </div>
+                  </div>
+                  <div class="col-md-3 col-sm-6 col-6">
+                    <label class="form-label small text-muted mb-0" style="font-size:0.75rem;">PPPK (Rp/hari)</label>
+                    <div class="input-group input-group-sm">
+                      <span class="input-group-text">Rp</span>
+                      <input type="number" id="inputSpjNominalPppk" class="form-control fw-bold" value="100000" min="0" step="5000" oninput="recalculateAndRenderSpjPreview()">
+                    </div>
+                  </div>
+                  <div class="col-md-3 col-sm-6 col-6">
+                    <label class="form-label small text-muted mb-0" style="font-size:0.75rem;">PPPK PW (Rp/hari)</label>
+                    <div class="input-group input-group-sm">
+                      <span class="input-group-text">Rp</span>
+                      <input type="number" id="inputSpjNominalPppkPw" class="form-control fw-bold" value="100000" min="0" step="5000" oninput="recalculateAndRenderSpjPreview()">
+                    </div>
+                  </div>
+                  <div class="col-md-3 col-sm-6 col-6">
+                    <label class="form-label small text-muted mb-0" style="font-size:0.75rem;">Non-ASN (Rp/hari)</label>
+                    <div class="input-group input-group-sm">
+                      <span class="input-group-text">Rp</span>
+                      <input type="number" id="inputSpjNominalNonAsn" class="form-control fw-bold" value="75000" min="0" step="5000" oninput="recalculateAndRenderSpjPreview()">
+                    </div>
                   </div>
                 </div>
-                <div class="col-md-2 col-sm-6 col-6">
+              </div>
+
+              <div class="row g-2 mb-3">
+                <div class="col-md-3 col-sm-6 col-6">
                   <label class="form-label small fw-semibold mb-1">Jumlah Hari</label>
                   <input type="number" id="inputSpjHari" class="form-control form-control-sm" value="1" min="1" max="30" oninput="recalculateAndRenderSpjPreview()">
                 </div>
-                <div class="col-md-2 col-sm-6 col-6">
+                <div class="col-md-3 col-sm-6 col-6">
                   <label class="form-label small fw-semibold mb-1">Satuan</label>
                   <input type="text" id="inputSpjSatuan" class="form-control form-control-sm" value="hari" oninput="recalculateAndRenderSpjPreview()">
                 </div>
-                <div class="col-md-4 col-sm-6 col-12">
+                <div class="col-md-6 col-12">
                   <label class="form-label small fw-semibold mb-1">Tempat &amp; Tanggal TTD (Ketik Manual)</label>
                   <input type="text" id="inputSpjTanggal" class="form-control form-control-sm" placeholder="Karanganyar, ..." oninput="recalculateAndRenderSpjPreview()">
                 </div>
@@ -6357,7 +6390,15 @@
     }
 
     async function recalculateAndRenderSpjPreview() {
-      const nominal = parseFloat(document.getElementById("inputSpjNominal")?.value) || 200000;
+      const nomPnsRaw = parseFloat(document.getElementById("inputSpjNominalPns")?.value);
+      const nomPns = isNaN(nomPnsRaw) ? 100000 : nomPnsRaw;
+      const nomPppkRaw = parseFloat(document.getElementById("inputSpjNominalPppk")?.value);
+      const nomPppk = isNaN(nomPppkRaw) ? 100000 : nomPppkRaw;
+      const nomPppkPwRaw = parseFloat(document.getElementById("inputSpjNominalPppkPw")?.value);
+      const nomPppkPw = isNaN(nomPppkPwRaw) ? 100000 : nomPppkPwRaw;
+      const nomNonAsnRaw = parseFloat(document.getElementById("inputSpjNominalNonAsn")?.value);
+      const nomNonAsn = isNaN(nomNonAsnRaw) ? 75000 : nomNonAsnRaw;
+
       const hari = parseInt(document.getElementById("inputSpjHari")?.value, 10) || 1;
       const satuan = document.getElementById("inputSpjSatuan")?.value || "hari";
       const tanggal = document.getElementById("inputSpjTanggal")?.value || "";
@@ -6407,9 +6448,20 @@
 
       let totBruto = 0, totPajak = 0, totNetto = 0;
       const calcList = participants.map((pt, idx) => {
-        const bruto = nominal * hari;
         const statusLower = String(pt.statusKepegawaian || pt.statusPeg || "").toLowerCase();
         const golUpper = String(pt.golongan || "").toUpperCase();
+
+        // Tentukan Uang Saku / Jasa per Hari berdasarkan Status Kepegawaian
+        let nominal = nomNonAsn;
+        if (statusLower.includes("pns")) {
+          nominal = nomPns;
+        } else if (statusLower.includes("pppk pw") || statusLower.includes("paruh waktu")) {
+          nominal = nomPppkPw;
+        } else if (statusLower.includes("pppk")) {
+          nominal = nomPppk;
+        }
+
+        const bruto = nominal * hari;
 
         let tarif = 0;
         let tarifStr = "0%";
