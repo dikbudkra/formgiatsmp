@@ -397,6 +397,14 @@
       0%, 80%, 100% { transform: scale(0.3); opacity: 0.4; }
       40% { transform: scale(1); opacity: 1; }
     }
+    @keyframes spinIcon {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .spin-anim {
+      display: inline-block;
+      animation: spinIcon 0.9s linear infinite;
+    }
   </style>
 </head>
 <body>
@@ -460,6 +468,12 @@
 
     <!-- Actions & Event Switcher in Topbar -->
     <div class="ms-auto d-flex align-items-center gap-2 flex-shrink-0">
+      <!-- Tombol Refresh Manual Global -->
+      <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-2.5 py-1.5 fw-semibold d-flex align-items-center gap-1 shadow-sm" id="btnTopbarRefresh" onclick="refreshCurrentDashboard(true)" title="Segarkan Data Terbaru">
+        <i class="bi bi-arrow-clockwise"></i>
+        <span class="d-none d-sm-inline small">Refresh</span>
+      </button>
+
       <!-- Tombol Ganti Kegiatan (Pop-up Modal) -->
       <button type="button" class="btn btn-light border btn-sm rounded-pill px-3 py-1.5 fw-bold text-dark d-flex align-items-center gap-1.5 shadow-sm" id="btnTopbarGantiGiat" onclick="openModalPilihKegiatanTopbar()" title="Ganti Kegiatan yang Ditampilkan">
         <i class="bi bi-calendar2-check-fill text-primary" id="iconTopbarCalendar"></i>
@@ -2191,6 +2205,7 @@
       }
       initSpjDropzone();
       initParticipantsViewMode();
+      startMarshalAutoRefresh();
     });
 
     /**
@@ -2520,14 +2535,32 @@
       }
     }
 
+    let isRefreshingDashboard = false;
+    let marshalAutoRefreshTimer = null;
+
     async function refreshCurrentDashboard(showToast = true) {
-      const btn = document.querySelector('button[onclick="refreshCurrentDashboard()"]');
-      const icon = btn ? btn.querySelector('i') : null;
-      if (icon) icon.classList.add("fa-spin");
-      if (btn) btn.disabled = true;
+      if (isRefreshingDashboard) return;
+      isRefreshingDashboard = true;
+
+      const btns = [
+        document.getElementById("btnTopbarRefresh"),
+        document.querySelector('button[onclick="refreshCurrentDashboard()"]')
+      ].filter(Boolean);
+
+      btns.forEach(b => {
+        b.disabled = true;
+        const ic = b.querySelector("i");
+        if (ic) ic.classList.add("spin-anim");
+      });
 
       try {
         await loadDashboardInitial(false, activeEventId);
+        // Pertahankan filter pencarian tabel peserta jika sedang terisi
+        const searchPeserta = document.getElementById("searchTablePeserta");
+        const filterStatus = document.getElementById("filterStatusHadirTable");
+        if ((searchPeserta && searchPeserta.value.trim()) || (filterStatus && filterStatus.value)) {
+          if (typeof filterTablePeserta === "function") filterTablePeserta();
+        }
         if (showToast) {
           Swal.fire({
             toast: true,
@@ -2539,9 +2572,46 @@
           });
         }
       } finally {
-        if (icon) icon.classList.remove("fa-spin");
-        if (btn) btn.disabled = false;
+        btns.forEach(b => {
+          b.disabled = false;
+          const ic = b.querySelector("i");
+          if (ic) ic.classList.remove("spin-anim");
+        });
+        isRefreshingDashboard = false;
       }
+    }
+
+    /**
+     * Smart Auto-Refresh 60 Detik (Khusus Menu Pantauan: Dashboard, Monitoring Sekolah, Rekap Kaos, Data Peserta)
+     */
+    function startMarshalAutoRefresh() {
+      if (marshalAutoRefreshTimer) clearInterval(marshalAutoRefreshTimer);
+
+      const monitoredTabs = new Set([
+        "tabDashboard",
+        "tabMonitoringSekolah",
+        "tabRekapKaos",
+        "tabDataPeserta"
+      ]);
+
+      marshalAutoRefreshTimer = setInterval(() => {
+        if (!currentAdminPin) return;
+        const lockEl = document.getElementById("lockscreenOverlay");
+        if (lockEl && lockEl.style.display !== "none") return;
+        if (document.visibilityState !== "visible") return;
+        if (typeof Swal !== "undefined" && Swal.isVisible()) return;
+        if (document.querySelector(".modal.show")) return;
+
+        // Jangan refresh jika panitia sedang mengetik di input/select/textarea
+        const activeTag = document.activeElement ? document.activeElement.tagName : "";
+        if (["INPUT", "TEXTAREA", "SELECT"].includes(activeTag)) return;
+
+        // Cek apakah tab yang sedang dibuka termasuk menu pantauan
+        const activeTab = document.querySelector(".tab-pane.active:not(.d-none)");
+        if (!activeTab || !monitoredTabs.has(activeTab.id)) return;
+
+        refreshCurrentDashboard(false);
+      }, 60000);
     }
 
     /**
