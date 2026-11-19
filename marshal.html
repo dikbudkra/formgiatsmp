@@ -4622,7 +4622,9 @@
 
       // 1. Render Tampilan Tabel
       if (tbody) {
-        tbody.innerHTML = participants.map((p, i) => `
+        tbody.innerHTML = participants.map((p, i) => {
+          const hasWa = String(p.noWa || "").replace(/[^0-9]/g, "").length >= 9;
+          return `
           <tr>
             <td>${i + 1}</td>
             <td class="font-monospace fw-bold text-primary">${escapeHtml(p.regId || '-')}</td>
@@ -4640,6 +4642,10 @@
             </td>
             <td class="text-center">
               <div class="d-inline-flex gap-1">
+                ${hasWa ? `
+                <button class="btn btn-outline-success btn-sm rounded-pill p-1 px-2" onclick="openWhatsAppParticipant('${escapeHtml(p.regId)}')" title="Hubungi via WhatsApp (${escapeHtml(p.noWa)})">
+                  <i class="bi bi-whatsapp"></i>
+                </button>` : ''}
                 <button class="btn btn-outline-primary btn-sm rounded-pill p-1 px-2" onclick="printOrDownloadParticipantBiodata('${escapeHtml(p.regId)}')" title="Cetak / Unduh Biodata Peserta (PDF A4)">
                   <i class="bi bi-file-earmark-person-fill"></i>
                 </button>
@@ -4652,13 +4658,15 @@
               </div>
             </td>
           </tr>
-        `).join("");
+        `;
+        }).join("");
       }
 
       // 2. Render Tampilan Kartu Ringkas (Mobile / Thumb-Zone Friendly)
       if (cardContainer) {
         cardContainer.innerHTML = participants.map((p, i) => {
           const isHadir = String(p.statusKehadiran).toLowerCase() === 'hadir';
+          const hasWa = String(p.noWa || "").replace(/[^0-9]/g, "").length >= 9;
           return `
             <div class="col">
               <div class="card h-100 border rounded-3 p-3 shadow-none bg-white transition-all">
@@ -4693,6 +4701,10 @@
 
                 <div class="mt-auto pt-2 border-top">
                   <div class="d-flex gap-1.5">
+                    ${hasWa ? `
+                    <button type="button" class="btn btn-outline-success btn-sm rounded-pill px-2.5 py-1.5 d-inline-flex align-items-center justify-content-center" onclick="openWhatsAppParticipant('${escapeHtml(p.regId)}')" title="Chat WhatsApp (${escapeHtml(p.noWa)})">
+                      <i class="bi bi-whatsapp"></i>
+                    </button>` : ''}
                     <button type="button" class="btn btn-outline-primary btn-sm rounded-pill flex-grow-1 py-1.5 fw-semibold d-inline-flex align-items-center justify-content-center gap-1" onclick="printOrDownloadParticipantBiodata('${escapeHtml(p.regId)}')" title="Cetak Biodata">
                       <i class="bi bi-file-earmark-person-fill"></i>
                       <span style="font-size: 0.78rem;">Biodata</span>
@@ -4711,6 +4723,28 @@
           `;
         }).join("");
       }
+    }
+
+    function openWhatsAppParticipant(regId) {
+      const participants = currentDashboardData?.participants || [];
+      const p = participants.find(item => String(item.regId || "").trim() === String(regId || "").trim());
+      if (!p) return;
+
+      let waNum = String(p.noWa || "").replace(/[^0-9]/g, "");
+      if (!waNum || waNum.length < 9) {
+        Swal.fire({ icon: "warning", title: "Nomor WA Tidak Tersedia", text: "Peserta ini belum memiliki nomor WhatsApp yang valid." });
+        return;
+      }
+      if (waNum.startsWith("0")) {
+        waNum = "62" + waNum.slice(1);
+      } else if (waNum.startsWith("8")) {
+        waNum = "62" + waNum;
+      }
+
+      const nama = p.namaLengkap || p.nama || "Bapak/Ibu";
+      const keg = p.namaKegiatan || currentDashboardData?.settings?.NAMA_KEGIATAN || "Kegiatan Kedinasan";
+      const msg = `Yth. Bapak/Ibu ${nama},\nKami dari Panitia ${keg} Bidang SMP DISDIKBUD Karanganyar.\n\n`;
+      window.open(`https://wa.me/${waNum}?text=${encodeURIComponent(msg)}`, "_blank");
     }
 
     /**

@@ -1236,6 +1236,7 @@ function saveEvent(eventData, pin) {
 
     // Pertahankan pengaturan sertifikat yang sudah ada jika mengedit kegiatan
     const existingRow = targetRow !== -1 ? data[targetRow - 1] : [];
+    const oldNama = targetRow !== -1 ? String(existingRow[1] || "").trim() : "";
     const finalModulSertifikat = eventData.modulSertifikat !== undefined
       ? String(eventData.modulSertifikat).trim().toUpperCase()
       : String(existingRow[14] || "OFF").trim().toUpperCase();
@@ -1294,6 +1295,34 @@ function saveEvent(eventData, pin) {
 
     if (targetRow !== -1) {
       sheet.getRange(targetRow, 1, 1, rowData.length).setValues([rowData]);
+      // Jika nama kegiatan berubah, sinkronkan kolom Nama Kegiatan di Data_Peserta agar pendaftar lama tetap terbaca
+      if (oldNama && oldNama !== nama) {
+        try {
+          const sheetPeserta = ss.getSheetByName(SHEET_PESERTA);
+          if (sheetPeserta && sheetPeserta.getLastRow() > 1) {
+            const pLastRow = sheetPeserta.getLastRow();
+            const pHeaders = sheetPeserta.getRange(1, 1, 1, sheetPeserta.getLastColumn()).getValues()[0].map(h => String(h).trim().toLowerCase());
+            const idxKeg = pHeaders.indexOf("nama kegiatan");
+            if (idxKeg !== -1) {
+              const kegColRange = sheetPeserta.getRange(2, idxKeg + 1, pLastRow - 1, 1);
+              const kegVals = kegColRange.getValues();
+              let hasChanged = false;
+              const oldLower = oldNama.toLowerCase();
+              for (let r = 0; r < kegVals.length; r++) {
+                if (String(kegVals[r][0] || "").trim().toLowerCase() === oldLower) {
+                  kegVals[r][0] = nama;
+                  hasChanged = true;
+                }
+              }
+              if (hasChanged) {
+                kegColRange.setValues(kegVals);
+              }
+            }
+          }
+        } catch (eSync) {
+          Logger.log("Sync nama kegiatan Data_Peserta notice: " + eSync.toString());
+        }
+      }
     } else {
       sheet.appendRow(rowData);
     }
