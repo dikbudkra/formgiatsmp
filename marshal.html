@@ -1890,35 +1890,49 @@
 
                 <!-- Input Besaran Persentase Pajak Tiap Golongan / Status -->
                 <div id="containerTarifPajakInputs" class="row g-2 pt-2 border-top">
-                  <div class="col-md-2 col-sm-4 col-6">
-                    <label class="form-label small text-muted mb-0" style="font-size:0.75rem;">Golongan IV (%)</label>
+                  <div class="col-6 col-sm-3 col-lg">
+                    <label class="form-label small text-muted mb-0" style="font-size:0.75rem;">PNS Gol IV (%)</label>
                     <div class="input-group input-group-sm">
                       <input type="number" id="inputTarifPajakGol4" class="form-control form-control-sm text-center fw-bold" value="15" min="0" max="100" step="0.5" oninput="recalculateAndRenderSpjPreview()">
                       <span class="input-group-text">%</span>
                     </div>
                   </div>
-                  <div class="col-md-2 col-sm-4 col-6">
-                    <label class="form-label small text-muted mb-0" style="font-size:0.75rem;">Golongan III (%)</label>
+                  <div class="col-6 col-sm-3 col-lg">
+                    <label class="form-label small text-muted mb-0" style="font-size:0.75rem;">PNS Gol III (%)</label>
                     <div class="input-group input-group-sm">
                       <input type="number" id="inputTarifPajakGol3" class="form-control form-control-sm text-center fw-bold" value="5" min="0" max="100" step="0.5" oninput="recalculateAndRenderSpjPreview()">
                       <span class="input-group-text">%</span>
                     </div>
                   </div>
-                  <div class="col-md-2 col-sm-4 col-6">
-                    <label class="form-label small text-muted mb-0" style="font-size:0.75rem;">Golongan I &amp; II (%)</label>
+                  <div class="col-6 col-sm-3 col-lg">
+                    <label class="form-label small text-muted mb-0" style="font-size:0.75rem;">PNS Gol II (%)</label>
                     <div class="input-group input-group-sm">
-                      <input type="number" id="inputTarifPajakGol12" class="form-control form-control-sm text-center fw-bold" value="0" min="0" max="100" step="0.5" oninput="recalculateAndRenderSpjPreview()">
+                      <input type="number" id="inputTarifPajakGol2" class="form-control form-control-sm text-center fw-bold" value="0" min="0" max="100" step="0.5" oninput="recalculateAndRenderSpjPreview()">
                       <span class="input-group-text">%</span>
                     </div>
                   </div>
-                  <div class="col-md-3 col-sm-6 col-6">
-                    <label class="form-label small text-muted mb-0" style="font-size:0.75rem;">PPPK &amp; PPPK PW (%)</label>
+                  <div class="col-6 col-sm-3 col-lg">
+                    <label class="form-label small text-muted mb-0" style="font-size:0.75rem;">PNS Gol I (%)</label>
+                    <div class="input-group input-group-sm">
+                      <input type="number" id="inputTarifPajakGol1" class="form-control form-control-sm text-center fw-bold" value="0" min="0" max="100" step="0.5" oninput="recalculateAndRenderSpjPreview()">
+                      <span class="input-group-text">%</span>
+                    </div>
+                  </div>
+                  <div class="col-6 col-sm-4 col-lg">
+                    <label class="form-label small text-muted mb-0" style="font-size:0.75rem;">PPPK (%)</label>
                     <div class="input-group input-group-sm">
                       <input type="number" id="inputTarifPajakPppk" class="form-control form-control-sm text-center fw-bold" value="0" min="0" max="100" step="0.5" oninput="recalculateAndRenderSpjPreview()">
                       <span class="input-group-text">%</span>
                     </div>
                   </div>
-                  <div class="col-md-3 col-sm-6 col-12">
+                  <div class="col-6 col-sm-4 col-lg">
+                    <label class="form-label small text-muted mb-0" style="font-size:0.75rem;">PPPK PW (%)</label>
+                    <div class="input-group input-group-sm">
+                      <input type="number" id="inputTarifPajakPppkPw" class="form-control form-control-sm text-center fw-bold" value="0" min="0" max="100" step="0.5" oninput="recalculateAndRenderSpjPreview()">
+                      <span class="input-group-text">%</span>
+                    </div>
+                  </div>
+                  <div class="col-12 col-sm-4 col-lg">
                     <label class="form-label small text-muted mb-0" style="font-size:0.75rem;">Non-ASN (%)</label>
                     <div class="input-group input-group-sm">
                       <input type="number" id="inputTarifPajakNonAsn" class="form-control form-control-sm text-center fw-bold" value="0" min="0" max="100" step="0.5" oninput="recalculateAndRenderSpjPreview()">
@@ -6378,13 +6392,17 @@
     function resetSpjTaxRatesDefault() {
       const elGol4 = document.getElementById("inputTarifPajakGol4");
       const elGol3 = document.getElementById("inputTarifPajakGol3");
-      const elGol12 = document.getElementById("inputTarifPajakGol12");
+      const elGol2 = document.getElementById("inputTarifPajakGol2");
+      const elGol1 = document.getElementById("inputTarifPajakGol1");
       const elPppk = document.getElementById("inputTarifPajakPppk");
+      const elPppkPw = document.getElementById("inputTarifPajakPppkPw");
       const elNonAsn = document.getElementById("inputTarifPajakNonAsn");
       if (elGol4) elGol4.value = "15";
       if (elGol3) elGol3.value = "5";
-      if (elGol12) elGol12.value = "0";
+      if (elGol2) elGol2.value = "0";
+      if (elGol1) elGol1.value = "0";
       if (elPppk) elPppk.value = "0";
+      if (elPppkPw) elPppkPw.value = "0";
       if (elNonAsn) elNonAsn.value = "0";
       recalculateAndRenderSpjPreview();
     }
@@ -6406,15 +6424,19 @@
 
       const rateGol4 = (parseFloat(document.getElementById("inputTarifPajakGol4")?.value) || 0) / 100;
       const rateGol3 = (parseFloat(document.getElementById("inputTarifPajakGol3")?.value) || 0) / 100;
-      const rateGol12 = (parseFloat(document.getElementById("inputTarifPajakGol12")?.value) || 0) / 100;
+      const rateGol2 = (parseFloat(document.getElementById("inputTarifPajakGol2")?.value) || 0) / 100;
+      const rateGol1 = (parseFloat(document.getElementById("inputTarifPajakGol1")?.value) || 0) / 100;
       const ratePppk = (parseFloat(document.getElementById("inputTarifPajakPppk")?.value) || 0) / 100;
+      const ratePppkPw = (parseFloat(document.getElementById("inputTarifPajakPppkPw")?.value) || 0) / 100;
       const rateNonAsn = (parseFloat(document.getElementById("inputTarifPajakNonAsn")?.value) || 0) / 100;
 
       const tarifPajakCustom = {
         gol4: rateGol4,
         gol3: rateGol3,
-        gol12: rateGol12,
+        gol2: rateGol2,
+        gol1: rateGol1,
         pppk: ratePppk,
+        pppkPw: ratePppkPw,
         nonAsn: rateNonAsn
       };
 
@@ -6476,10 +6498,16 @@
             } else if (golUpper.startsWith("III") || golUpper.includes("GOLONGAN III")) {
               tarif = rateGol3;
               tarifStr = (rateGol3 * 100) + "%";
+            } else if (golUpper.startsWith("II") || golUpper.includes("GOLONGAN II")) {
+              tarif = rateGol2;
+              tarifStr = (rateGol2 * 100) + "%";
             } else {
-              tarif = rateGol12;
-              tarifStr = (rateGol12 * 100) + "%";
+              tarif = rateGol1;
+              tarifStr = (rateGol1 * 100) + "%";
             }
+          } else if (statusLower.includes("pppk pw") || statusLower.includes("paruh waktu")) {
+            tarif = ratePppkPw;
+            tarifStr = (ratePppkPw * 100) + "%";
           } else if (statusLower.includes("pppk")) {
             tarif = ratePppk;
             tarifStr = (ratePppk * 100) + "%";
