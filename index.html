@@ -136,6 +136,27 @@
       transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
 
+    .form-select {
+      padding-right: 2.5rem;
+    }
+
+    .form-select.form-select-sm {
+      padding: 0.45rem 2.25rem 0.45rem 0.85rem;
+      font-size: 0.86rem;
+    }
+
+    .cert-event-selector {
+      width: 100%;
+    }
+
+    @media (min-width: 768px) {
+      .cert-event-selector {
+        width: auto;
+        min-width: 280px;
+        max-width: 420px;
+      }
+    }
+
     .form-control:focus, .form-select:focus {
       border-color: var(--primary-accent);
       box-shadow: 0 0 0 3.5px rgba(59, 130, 246, 0.15);
@@ -411,9 +432,11 @@
                 <h3 class="h4 fw-bold text-dark mb-0">Unduh E-Sertifikat Peserta</h3>
               </div>
             </div>
-            <div id="certEventSelectorWrapper" class="d-none">
-              <label class="form-label small fw-bold text-muted mb-1">Pilih Kegiatan:</label>
-              <select class="form-select form-select-sm" id="selectCertEvent" onchange="onCertEventSelectChange(this.value)">
+            <div id="certEventSelectorWrapper" class="d-none cert-event-selector">
+              <label class="form-label small fw-bold text-secondary mb-1" for="selectCertEvent">
+                <i class="bi bi-calendar2-event me-1 text-warning-emphasis"></i>Pilih Kegiatan:
+              </label>
+              <select class="form-select form-select-sm fw-semibold text-dark bg-white shadow-sm" id="selectCertEvent" onchange="onCertEventSelectChange(this.value)">
               </select>
             </div>
           </div>
