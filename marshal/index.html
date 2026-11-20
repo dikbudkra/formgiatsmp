@@ -1615,6 +1615,18 @@
                     <label class="form-check-label" for="switchModulBiodata">Modul Biodata (PDF)</label>
                   </div>
                 </div>
+                <div class="col-6 col-md-4">
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="switchModulJalurSmp" checked>
+                    <label class="form-check-label" for="switchModulJalurSmp">Jalur Pendaftaran SMP</label>
+                  </div>
+                </div>
+                <div class="col-6 col-md-4">
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="switchModulJalurOpd" checked>
+                    <label class="form-check-label" for="switchModulJalurOpd">Jalur Tamu / OPD Lain</label>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -3226,6 +3238,10 @@
       if (swCert) swCert.checked = false;
       const swBiodata = document.getElementById("switchModulBiodata");
       if (swBiodata) swBiodata.checked = true;
+      const swSmp = document.getElementById("switchModulJalurSmp");
+      if (swSmp) swSmp.checked = true;
+      const swOpd = document.getElementById("switchModulJalurOpd");
+      if (swOpd) swOpd.checked = true;
       const modal = new bootstrap.Modal(document.getElementById("modalKegiatan"));
       modal.show();
     }
@@ -3257,6 +3273,10 @@
       if (swCert) swCert.checked = (ev.modulSertifikat === "ON");
       const swBiodata = document.getElementById("switchModulBiodata");
       if (swBiodata) swBiodata.checked = (ev.modulBiodata !== "OFF");
+      const swSmp = document.getElementById("switchModulJalurSmp");
+      if (swSmp) swSmp.checked = (ev.modulJalurSmp !== "OFF");
+      const swOpd = document.getElementById("switchModulJalurOpd");
+      if (swOpd) swOpd.checked = (ev.modulJalurOpd !== "OFF");
 
       const modal = new bootstrap.Modal(document.getElementById("modalKegiatan"));
       modal.show();
@@ -3266,6 +3286,17 @@
       e.preventDefault();
       const isKaosOn = document.getElementById("switchModulKaos").checked;
       const isLenganOn = isKaosOn && document.getElementById("switchModulLengan").checked;
+      const isJalurSmpOn = document.getElementById("switchModulJalurSmp")?.checked !== false;
+      const isJalurOpdOn = document.getElementById("switchModulJalurOpd")?.checked !== false;
+
+      if (!isJalurSmpOn && !isJalurOpdOn) {
+        Swal.fire({
+          title: "Jalur Pendaftaran Kosong",
+          text: "Minimal satu jalur pendaftaran (Satuan Pendidikan SMP atau Tamu / OPD Lain) harus diaktifkan!",
+          icon: "warning"
+        });
+        return;
+      }
 
       const eventData = {
         idKegiatan: document.getElementById("eventModalId").value,
@@ -3282,7 +3313,9 @@
         modulKesehatan: document.getElementById("switchModulKesehatan").checked ? "ON" : "OFF",
         modulEticketPresensi: document.getElementById("switchModulEticket")?.checked ? "ON" : "OFF",
         modulSertifikat: document.getElementById("switchModulSertifikatModal")?.checked ? "ON" : "OFF",
-        modulBiodata: document.getElementById("switchModulBiodata")?.checked ? "ON" : "OFF"
+        modulBiodata: document.getElementById("switchModulBiodata")?.checked ? "ON" : "OFF",
+        modulJalurSmp: isJalurSmpOn ? "ON" : "OFF",
+        modulJalurOpd: isJalurOpdOn ? "ON" : "OFF"
       };
 
       Swal.fire({

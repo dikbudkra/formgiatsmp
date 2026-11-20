@@ -561,7 +561,7 @@
           </div>
 
           <!-- Pilihan Kategori: Satuan Pendidikan (SMP) vs Tamu / OPD Lain -->
-          <div class="mb-3">
+          <div class="mb-3" id="boxKategoriInstansi">
             <label class="form-label small fw-bold text-secondary">Kategori Asal Instansi <span class="text-danger">*</span></label>
             <div class="pill-selector">
               <input type="radio" class="pill-radio" id="katInstansiSmp" name="kategoriInstansi" value="SMP" checked onchange="handleKategoriInstansiChange('SMP')">
@@ -1406,6 +1406,25 @@
       if (lblKesehatan) {
         lblKesehatan.textContent = `${secNo + 1}. Riwayat Kesehatan & Alergi (Opsional)`;
       }
+
+      // Modul Jalur Pendaftaran (SMP vs Tamu / OPD Lain)
+      const isJalurSmpOn = ev.modulJalurSmp !== "OFF";
+      const isJalurOpdOn = ev.modulJalurOpd !== "OFF";
+      const boxKat = document.getElementById("boxKategoriInstansi");
+      const radioSmp = document.getElementById("katInstansiSmp");
+      const radioOpd = document.getElementById("katInstansiOpd");
+
+      if (isJalurSmpOn && !isJalurOpdOn) {
+        if (boxKat) boxKat.classList.add("d-none");
+        if (radioSmp) radioSmp.checked = true;
+        handleKategoriInstansiChange("SMP");
+      } else if (!isJalurSmpOn && isJalurOpdOn) {
+        if (boxKat) boxKat.classList.add("d-none");
+        if (radioOpd) radioOpd.checked = true;
+        handleKategoriInstansiChange("OPD");
+      } else {
+        if (boxKat) boxKat.classList.remove("d-none");
+      }
     }
 
     /**
@@ -1442,13 +1461,15 @@
         return s.nama.toLowerCase().includes(cleanKeyword) || s.npsn.includes(cleanKeyword);
       });
 
+      const isOpdAllowed = !activeSelectedEvent || activeSelectedEvent.modulJalurOpd !== "OFF";
+
       if (filtered.length === 0) {
         container.innerHTML = `
           <div class="p-3 text-muted small text-center">
-            Sekolah tidak ditemukan.<br>
+            Sekolah tidak ditemukan.${isOpdAllowed ? `<br>
             <button type="button" class="btn btn-outline-primary btn-sm rounded-pill mt-2 fw-bold" onclick="switchToOpdMode()">
               <i class="bi bi-building-gear me-1"></i> Klik di Sini untuk Tamu / OPD Lain
-            </button>
+            </button>` : ""}
           </div>
         `;
         return;
@@ -1459,11 +1480,11 @@
           <div class="fw-bold text-dark">${escapeHtml(s.nama)}</div>
           <div class="small text-muted">NPSN: ${escapeHtml(s.npsn)} | ${escapeHtml(s.status)} | Kec. ${escapeHtml(s.kecamatan)}</div>
         </div>
-      `).join("") + `
+      `).join("") + (isOpdAllowed ? `
         <div class="p-2 border-top text-center bg-light cursor-pointer text-primary fw-bold small" onclick="switchToOpdMode()">
           <i class="bi bi-building-gear me-1"></i> Bukan dari SMP? Daftar sebagai Tamu / OPD Lain
         </div>
-      `;
+      ` : "");
     }
 
     function handleKategoriInstansiChange(kat) {

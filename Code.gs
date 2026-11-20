@@ -178,7 +178,9 @@ function JALANKAN_SETUP_DATABASE_MULTI_KEGIATAN() {
     "Blanko Depan ID",
     "Blanko Belakang ID",
     "Konfigurasi Layout Sertifikat",
-    "Modul Biodata"
+    "Modul Biodata",
+    "Modul Jalur SMP",
+    "Modul Jalur OPD"
   ];
 
   let sheetKegiatan = ss.getSheetByName(SHEET_MASTER_KEGIATAN);
@@ -293,7 +295,7 @@ function JALANKAN_SETUP_DATABASE_MULTI_KEGIATAN() {
 function ensureDatabaseReady_() {
   const cache = CacheService.getScriptCache();
   try {
-    if (cache.get("db_ready_v2")) {
+    if (cache.get("db_ready_v3")) {
       return;
     }
   } catch (e) {}
@@ -422,7 +424,9 @@ function ensureDatabaseReady_() {
     "Blanko Depan ID",
     "Blanko Belakang ID",
     "Konfigurasi Layout Sertifikat",
-    "Modul Biodata"
+    "Modul Biodata",
+    "Modul Jalur SMP",
+    "Modul Jalur OPD"
   ];
   let sheetKegiatan = ss.getSheetByName(SHEET_MASTER_KEGIATAN);
   if (!sheetKegiatan) {
@@ -449,7 +453,7 @@ function ensureDatabaseReady_() {
   }
 
   try {
-    cache.put("db_ready_v2", "true", 21600);
+    cache.put("db_ready_v3", "true", 21600);
   } catch (e) {}
 }
 
@@ -1166,7 +1170,9 @@ function getAllEventsForAdminInternal_() {
           blankoDepanId: String(row[19] || "").trim(),
           blankoBelakangId: String(row[20] || "").trim(),
           layoutSertifikat: parseCertLayoutJson_(row[21]),
-          modulBiodata: String(row[22] || "ON").trim().toUpperCase()
+          modulBiodata: String(row[22] || "ON").trim().toUpperCase(),
+          modulJalurSmp: String(row[23] || "ON").trim().toUpperCase(),
+          modulJalurOpd: String(row[24] || "ON").trim().toUpperCase()
         });
       }
     }
@@ -1274,6 +1280,12 @@ function saveEvent(eventData, pin) {
     const finalModulBiodata = eventData.modulBiodata !== undefined
       ? (String(eventData.modulBiodata).trim().toUpperCase() === "OFF" ? "OFF" : "ON")
       : String(existingRow[22] || "ON").trim().toUpperCase();
+    const finalModulJalurSmp = eventData.modulJalurSmp !== undefined
+      ? (String(eventData.modulJalurSmp).trim().toUpperCase() === "OFF" ? "OFF" : "ON")
+      : String(existingRow[23] || "ON").trim().toUpperCase();
+    const finalModulJalurOpd = eventData.modulJalurOpd !== undefined
+      ? (String(eventData.modulJalurOpd).trim().toUpperCase() === "OFF" ? "OFF" : "ON")
+      : String(existingRow[24] || "ON").trim().toUpperCase();
 
     const finalStatusForm = String(eventData.statusForm || "BUKA").trim().toUpperCase();
 
@@ -1300,7 +1312,9 @@ function saveEvent(eventData, pin) {
       finalBlankoDepanId,
       finalBlankoBelakangId,
       finalLayoutJson,
-      finalModulBiodata
+      finalModulBiodata,
+      finalModulJalurSmp,
+      finalModulJalurOpd
     ];
 
     if (targetRow !== -1) {
@@ -1599,7 +1613,9 @@ function getActiveEventsForPublic() {
         hasBlankoDepan: Boolean(String(row[19] || "").trim()),
         hasBlankoBelakang: Boolean(String(row[20] || "").trim()),
         layoutSertifikat: parseCertLayoutJson_(row[21]),
-        modulBiodata: String(row[22] || "ON").trim().toUpperCase()
+        modulBiodata: String(row[22] || "ON").trim().toUpperCase(),
+        modulJalurSmp: String(row[23] || "ON").trim().toUpperCase(),
+        modulJalurOpd: String(row[24] || "ON").trim().toUpperCase()
       };
 
       if (status === "BUKA") {
@@ -2284,6 +2300,8 @@ function getInitialFormData(targetEventIdOrName) {
           MODUL_KESEHATAN: matched.modulKesehatan,
           MODUL_ETICKET_PRESENSI: matched.modulEticketPresensi,
           MODUL_BIODATA: matched.modulBiodata || "ON",
+          MODUL_JALUR_SMP: matched.modulJalurSmp || "ON",
+          MODUL_JALUR_OPD: matched.modulJalurOpd || "ON",
           TANGGAL_PELAKSANAAN: matched.tanggalPelaksanaan,
           LOKASI_KEGIATAN: matched.lokasiKegiatan
         };
@@ -2304,6 +2322,8 @@ function getInitialFormData(targetEventIdOrName) {
         MODUL_KESEHATAN: ev.modulKesehatan,
         MODUL_ETICKET_PRESENSI: ev.modulEticketPresensi,
         MODUL_BIODATA: ev.modulBiodata || "ON",
+        MODUL_JALUR_SMP: ev.modulJalurSmp || "ON",
+        MODUL_JALUR_OPD: ev.modulJalurOpd || "ON",
         TANGGAL_PELAKSANAAN: ev.tanggalPelaksanaan,
         LOKASI_KEGIATAN: ev.lokasiKegiatan
       };
@@ -2404,6 +2424,8 @@ function submitRegistration(formData) {
         MODUL_KESEHATAN: matched.modulKesehatan,
         MODUL_ETICKET_PRESENSI: matched.modulEticketPresensi,
         MODUL_BIODATA: matched.modulBiodata || "ON",
+        MODUL_JALUR_SMP: matched.modulJalurSmp || "ON",
+        MODUL_JALUR_OPD: matched.modulJalurOpd || "ON",
         TANGGAL_PELAKSANAAN: matched.tanggalPelaksanaan,
         LOKASI_KEGIATAN: matched.lokasiKegiatan
       };
@@ -2767,6 +2789,8 @@ function getAdminDashboardData(pin, targetEventIdOrName) {
         MODUL_KESEHATAN: selectedEvent.modulKesehatan,
         MODUL_ETICKET_PRESENSI: selectedEvent.modulEticketPresensi,
         MODUL_BIODATA: selectedEvent.modulBiodata || "ON",
+        MODUL_JALUR_SMP: selectedEvent.modulJalurSmp || "ON",
+        MODUL_JALUR_OPD: selectedEvent.modulJalurOpd || "ON",
         TANGGAL_PELAKSANAAN: selectedEvent.tanggalPelaksanaan,
         LOKASI_KEGIATAN: selectedEvent.lokasiKegiatan,
         MODUL_SERTIFIKAT: selectedEvent.modulSertifikat || "OFF",
