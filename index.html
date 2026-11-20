@@ -439,6 +439,13 @@
               <select class="form-select form-select-sm fw-semibold text-dark bg-white shadow-sm" id="selectCertEvent" onchange="onCertEventSelectChange(this.value)">
               </select>
             </div>
+            <div id="certSingleEventBadge" class="d-none bg-warning-subtle border border-warning rounded-3 px-3 py-2 shadow-sm">
+              <div class="small text-warning-emphasis fw-bold text-uppercase" style="font-size: 0.68rem; letter-spacing: 0.03em;">
+                <i class="bi bi-calendar2-check-fill me-1"></i>Kegiatan E-Sertifikat
+              </div>
+              <div class="fw-bold text-dark small" id="lblSingleCertEventName">-</div>
+              <div class="text-secondary" style="font-size: 0.75rem;" id="lblSingleCertEventDate"></div>
+            </div>
           </div>
 
           <p class="text-secondary small mb-3" id="lblCertEventInfo">
@@ -2766,10 +2773,12 @@
 
       cardSec.classList.remove("d-none");
       const selectorWrapper = document.getElementById("certEventSelectorWrapper");
+      const singleBadge = document.getElementById("certSingleEventBadge");
       const selectorEl = document.getElementById("selectCertEvent");
 
       if (certEvents.length > 1) {
         if (selectorWrapper) selectorWrapper.classList.remove("d-none");
+        if (singleBadge) singleBadge.classList.add("d-none");
         if (selectorEl) {
           selectorEl.innerHTML = certEvents.map(ev => `
             <option value="${escapeHtml(ev.idKegiatan)}">${escapeHtml(ev.namaKegiatan)}</option>
@@ -2778,6 +2787,7 @@
         activeCertEvent = certEvents[0];
       } else {
         if (selectorWrapper) selectorWrapper.classList.add("d-none");
+        if (singleBadge) singleBadge.classList.remove("d-none");
         activeCertEvent = certEvents[0];
       }
 
@@ -2797,10 +2807,24 @@
       const lockedBox = document.getElementById("boxCertLockedNotice");
       const openBox = document.getElementById("boxCertOpenDownload");
       const lockedName = document.getElementById("lblCertLockedEventName");
+      const infoEl = document.getElementById("lblCertEventInfo");
+      const singleNameEl = document.getElementById("lblSingleCertEventName");
+      const singleDateEl = document.getElementById("lblSingleCertEventDate");
       const resultsContainer = document.getElementById("containerCertResults");
       if (resultsContainer) {
         resultsContainer.innerHTML = "";
         resultsContainer.classList.add("d-none");
+      }
+
+      const eventName = ev.namaKegiatan || "Kegiatan Aktif";
+      if (singleNameEl) singleNameEl.textContent = eventName;
+      if (singleDateEl) {
+        const tgl = (ev.tanggalPelaksanaan || "").trim();
+        singleDateEl.textContent = tgl ? `Tanggal: ${tgl}` : "";
+        singleDateEl.classList.toggle("d-none", !tgl);
+      }
+      if (infoEl) {
+        infoEl.innerHTML = `Fasilitas unduh e-sertifikat berformat PDF A4 untuk peserta kegiatan <strong class="text-dark">${escapeHtml(eventName)}</strong> — Bidang SMP DISDIKBUD Karanganyar.`;
       }
 
       const isDownloadOpen = (ev.statusUnduhSertifikat === "BUKA");
