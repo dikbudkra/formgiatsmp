@@ -2576,7 +2576,7 @@ function submitRegistration(formData) {
       sanitizeFormula(riwayatPenyakitFinal),
       sanitizeFormula(kontakNamaFinal),
       kontakHpFinal,
-      "BELUM HADIR",
+      String(settings.MODUL_ETICKET_PRESENSI || "ON").toUpperCase() === "OFF" ? "HADIR" : "BELUM HADIR",
       "-"
     ];
 
@@ -2830,7 +2830,10 @@ function getAdminDashboardData(pin, targetEventIdOrName) {
         }
 
         const offset = hasKegiatanCol ? 1 : 0;
-        const statusHadirVal = idxHadir !== -1 ? String(row[idxHadir] || "BELUM HADIR").trim().toUpperCase() : String(row[hasKegiatanCol ? 20 : 18] || "BELUM HADIR").trim().toUpperCase();
+        const isEticketOff = String(settings.MODUL_ETICKET_PRESENSI || "ON").toUpperCase() === "OFF";
+        const statusHadirVal = isEticketOff
+          ? "HADIR"
+          : (idxHadir !== -1 ? String(row[idxHadir] || "BELUM HADIR").trim().toUpperCase() : String(row[hasKegiatanCol ? 20 : 18] || "BELUM HADIR").trim().toUpperCase());
         const waktuHadirVal = idxWaktuHadir !== -1 ? String(row[idxWaktuHadir] || "-").trim() : String(row[hasKegiatanCol ? 21 : 19] || "-").trim();
 
         if (statusHadirVal === "HADIR") {

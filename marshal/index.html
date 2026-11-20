@@ -3879,28 +3879,58 @@
 
     let cachedMonitoringSekolah = { belum: [], sudah: [] };
 
+    function normalizeSchoolKey(name) {
+      return String(name || "")
+        .toLowerCase()
+        .replace(/[.,\-_()]/g, " ")
+        .replace(/\bsmp\s*n\b/g, "smp negeri")
+        .replace(/\bsmpn\b/g, "smp negeri")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
     function renderMonitoringSekolah(data) {
       const participants = data.participants || [];
       const master = (data.masterSekolah && data.masterSekolah.length > 0)
         ? data.masterSekolah
         : ((data.unregisteredSchools && data.unregisteredSchools.length > 0) ? data.unregisteredSchools : DEFAULT_MASTER_SEKOLAH_KARANGANYAR);
 
-      const registeredNpsn = new Set(participants.map(p => String(p.npsn || "").trim()));
-      const registeredName = new Set(participants.map(p => String(p.namaSekolah || "").trim().toLowerCase()));
+      const registeredNpsn = new Set(
+        participants
+          .map(p => String(p.npsn || "").replace(/^'/, "").trim())
+          .filter(n => n && n !== "-")
+      );
+      const registeredNames = participants
+        .map(p => normalizeSchoolKey(p.namaSekolah))
+        .filter(n => n && n !== "-");
+      const registeredNameSet = new Set(registeredNames);
+
+      const isSchoolNameMatched = (masterNorm) => {
+        if (!masterNorm || masterNorm === "-") return false;
+        if (registeredNameSet.has(masterNorm)) return true;
+        return registeredNames.some(rName =>
+          (rName.length >= 6 && masterNorm.startsWith(rName + " ")) ||
+          (masterNorm.length >= 6 && rName.startsWith(masterNorm + " "))
+        );
+      };
 
       const registeredCount = {};
       const registeredSchoolMeta = {};
       participants.forEach(p => {
         const schName = String(p.namaSekolah || "").trim();
-        registeredCount[schName] = (registeredCount[schName] || 0) + 1;
-        if (!registeredSchoolMeta[schName]) {
-          registeredSchoolMeta[schName] = { npsn: p.npsn || "-", kecamatan: p.kecamatan || "-" };
+        const normKey = normalizeSchoolKey(schName) || schName.toLowerCase();
+        if (!registeredCount[normKey]) {
+          registeredCount[normKey] = { displayName: schName, count: 0 };
+          registeredSchoolMeta[normKey] = { npsn: String(p.npsn || "-").replace(/^'/, "").trim(), kecamatan: p.kecamatan || "-" };
         }
+        registeredCount[normKey].count += 1;
       });
 
       const belum = master.filter(m => {
-        const npsnMatch = m.npsn && registeredNpsn.has(String(m.npsn).trim());
-        const nameMatch = m.nama && registeredName.has(String(m.nama).trim().toLowerCase());
+        const mNpsn = String(m.npsn || "").replace(/^'/, "").trim();
+        const mNorm = normalizeSchoolKey(m.nama);
+        const npsnMatch = mNpsn && mNpsn !== "-" && registeredNpsn.has(mNpsn);
+        const nameMatch = isSchoolNameMatched(mNorm);
         return !npsnMatch && !nameMatch;
       }).map(m => ({
         nama: m.nama || "-",
@@ -3908,13 +3938,18 @@
         kecamatan: m.kecamatan || "-"
       }));
 
-      const sudah = Object.keys(registeredCount).map(sch => {
-        const m = master.find(x => String(x.nama).trim().toLowerCase() === sch.toLowerCase() || (x.npsn && String(x.npsn).trim() === registeredSchoolMeta[sch]?.npsn));
+      const sudah = Object.keys(registeredCount).map(normKey => {
+        const entry = registeredCount[normKey];
+        const meta = registeredSchoolMeta[normKey];
+        const m = master.find(x =>
+          normalizeSchoolKey(x.nama) === normKey ||
+          (x.npsn && String(x.npsn).replace(/^'/, "").trim() === meta?.npsn && meta?.npsn !== "-")
+        );
         return {
-          nama: sch,
-          npsn: m ? m.npsn : (registeredSchoolMeta[sch]?.npsn || "-"),
-          kecamatan: m ? m.kecamatan : (registeredSchoolMeta[sch]?.kecamatan || "-"),
-          count: registeredCount[sch]
+          nama: m ? m.nama : entry.displayName,
+          npsn: m ? m.npsn : (meta?.npsn || "-"),
+          kecamatan: m ? m.kecamatan : (meta?.kecamatan || "-"),
+          count: entry.count
         };
       });
 
@@ -4660,6 +4695,7 @@
     function renderParticipantsTable(participants) {
       const tbody = document.getElementById("tbodyPesertaLengkap");
       const cardContainer = document.getElementById("containerPesertaCardView");
+      const isEticketOff = String(currentDashboardData?.settings?.MODUL_ETICKET_PRESENSI || "ON").toUpperCase() === "OFF";
 
       if (!participants || participants.length === 0) {
         if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-muted">Belum ada data peserta terdaftar.</td></tr>';
@@ -4671,6 +4707,8 @@
       if (tbody) {
         tbody.innerHTML = participants.map((p, i) => {
           const hasWa = String(p.noWa || "").replace(/[^0-9]/g, "").length >= 9;
+          const isHadir = isEticketOff || String(p.statusKehadiran).toLowerCase() === 'hadir';
+          const statusLabel = isEticketOff ? 'HADIR' : (p.statusKehadiran || 'Belum');
           return `
           <tr>
             <td>${i + 1}</td>
@@ -4683,8 +4721,8 @@
             <td>${escapeHtml(p.jabatan || '-')} (${escapeHtml(p.statusKepegawaian || '-')})</td>
             <td><span class="badge bg-light text-dark border">${escapeHtml(p.ukuranKaos || '-')} (${escapeHtml(p.panjangLengan || '-')})</span></td>
             <td>
-              <span class="badge ${String(p.statusKehadiran).toLowerCase() === 'hadir' ? 'bg-success' : 'bg-warning text-dark'}">
-                ${escapeHtml(p.statusKehadiran || 'Belum')}
+              <span class="badge ${isHadir ? 'bg-success' : 'bg-warning text-dark'}">
+                ${escapeHtml(statusLabel)}
               </span>
             </td>
             <td class="text-center">
@@ -4712,7 +4750,7 @@
       // 2. Render Tampilan Kartu Ringkas (Mobile / Thumb-Zone Friendly)
       if (cardContainer) {
         cardContainer.innerHTML = participants.map((p, i) => {
-          const isHadir = String(p.statusKehadiran).toLowerCase() === 'hadir';
+          const isHadir = isEticketOff || String(p.statusKehadiran).toLowerCase() === 'hadir';
           const hasWa = String(p.noWa || "").replace(/[^0-9]/g, "").length >= 9;
           return `
             <div class="col">
@@ -4832,11 +4870,13 @@
     function filterTablePeserta(val) {
       const q = (val || document.getElementById("searchTablePeserta").value).toLowerCase();
       const statusFilter = document.getElementById("filterStatusHadirTable").value.toLowerCase();
+      const isEticketOff = String(currentDashboardData?.settings?.MODUL_ETICKET_PRESENSI || "ON").toUpperCase() === "OFF";
 
       const participants = currentDashboardData?.participants || [];
       const filtered = participants.filter(p => {
         const matchQ = !q || [p.regId, p.namaLengkap, p.namaSekolah, p.nip].some(x => String(x || "").toLowerCase().includes(q));
-        const matchStatus = !statusFilter || (statusFilter === "hadir" ? String(p.statusKehadiran).toLowerCase() === "hadir" : String(p.statusKehadiran).toLowerCase() !== "hadir");
+        const pHadir = isEticketOff || String(p.statusKehadiran).toLowerCase() === "hadir";
+        const matchStatus = !statusFilter || (statusFilter === "hadir" ? pHadir : !pHadir);
         return matchQ && matchStatus;
       });
 
