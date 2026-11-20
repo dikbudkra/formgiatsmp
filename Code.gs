@@ -1285,7 +1285,7 @@ function saveEvent(eventData, pin) {
       : String(existingRow[23] || "ON").trim().toUpperCase();
     const finalModulJalurOpd = eventData.modulJalurOpd !== undefined
       ? (String(eventData.modulJalurOpd).trim().toUpperCase() === "OFF" ? "OFF" : "ON")
-      : String(existingRow[24] || "ON").trim().toUpperCase();
+      : String(existingRow[24] || (targetRow === -1 ? "OFF" : "ON")).trim().toUpperCase();
 
     const finalStatusForm = String(eventData.statusForm || "BUKA").trim().toUpperCase();
 

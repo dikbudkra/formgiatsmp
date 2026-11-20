@@ -1623,7 +1623,7 @@
                 </div>
                 <div class="col-6 col-md-4">
                   <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" id="switchModulJalurOpd" checked>
+                    <input class="form-check-input" type="checkbox" id="switchModulJalurOpd">
                     <label class="form-check-label" for="switchModulJalurOpd">Jalur Tamu / OPD Lain</label>
                   </div>
                 </div>
@@ -3241,7 +3241,7 @@
       const swSmp = document.getElementById("switchModulJalurSmp");
       if (swSmp) swSmp.checked = true;
       const swOpd = document.getElementById("switchModulJalurOpd");
-      if (swOpd) swOpd.checked = true;
+      if (swOpd) swOpd.checked = false;
       const modal = new bootstrap.Modal(document.getElementById("modalKegiatan"));
       modal.show();
     }
