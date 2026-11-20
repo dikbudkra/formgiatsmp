@@ -4737,6 +4737,9 @@
                 <button class="btn btn-outline-warning btn-sm rounded-pill p-1 px-2" onclick="certDownloadOne('${escapeHtml(p.regId)}')" title="Unduh E-Sertifikat Peserta (PDF A4)">
                   <i class="bi bi-award-fill"></i>
                 </button>
+                <button class="btn btn-outline-secondary btn-sm rounded-pill p-1 px-2" onclick="openModalEditParticipant('${escapeHtml(p.regId)}')" title="Edit Biodata Peserta">
+                  <i class="bi bi-pencil-fill"></i>
+                </button>
                 <button class="btn btn-outline-danger btn-sm rounded-pill p-1 px-2" onclick="confirmDeleteParticipant('${escapeHtml(p.regId)}')" title="Hapus Data Peserta">
                   <i class="bi bi-trash"></i>
                 </button>
@@ -4797,6 +4800,9 @@
                     <button type="button" class="btn btn-outline-warning btn-sm rounded-pill flex-grow-1 py-1.5 fw-semibold text-dark d-inline-flex align-items-center justify-content-center gap-1" onclick="certDownloadOne('${escapeHtml(p.regId)}')" title="Unduh Sertifikat">
                       <i class="bi bi-award-fill text-warning"></i>
                       <span style="font-size: 0.78rem;">Sertifikat</span>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-2.5 py-1.5" onclick="openModalEditParticipant('${escapeHtml(p.regId)}')" title="Edit Biodata Peserta">
+                      <i class="bi bi-pencil-fill"></i>
                     </button>
                     <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-2.5 py-1.5" onclick="confirmDeleteParticipant('${escapeHtml(p.regId)}')" title="Hapus Data">
                       <i class="bi bi-trash"></i>
@@ -4881,6 +4887,154 @@
       });
 
       renderParticipantsTable(filtered);
+    }
+
+    async function openModalEditParticipant(regId) {
+      const participants = currentDashboardData?.participants || [];
+      const p = participants.find(item => String(item.regId || "").trim() === String(regId || "").trim());
+      if (!p) return;
+
+      const curStatus = String(p.statusKepegawaian || "Non-ASN").trim();
+      const curJk = String(p.jenisKelamin || "Laki-laki").trim();
+      const curKaos = String(p.ukuranKaos || "-").trim();
+      const curLengan = String(p.panjangLengan || "-").trim();
+
+      const { value: formVals } = await Swal.fire({
+        title: `<div class="d-flex align-items-center justify-content-center gap-2">
+                  <i class="bi bi-pencil-square text-primary"></i>
+                  <span class="fs-5 fw-bold">Edit Biodata Peserta</span>
+                </div>`,
+        width: "650px",
+        html: `
+          <div class="text-start small">
+            <div class="alert alert-light border py-2 px-3 mb-3 d-flex justify-content-between align-items-center">
+              <span class="text-muted">ID Registrasi:</span>
+              <strong class="font-monospace text-primary">${escapeHtml(p.regId)}</strong>
+            </div>
+            <div class="row g-2.5">
+              <div class="col-12">
+                <label class="form-label fw-semibold mb-1">Nama Lengkap &amp; Gelar <span class="text-danger">*</span></label>
+                <input type="text" id="editPartNama" class="form-control form-control-sm" value="${escapeHtml(p.namaLengkap || p.nama || '')}">
+              </div>
+              <div class="col-md-8">
+                <label class="form-label fw-semibold mb-1">Satuan Pendidikan / Instansi <span class="text-danger">*</span></label>
+                <input type="text" id="editPartSekolah" class="form-control form-control-sm" value="${escapeHtml(p.namaSekolah || p.sekolah || '')}">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold mb-1">NPSN</label>
+                <input type="text" id="editPartNpsn" class="form-control form-control-sm font-monospace" value="${escapeHtml(p.npsn || '-')}">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold mb-1">Status Kepegawaian</label>
+                <select id="editPartStatusPeg" class="form-select form-select-sm">
+                  <option value="PNS" ${curStatus === "PNS" ? "selected" : ""}>PNS</option>
+                  <option value="PPPK" ${curStatus === "PPPK" ? "selected" : ""}>PPPK</option>
+                  <option value="PPPK PW" ${curStatus === "PPPK PW" ? "selected" : ""}>PPPK PW</option>
+                  <option value="Non-ASN" ${curStatus === "Non-ASN" || curStatus === "Non ASN" ? "selected" : ""}>Non-ASN</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold mb-1">NIP (18 digit / -)</label>
+                <input type="text" id="editPartNip" class="form-control form-control-sm font-monospace" value="${escapeHtml(p.nip || '-')}">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold mb-1">Golongan</label>
+                <input type="text" id="editPartGolongan" class="form-control form-control-sm" value="${escapeHtml(p.golongan || '-')}">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold mb-1">Pangkat</label>
+                <input type="text" id="editPartPangkat" class="form-control form-control-sm" value="${escapeHtml(p.pangkat || '-')}">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold mb-1">Jabatan / Peran</label>
+                <input type="text" id="editPartJabatan" class="form-control form-control-sm" value="${escapeHtml(p.jabatan || '-')}">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold mb-1">Jenis Kelamin</label>
+                <select id="editPartJk" class="form-select form-select-sm">
+                  <option value="Laki-laki" ${curJk === "Laki-laki" ? "selected" : ""}>Laki-laki</option>
+                  <option value="Perempuan" ${curJk === "Perempuan" ? "selected" : ""}>Perempuan</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold mb-1">No. WhatsApp</label>
+                <input type="text" id="editPartWa" class="form-control form-control-sm font-monospace" value="${escapeHtml(p.noWa || '-')}">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold mb-1">Kecamatan</label>
+                <input type="text" id="editPartKecamatan" class="form-control form-control-sm" value="${escapeHtml(p.kecamatan || '-')}">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold mb-1">Ukuran Kaos</label>
+                <select id="editPartKaos" class="form-select form-select-sm">
+                  ${["-", "S", "M", "L", "XL", "XXL", "3XL", "4XL"].map(sz => `<option value="${sz}" ${curKaos === sz ? "selected" : ""}>${sz}</option>`).join("")}
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold mb-1">Panjang Lengan</label>
+                <select id="editPartLengan" class="form-select form-select-sm">
+                  ${["-", "Pendek", "Panjang"].map(lg => `<option value="${lg}" ${curLengan === lg ? "selected" : ""}>${lg}</option>`).join("")}
+                </select>
+              </div>
+            </div>
+          </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: '<i class="bi bi-save me-1"></i> Simpan Perubahan',
+        cancelButtonText: "Batal",
+        confirmButtonColor: "#1e3a8a",
+        cancelButtonColor: "#64748b",
+        preConfirm: () => {
+          const nama = document.getElementById("editPartNama").value.trim();
+          const sekolah = document.getElementById("editPartSekolah").value.trim();
+          if (!nama || !sekolah) {
+            Swal.showValidationMessage("Nama Lengkap dan Satuan Pendidikan wajib diisi!");
+            return false;
+          }
+          return {
+            regId: p.regId,
+            namaLengkap: nama,
+            namaSekolah: sekolah,
+            npsn: document.getElementById("editPartNpsn").value.trim() || "-",
+            statusKepegawaian: document.getElementById("editPartStatusPeg").value,
+            nip: document.getElementById("editPartNip").value.trim() || "-",
+            golongan: document.getElementById("editPartGolongan").value.trim() || "-",
+            pangkat: document.getElementById("editPartPangkat").value.trim() || "-",
+            jabatan: document.getElementById("editPartJabatan").value.trim() || "-",
+            jenisKelamin: document.getElementById("editPartJk").value,
+            noWa: document.getElementById("editPartWa").value.trim() || "-",
+            kecamatan: document.getElementById("editPartKecamatan").value.trim() || "-",
+            ukuranKaos: document.getElementById("editPartKaos").value,
+            panjangLengan: document.getElementById("editPartLengan").value
+          };
+        }
+      });
+
+      if (!formVals) return;
+
+      Swal.fire({
+        title: "Menyimpan Perubahan...",
+        text: "Sedang memperbarui biodata peserta di Google Sheets...",
+        allowOutsideClick: false,
+        didOpen: () => { Swal.showLoading(); }
+      });
+
+      try {
+        const res = await callGasApi("updateParticipant", { participantData: formVals, pin: currentAdminPin });
+        if (res && res.success) {
+          await loadDashboardInitial(false, activeEventId);
+          const searchPeserta = document.getElementById("searchTablePeserta");
+          const filterStatus = document.getElementById("filterStatusHadirTable");
+          if ((searchPeserta && searchPeserta.value.trim()) || (filterStatus && filterStatus.value)) {
+            filterTablePeserta();
+          }
+          Swal.fire({ icon: "success", title: "Berhasil!", text: res.message || "Biodata peserta berhasil diperbarui.", timer: 2000, showConfirmButton: false });
+        } else {
+          Swal.fire({ icon: "error", title: "Gagal", text: res ? res.message : "Gagal memperbarui biodata peserta." });
+        }
+      } catch (err) {
+        Swal.fire({ icon: "error", title: "Error", text: err.message });
+      }
     }
 
     async function confirmDeleteParticipant(regId) {

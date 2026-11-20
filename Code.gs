@@ -657,6 +657,16 @@ function handleApiRequest_(action, payload) {
     case "deleteParticipant":
       return deleteParticipant(payload.regId, payload.pin);
 
+    case "updateParticipant": {
+      let pData = payload.participantData || payload;
+      if (typeof pData === "string") {
+        try {
+          pData = JSON.parse(pData);
+        } catch (e) {}
+      }
+      return updateParticipantData(pData, payload.pin);
+    }
+
     case "archiveAndResetEvent":
       return archiveAndResetEvent(payload.pin);
 
@@ -3023,6 +3033,108 @@ function deleteParticipant(regId, pin) {
   } catch (error) {
     Logger.log("Error deleteParticipant: " + error.toString());
     return { success: false, message: "Gagal menghapus data: " + error.message };
+  } finally {
+    if (hasLock) {
+      try { lock.releaseLock(); } catch (e) {}
+    }
+  }
+}
+
+/**
+ * Memperbarui data biodata peserta oleh Panitia (Portal Marshal)
+ */
+function updateParticipantData(participantData, pin) {
+  if (!verifyAdminPin(pin)) {
+    return { success: false, message: "Akses ditolak: PIN Panitia tidak valid." };
+  }
+  const p = participantData || {};
+  const cleanRegId = String(p.regId || "").trim();
+  if (!cleanRegId) {
+    return { success: false, message: "ID Registrasi tidak valid." };
+  }
+
+  const lock = LockService.getScriptLock();
+  let hasLock = false;
+  try {
+    try {
+      hasLock = lock.tryLock(10000);
+    } catch (e) {
+      hasLock = false;
+    }
+
+    const ss = getSpreadsheet_();
+    const sheet = ss.getSheetByName(SHEET_PESERTA);
+    if (!sheet) return { success: false, message: "Sheet Data_Peserta tidak ditemukan." };
+
+    const data = sheet.getDataRange().getValues();
+    if (data.length <= 1) return { success: false, message: "Data peserta kosong." };
+
+    const headerRow = data[0].map(h => String(h).trim().toLowerCase());
+    const hasKegiatanCol = headerRow.includes("nama kegiatan");
+    const offset = hasKegiatanCol ? 1 : 0;
+
+    let targetRow = -1;
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][1]).trim() === cleanRegId) {
+        targetRow = i + 1;
+        break;
+      }
+    }
+
+    if (targetRow === -1) {
+      return { success: false, message: `Peserta dengan ID ${cleanRegId} tidak ditemukan.` };
+    }
+
+    const rowArr = data[targetRow - 1];
+    const cleanVal = (v, fallback) => {
+      const s = String(v !== undefined && v !== null ? v : fallback).trim();
+      return s || "-";
+    };
+    const sanitizeFormula = (val) => {
+      const s = String(val || "").trim();
+      if (/^[=+\-@]/.test(s)) return "'" + s;
+      return s;
+    };
+
+    const namaLengkap = sanitizeFormula(cleanVal(p.namaLengkap, rowArr[6 + offset]));
+    const namaSekolah = sanitizeFormula(cleanVal(p.namaSekolah, rowArr[2 + offset]));
+    const npsnClean = String(p.npsn !== undefined ? p.npsn : rowArr[3 + offset]).replace(/^'/, "").trim() || "-";
+    const kecamatan = sanitizeFormula(cleanVal(p.kecamatan, rowArr[5 + offset]));
+    const statusPeg = sanitizeFormula(cleanVal(p.statusKepegawaian, rowArr[7 + offset]));
+    const nipClean = String(p.nip !== undefined ? p.nip : rowArr[8 + offset]).replace(/^'/, "").trim() || "-";
+    const golongan = sanitizeFormula(cleanVal(p.golongan, rowArr[9 + offset]));
+    const pangkat = sanitizeFormula(cleanVal(p.pangkat, rowArr[10 + offset]));
+    const jabatan = sanitizeFormula(cleanVal(p.jabatan, rowArr[11 + offset]));
+    const jenisKelamin = sanitizeFormula(cleanVal(p.jenisKelamin, rowArr[12 + offset]));
+    const ukuranKaos = sanitizeFormula(cleanVal(p.ukuranKaos, rowArr[13 + offset]));
+    const panjangLengan = hasKegiatanCol ? sanitizeFormula(cleanVal(p.panjangLengan, rowArr[15])) : "-";
+    const noWaClean = String(p.noWa !== undefined ? p.noWa : rowArr[hasKegiatanCol ? 16 : 14]).replace(/^'/, "").trim() || "-";
+
+    sheet.getRange(targetRow, 2 + offset + 1).setValue(namaSekolah);
+    sheet.getRange(targetRow, 3 + offset + 1).setValue(npsnClean !== "-" ? "'" + npsnClean : "-");
+    sheet.getRange(targetRow, 5 + offset + 1).setValue(kecamatan);
+    sheet.getRange(targetRow, 6 + offset + 1).setValue(namaLengkap);
+    sheet.getRange(targetRow, 7 + offset + 1).setValue(statusPeg);
+    sheet.getRange(targetRow, 8 + offset + 1).setValue(nipClean !== "-" ? "'" + nipClean : "-");
+    sheet.getRange(targetRow, 9 + offset + 1).setValue(golongan);
+    sheet.getRange(targetRow, 10 + offset + 1).setValue(pangkat);
+    sheet.getRange(targetRow, 11 + offset + 1).setValue(jabatan);
+    sheet.getRange(targetRow, 12 + offset + 1).setValue(jenisKelamin);
+    sheet.getRange(targetRow, 13 + offset + 1).setValue(ukuranKaos);
+    if (hasKegiatanCol) {
+      sheet.getRange(targetRow, 16).setValue(panjangLengan);
+      sheet.getRange(targetRow, 17).setValue(noWaClean !== "-" ? "'" + noWaClean : "-");
+    } else {
+      sheet.getRange(targetRow, 15).setValue(noWaClean !== "-" ? "'" + noWaClean : "-");
+    }
+
+    return {
+      success: true,
+      message: `Biodata peserta "${namaLengkap}" berhasil diperbarui.`
+    };
+  } catch (err) {
+    Logger.log("Error updateParticipantData: " + err.toString());
+    return { success: false, message: "Gagal memperbarui biodata peserta: " + err.message };
   } finally {
     if (hasLock) {
       try { lock.releaseLock(); } catch (e) {}
