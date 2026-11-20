@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Portal Marshal &amp; Panitia - Disdikbud Karanganyar</title>
   
   <meta name="description" content="Dashboard Manajemen Kegiatan &amp; Presensi QR Code Bidang SMP DISDIKBUD Karanganyar">
@@ -55,7 +55,7 @@
 
     /* Top Navbar */
     .topbar {
-      height: var(--topbar-height);
+      height: calc(var(--topbar-height) + env(safe-area-inset-top));
       background: #ffffff;
       border-bottom: 1px solid var(--card-border);
       position: fixed;
@@ -65,7 +65,7 @@
       z-index: 1030;
       display: flex;
       align-items: center;
-      padding: 0 1.25rem;
+      padding: env(safe-area-inset-top) 1.25rem 0;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
     }
 
@@ -75,11 +75,12 @@
       background: #0f172a;
       color: #94a3b8;
       position: fixed;
-      top: var(--topbar-height);
+      top: calc(var(--topbar-height) + env(safe-area-inset-top));
       bottom: 0;
       left: 0;
       z-index: 1025;
       overflow-y: auto;
+      padding-bottom: env(safe-area-inset-bottom);
       transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       display: flex;
       flex-direction: column;
@@ -92,10 +93,11 @@
 
     /* Main Content Area */
     .main-wrapper {
-      margin-top: var(--topbar-height);
+      margin-top: calc(var(--topbar-height) + env(safe-area-inset-top));
       margin-left: var(--sidebar-width);
-      padding: 1.5rem;
+      padding: 1.5rem 1.5rem calc(1.5rem + env(safe-area-inset-bottom));
       min-height: calc(100vh - var(--topbar-height));
+      min-height: calc(100dvh - var(--topbar-height) - env(safe-area-inset-top));
       transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       display: flex;
       flex-direction: column;
@@ -114,7 +116,13 @@
       }
       .main-wrapper {
         margin-left: 0 !important;
-        padding: 1rem;
+        padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom));
+      }
+    }
+
+    @media (max-width: 575.98px) {
+      .topbar {
+        padding: env(safe-area-inset-top) 0.75rem 0;
       }
     }
 
@@ -458,16 +466,16 @@
     </div>
 
     <!-- Active Event Title in Center (Tempat Kosong Diatas) -->
-    <div class="flex-grow-1 d-flex align-items-center justify-content-center px-3 min-w-0" id="topbarActiveEventContainer">
-      <div class="d-inline-flex align-items-center gap-2 px-3 py-1 bg-primary-subtle text-primary border border-primary-subtle rounded-pill shadow-xs text-truncate">
-        <i class="bi bi-award-fill text-primary"></i>
+    <div class="flex-grow-1 d-flex align-items-center justify-content-center px-2 px-sm-3 min-w-0" id="topbarActiveEventContainer">
+      <div class="d-inline-flex align-items-center gap-1.5 gap-sm-2 px-2.5 px-sm-3 py-1 bg-primary-subtle text-primary border border-primary-subtle rounded-pill shadow-xs text-truncate mw-100">
+        <i class="bi bi-award-fill text-primary flex-shrink-0"></i>
         <span class="text-secondary small fw-medium d-none d-lg-inline">Kegiatan Aktif:</span>
-        <span class="fw-bold text-truncate" id="topbarActiveEventTitle" style="max-width: 450px;">Memuat Kegiatan...</span>
+        <span class="fw-bold text-truncate small" id="topbarActiveEventTitle" style="max-width: 450px;">Memuat Kegiatan...</span>
       </div>
     </div>
 
     <!-- Actions & Event Switcher in Topbar -->
-    <div class="ms-auto d-flex align-items-center gap-2 flex-shrink-0">
+    <div class="ms-auto d-flex align-items-center gap-1.5 gap-sm-2 flex-shrink-0">
       <!-- Tombol Refresh Manual Global -->
       <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-2.5 py-1.5 fw-semibold d-flex align-items-center gap-1 shadow-sm" id="btnTopbarRefresh" onclick="refreshCurrentDashboard(true)" title="Segarkan Data Terbaru">
         <i class="bi bi-arrow-clockwise"></i>
@@ -475,9 +483,9 @@
       </button>
 
       <!-- Tombol Ganti Kegiatan (Pop-up Modal) -->
-      <button type="button" class="btn btn-light border btn-sm rounded-pill px-3 py-1.5 fw-bold text-dark d-flex align-items-center gap-1.5 shadow-sm" id="btnTopbarGantiGiat" onclick="openModalPilihKegiatanTopbar()" title="Ganti Kegiatan yang Ditampilkan">
+      <button type="button" class="btn btn-light border btn-sm rounded-pill px-2.5 px-sm-3 py-1.5 fw-bold text-dark d-flex align-items-center gap-1.5 shadow-sm" id="btnTopbarGantiGiat" onclick="openModalPilihKegiatanTopbar()" title="Ganti Kegiatan yang Ditampilkan">
         <i class="bi bi-calendar2-check-fill text-primary" id="iconTopbarCalendar"></i>
-        <span id="labelTombolGantiGiat">Ganti Giat</span>
+        <span id="labelTombolGantiGiat" class="d-none d-sm-inline">Ganti Giat</span>
         <i class="bi bi-chevron-down text-muted small ms-0.5"></i>
       </button>
 
@@ -486,9 +494,9 @@
         <span class="small">Form Publik</span>
       </a>
 
-      <button class="btn btn-danger btn-sm rounded-pill px-3 py-1 fw-bold shadow-sm d-flex align-items-center gap-1.5" onclick="confirmLogout()" title="Keluar dari Portal Panitia">
+      <button class="btn btn-danger btn-sm rounded-pill px-2.5 px-sm-3 py-1.5 py-sm-1 fw-bold shadow-sm d-flex align-items-center gap-1.5" onclick="confirmLogout()" title="Keluar dari Portal Panitia">
         <i class="bi bi-box-arrow-right"></i>
-        <span>Keluar</span>
+        <span class="d-none d-sm-inline">Keluar</span>
       </button>
     </div>
   </header>
