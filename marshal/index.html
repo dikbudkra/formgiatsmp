@@ -44,6 +44,10 @@
       --card-border: #e2e8f0;
     }
 
+    .min-w-0 {
+      min-width: 0 !important;
+    }
+
     body {
       font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background-color: var(--bg-body);
@@ -450,8 +454,8 @@
   </div>
 
   <!-- ==================== TOP NAVIGATION BAR ==================== -->
-  <header class="topbar">
-    <div class="d-flex align-items-center gap-3">
+  <header class="topbar gap-2">
+    <div class="d-flex align-items-center gap-2 gap-sm-3 flex-shrink-0">
       <!-- Toggle Sidebar Button (Bisa dibuka & ditutup) -->
       <button class="btn btn-light btn-sm border rounded-3 p-1.5" id="btnToggleSidebar" onclick="toggleSidebarMenu()" title="Buka/Tutup Menu">
         <i class="bi bi-list fs-5"></i>
@@ -466,10 +470,10 @@
     </div>
 
     <!-- Active Event Title in Center (Tempat Kosong Diatas) -->
-    <div class="flex-grow-1 d-flex align-items-center justify-content-center px-2 px-sm-3 min-w-0" id="topbarActiveEventContainer">
-      <div class="d-inline-flex align-items-center gap-1.5 gap-sm-2 px-2.5 px-sm-3 py-1 bg-primary-subtle text-primary border border-primary-subtle rounded-pill shadow-xs text-truncate mw-100">
+    <div class="flex-grow-1 d-flex align-items-center justify-content-center px-1 px-sm-3 min-w-0 overflow-hidden" id="topbarActiveEventContainer">
+      <div class="d-inline-flex align-items-center gap-1.5 gap-sm-2 px-2.5 px-sm-3 py-1 bg-primary-subtle text-primary border border-primary-subtle rounded-pill shadow-xs mw-100 min-w-0 overflow-hidden">
         <i class="bi bi-award-fill text-primary flex-shrink-0"></i>
-        <span class="text-secondary small fw-medium d-none d-lg-inline">Kegiatan Aktif:</span>
+        <span class="text-secondary small fw-medium d-none d-lg-inline flex-shrink-0">Kegiatan Aktif:</span>
         <span class="fw-bold text-truncate small" id="topbarActiveEventTitle" style="max-width: 450px;">Memuat Kegiatan...</span>
       </div>
     </div>
@@ -8310,7 +8314,11 @@
               margin: 1.0in 0.8in 1.0in 0.8in;
             }
             div.Section1 { page: Section1; }
-            body { font-family: Arial, sans-serif; font-size: 9.5pt; color: #000; }
+            .min-w-0 {
+      min-width: 0 !important;
+    }
+
+    body { font-family: Arial, sans-serif; font-size: 9.5pt; color: #000; }
             h3, h4 { text-align: center; margin: 2px; text-transform: uppercase; }
             table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 9pt; }
             th, td { border: 1px solid #000; padding: 5px; }
