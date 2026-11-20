@@ -782,7 +782,7 @@
           <!-- SEKSI 5: KONTAK & DARURAT -->
           <div class="step-banner">
             <i class="bi bi-telephone"></i>
-            <span>5. Kontak WhatsApp &amp; Darurat</span>
+            <span id="lblBannerKontak">5. Kontak WhatsApp &amp; Darurat</span>
           </div>
 
           <div class="row g-3 mb-4">
@@ -817,7 +817,7 @@
           <div id="modulKesehatanContainer" class="mb-4">
             <div class="step-banner">
               <i class="bi bi-heart-pulse"></i>
-              <span>6. Riwayat Kesehatan &amp; Alergi (Opsional)</span>
+              <span id="lblBannerKesehatan">6. Riwayat Kesehatan &amp; Alergi (Opsional)</span>
             </div>
 
             <div class="mb-3">
@@ -1392,6 +1392,19 @@
       const modulKesehatanEl = document.getElementById("modulKesehatanContainer");
       if (modulKesehatanEl) {
         modulKesehatanEl.style.display = isKesehatanOn ? "block" : "none";
+      }
+
+      // Penomoran & Judul Seksi Dinamis (agar tidak membingungkan jika Kaos / Kontak Darurat OFF)
+      let secNo = isKaosOn ? 5 : 4;
+      const lblKontak = document.getElementById("lblBannerKontak");
+      if (lblKontak) {
+        lblKontak.textContent = isDaruratOn
+          ? `${secNo}. Kontak WhatsApp & Darurat`
+          : `${secNo}. Kontak WhatsApp Peserta`;
+      }
+      const lblKesehatan = document.getElementById("lblBannerKesehatan");
+      if (lblKesehatan) {
+        lblKesehatan.textContent = `${secNo + 1}. Riwayat Kesehatan & Alergi (Opsional)`;
       }
     }
 
