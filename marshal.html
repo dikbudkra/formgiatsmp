@@ -307,7 +307,7 @@
         margin: 1cm;
       }
     }
-    /* ================= Modern Chat Balloons (Jemprot AI) ================= */
+    /* ================= Modern Chat Balloons (R.A.D.I.T.) ================= */
     .chat-message-row {
       display: flex;
       margin-bottom: 1.25rem;
@@ -327,14 +327,40 @@
       font-size: 1.15rem;
       flex-shrink: 0;
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+      overflow: hidden;
     }
     .chat-avatar.user-avatar {
       background: linear-gradient(135deg, #1e3a8a, #2563eb);
       color: #ffffff;
     }
     .chat-avatar.ai-avatar {
-      background: linear-gradient(135deg, #f59e0b, #d97706);
-      color: #ffffff;
+      background: #ffffff;
+      border: 1.5px solid #cbd5e1;
+      padding: 2px;
+    }
+    .chat-avatar.ai-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+    }
+    .chat-bubble-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin-top: 0.65rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid #f1f5f9;
+    }
+    .chat-reply-quote {
+      background: rgba(255, 255, 255, 0.16);
+      border-left: 3px solid #fbbf24;
+      padding: 0.35rem 0.6rem;
+      border-radius: 0.45rem;
+      font-size: 0.78rem;
+      margin-bottom: 0.45rem;
+      color: #e2e8f0;
     }
     .chat-bubble {
       max-width: 82%;
@@ -553,10 +579,10 @@
     </div>
 
     <!-- 5. KECERDASAN BUATAN -->
-    <div class="nav-group-title">Kecerdasan Buatan</div>
+    <div class="nav-group-title">Asisten Cerdas</div>
     <div class="nav-sidebar-link" onclick="switchTab('tabGeminiAi', this)">
-      <i class="bi bi-stars text-warning"></i>
-      <span>Tanya Jemprot AI</span>
+      <img src="./icons/radit-icon.png" alt="R.A.D.I.T." style="width: 20px; height: 20px; border-radius: 50%; object-fit: cover;">
+      <span>Tanya R.A.D.I.T.</span>
     </div>
 
     <!-- 6. SISTEM & PENGATURAN -->
@@ -1174,7 +1200,7 @@
             </span>
             <h4 class="fw-bold text-dark mb-1">Pustaka &amp; Generator Dokumen SPJ</h4>
             <p class="text-muted small mb-0">
-              Kelola format dokumen dan SPJ dinas (<strong>.xlsx</strong> &amp; <strong>.docx</strong>), tersimpan aman di Google Drive dan terisi otomatis dari data peserta kegiatan aktif dengan analisis Jemprot AI.
+              Kelola format dokumen dan SPJ dinas (<strong>.xlsx</strong> &amp; <strong>.docx</strong>), tersimpan aman di Google Drive dan terisi otomatis dari data peserta kegiatan aktif dengan analisis R.A.D.I.T.
             </p>
           </div>
           <div class="d-flex gap-2">
@@ -1353,12 +1379,15 @@
       </div>
     </section>
 
-    <!-- ==================== TAB 8: ASISTEN JEMPROT AI ==================== -->
+    <!-- ==================== TAB 8: ASISTEN R.A.D.I.T. ==================== -->
     <section id="tabGeminiAi" class="tab-pane d-none">
       <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-        <div>
-          <h3 class="h4 fw-bold text-dark mb-0">Asisten Jemprot AI Panitia</h3>
-          <p class="text-muted small mb-0">Analisis cerdas kehadiran, rekap logistik, dan asisten panitia</p>
+        <div class="d-flex align-items-center gap-2.5">
+          <img src="./icons/radit-icon.png" alt="Logo R.A.D.I.T." class="rounded-circle border shadow-xs flex-shrink-0" style="width: 44px; height: 44px; object-fit: cover;">
+          <div>
+            <h3 class="h4 fw-bold text-dark mb-0">R.A.D.I.T. <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill align-middle ms-1" style="font-size: 0.7rem;">Asisten Panitia</span></h3>
+            <p class="text-muted small mb-0">Robot Asisten Data dan Informasi Terpusat — Khusus data peserta kegiatan aktif</p>
+          </div>
         </div>
         <div class="d-flex align-items-center gap-2 flex-wrap">
           <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1.5 small shadow-xs">
@@ -1375,16 +1404,26 @@
         <!-- Balon Chat Area -->
         <div id="chatAiContainer" class="flex-grow-1 overflow-auto p-3 bg-light rounded-4 mb-3 border border-light-subtle" style="min-height: 380px; max-height: 480px;">
           <div class="chat-message-row ai">
-            <div class="chat-avatar ai-avatar" title="Jemprot AI">
-              <i class="bi bi-robot"></i>
+            <div class="chat-avatar ai-avatar" title="R.A.D.I.T.">
+              <img src="./icons/radit-icon.png" alt="R.A.D.I.T.">
             </div>
             <div class="chat-bubble chat-bubble-ai">
               <div class="d-flex align-items-center gap-1.5 mb-1.5">
-                <strong class="text-primary small">Jemprot AI</strong>
-                <span class="badge bg-warning text-dark py-0.5 px-1.5 rounded-pill" style="font-size:0.65rem;">Asisten Panitia</span>
+                <strong class="text-primary small">R.A.D.I.T.</strong>
+                <span class="badge bg-warning text-dark py-0.5 px-1.5 rounded-pill" style="font-size:0.65rem;">Asisten Data Peserta</span>
               </div>
-              <div>Halo Panitia! Saya siap membantu menganalisis data peserta, kehadiran presensi, dan kebutuhan logistik kegiatan aktif ini. Ada yang bisa saya bantu?</div>
-              <span class="chat-time">Siap Melayani</span>
+              <div class="chat-ai-content">Halo <strong>Bapak/Ibu Panitia</strong>! Saya <strong>R.A.D.I.T.</strong> (<em>Robot Asisten Data dan Informasi Terpusat</em>). Saya siap membantu menjawab pertanyaan seputar data peserta, kehadiran, sekolah/OPD, dan logistik kaos kegiatan aktif ini dengan bahasa sehari-hari. Ada yang ingin dicek?</div>
+              <div class="chat-bubble-actions">
+                <span class="chat-time m-0">Siap Melayani</span>
+                <div class="d-flex align-items-center gap-1">
+                  <button type="button" class="btn btn-light border btn-sm py-0.5 px-2 rounded-pill small text-secondary" style="font-size: 0.72rem;" onclick="replyToAiBubble(this)" title="Balas pesan ini">
+                    <i class="bi bi-reply-fill me-1 text-primary"></i>Reply
+                  </button>
+                  <button type="button" class="btn btn-light border btn-sm py-0.5 px-2 rounded-pill small text-secondary" style="font-size: 0.72rem;" onclick="copyAiBubbleText(this)" title="Salin teks jawaban">
+                    <i class="bi bi-clipboard me-1"></i>Copy
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1395,8 +1434,8 @@
             <span class="text-muted small fw-bold me-1 flex-shrink-0" style="font-size: 0.78rem;">
               <i class="bi bi-lightning-charge-fill text-warning me-0.5"></i>Tanya Cepat:
             </span>
-            <button type="button" class="btn btn-light btn-sm rounded-pill border px-2.5 py-1 small text-dark fw-semibold shadow-xs flex-shrink-0" onclick="askQuickPrompt('Bagaimana ringkasan pendaftar kegiatan ini?')">
-              📊 Ringkasan kegiatan ini
+            <button type="button" class="btn btn-light btn-sm rounded-pill border px-2.5 py-1 small text-dark fw-semibold shadow-xs flex-shrink-0" onclick="askQuickPrompt('Bagaimana ringkasan pendaftar dan kehadiran kegiatan ini?')">
+              📊 Ringkasan &amp; kehadiran
             </button>
             <button type="button" class="btn btn-light btn-sm rounded-pill border px-2.5 py-1 small text-dark fw-semibold shadow-xs flex-shrink-0" onclick="askQuickPrompt('Siapa saja yang sudah mendaftar?')">
               👥 Siapa saja yang sudah daftar?
@@ -1413,9 +1452,18 @@
           </div>
         </div>
 
+        <!-- Preview Reply (Jika Admin Membalas Bubble R.A.D.I.T.) -->
+        <div id="aiReplyPreview" class="d-none alert alert-primary py-2 px-3 mb-2 rounded-3 d-flex align-items-center justify-content-between gap-2 small">
+          <div class="min-w-0">
+            <div class="fw-bold text-primary" style="font-size: 0.74rem;"><i class="bi bi-reply-fill me-1"></i>Membalas R.A.D.I.T.:</div>
+            <div id="aiReplyPreviewText" class="text-truncate text-secondary" style="font-size: 0.78rem;"></div>
+          </div>
+          <button type="button" class="btn-close btn-sm flex-shrink-0" aria-label="Batal balas" onclick="clearAiReply()"></button>
+        </div>
+
         <!-- Kotak Input Chat & Tombol Kirim -->
         <div class="d-flex gap-2">
-          <input type="text" class="form-control rounded-pill px-3.5 py-2" id="inputAiQuestion" placeholder="Ketik pertanyaan untuk Jemprot AI..." onkeypress="if(event.key==='Enter') submitAiQuestion()">
+          <input type="text" class="form-control rounded-pill px-3.5 py-2" id="inputAiQuestion" placeholder="Tanyakan data peserta ke R.A.D.I.T. dengan bahasa sehari-hari..." onkeypress="if(event.key==='Enter') submitAiQuestion()">
           <button class="btn btn-primary fw-bold px-4 rounded-pill d-inline-flex align-items-center justify-content-center shadow-sm" id="btnSubmitAi" onclick="submitAiQuestion()" title="Kirim Pertanyaan">
             <i class="bi bi-send-fill"></i>
           </button>
@@ -5662,18 +5710,18 @@
 
           Swal.fire({
             icon: "success",
-            title: "Format Dipelajari Jemprot AI!",
+            title: "Format Dipelajari R.A.D.I.T.!",
             html: `
               <p class="mb-2">Pemahaman struktur format <strong>"${escapeHtml(tpl.namaDokumen)}"</strong> telah berhasil disimpan ke Memori:</p>
               <div class="p-2 bg-light border rounded text-start small" style="font-size: 0.82rem; line-height: 1.6;">
                 ${colSummary}
               </div>
-              <p class="text-muted small mt-2 mb-0">Status Jemprot AI kini <strong>Aktif &amp; Siap</strong> menghasilkan dokumen yang presisi 100%.</p>
+              <p class="text-muted small mt-2 mb-0">Status R.A.D.I.T. kini <strong>Aktif &amp; Siap</strong> menghasilkan dokumen yang presisi 100%.</p>
             `,
             confirmButtonText: "Mantap, Mengerti!"
           });
         } else {
-          Swal.fire("Peringatan", "Jemprot AI belum dapat memetakan struktur file ini. Pastikan file memiliki baris header dan contoh data.", "warning");
+          Swal.fire("Peringatan", "R.A.D.I.T. belum dapat memetakan struktur file ini. Pastikan file memiliki baris header dan contoh data.", "warning");
         }
       } catch (err) {
         Swal.fire("Error Pemindaian", err.message || err.toString(), "error");
@@ -5773,12 +5821,12 @@
                 </div>
               </div>
 
-              <!-- Indikator Status Jemprot AI Memory -->
+              <!-- Indikator Status Memori R.A.D.I.T. -->
               <div class="p-2 rounded mb-3 border ${isAiScanned ? 'bg-success-subtle border-success-subtle' : 'bg-warning-subtle border-warning-subtle'}">
                 <div class="d-flex align-items-center justify-content-between">
                   <span class="${isAiScanned ? 'text-success' : 'text-warning-emphasis'} fw-semibold small" style="font-size: 0.76rem;">
                     <i class="bi ${isAiScanned ? 'bi-check-circle-fill text-success' : 'bi-x-circle-fill text-warning'} me-1"></i>
-                    ${isAiScanned ? 'Jemprot AI: Format Dipelajari' : 'Jemprot AI: Belum Dipindai'}
+                    ${isAiScanned ? 'R.A.D.I.T.: Format Dipelajari' : 'R.A.D.I.T.: Belum Dipindai'}
                   </span>
                   <button class="btn btn-sm ${isAiScanned ? 'btn-outline-success' : 'btn-warning text-dark'} py-0 px-2 fw-bold" style="font-size: 0.72rem;" onclick="event.stopPropagation(); scanTemplateWithGemini('${tpl.id}', ${isAiScanned ? 'true' : 'false'})" title="${isAiScanned ? 'Pindai ulang dengan Gemini AI' : 'Pelajari format dengan Gemini AI'}">
                     <i class="bi ${isAiScanned ? 'bi-arrow-repeat' : 'bi-stars'} me-1"></i>${isAiScanned ? 'Pindai Ulang' : 'Pindai AI'}
@@ -8407,11 +8455,42 @@
     }
 
     /**
-     * TAB 8: ASISTEN JEMPROT AI
+     * TAB 8: ASISTEN R.A.D.I.T. (Robot Asisten Data dan Informasi Terpusat)
      */
+    let aiChatHistory = [];
+    let activeAiReplyQuote = "";
+
+    function clearAiReply() {
+      activeAiReplyQuote = "";
+      const previewEl = document.getElementById("aiReplyPreview");
+      const textEl = document.getElementById("aiReplyPreviewText");
+      if (previewEl) previewEl.classList.add("d-none");
+      if (textEl) textEl.textContent = "";
+    }
+
+    function replyToAiBubble(btnEl) {
+      const bubble = btnEl.closest(".chat-bubble-ai");
+      if (!bubble) return;
+      const contentEl = bubble.querySelector(".chat-ai-content");
+      const rawText = (contentEl ? contentEl.innerText : bubble.innerText).trim();
+      const shortQuote = rawText.length > 180 ? rawText.slice(0, 180) + "..." : rawText;
+      activeAiReplyQuote = shortQuote;
+
+      const previewEl = document.getElementById("aiReplyPreview");
+      const textEl = document.getElementById("aiReplyPreviewText");
+      if (textEl) textEl.textContent = shortQuote;
+      if (previewEl) previewEl.classList.remove("d-none");
+
+      const input = document.getElementById("inputAiQuestion");
+      if (input) input.focus();
+    }
+
     function clearAiChat(silent = false) {
       const container = document.getElementById("chatAiContainer");
       if (!container) return;
+
+      aiChatHistory = [];
+      clearAiReply();
 
       const currentEventName = currentDashboardData?.settings?.NAMA_KEGIATAN || activeEventId || "Kegiatan Aktif";
       const lblActive = document.getElementById("lblAiEventActive");
@@ -8419,21 +8498,31 @@
 
       container.innerHTML = `
         <div class="chat-message-row ai">
-          <div class="chat-avatar ai-avatar" title="Jemprot AI">
-            <i class="bi bi-robot"></i>
+          <div class="chat-avatar ai-avatar" title="R.A.D.I.T.">
+            <img src="./icons/radit-icon.png" alt="R.A.D.I.T.">
           </div>
           <div class="chat-bubble chat-bubble-ai">
-            <div class="d-flex align-items-center justify-content-between mb-1.5 gap-2">
+            <div class="d-flex align-items-center justify-content-between mb-1.5 gap-2 flex-wrap">
               <div class="d-flex align-items-center gap-1.5">
-                <strong class="text-primary small">Jemprot AI</strong>
-                <span class="badge bg-warning text-dark py-0.5 px-1.5 rounded-pill" style="font-size:0.65rem;">Asisten Panitia</span>
+                <strong class="text-primary small">R.A.D.I.T.</strong>
+                <span class="badge bg-warning text-dark py-0.5 px-1.5 rounded-pill" style="font-size:0.65rem;">Asisten Data Peserta</span>
               </div>
               <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill small" style="font-size: 0.68rem;">
                 <i class="bi bi-award-fill me-1"></i>${escapeHtml(currentEventName)}
               </span>
             </div>
-            <div>Halo Panitia! Saya siap membantu menganalisis data peserta, logistik kaos, dan presensi untuk kegiatan <strong>"${escapeHtml(currentEventName)}"</strong>. Silakan tanyakan atau pilih salah satu tombol pertanyaan cepat di bawah!</div>
-            <span class="chat-time">Siap Melayani</span>
+            <div class="chat-ai-content">Halo <strong>Bapak/Ibu Panitia</strong>! Saya <strong>R.A.D.I.T.</strong> (<em>Robot Asisten Data dan Informasi Terpusat</em>). Saya siap membantu menganalisis data peserta, kehadiran presensi, sekolah/OPD, dan logistik kaos untuk kegiatan <strong>"${escapeHtml(currentEventName)}"</strong>. Silakan tanyakan dengan bahasa sehari-hari!</div>
+            <div class="chat-bubble-actions">
+              <span class="chat-time m-0">Siap Melayani</span>
+              <div class="d-flex align-items-center gap-1">
+                <button type="button" class="btn btn-light border btn-sm py-0.5 px-2 rounded-pill small text-secondary" style="font-size: 0.72rem;" onclick="replyToAiBubble(this)" title="Balas pesan ini">
+                  <i class="bi bi-reply-fill me-1 text-primary"></i>Reply
+                </button>
+                <button type="button" class="btn btn-light border btn-sm py-0.5 px-2 rounded-pill small text-secondary" style="font-size: 0.72rem;" onclick="copyAiBubbleText(this)" title="Salin teks jawaban">
+                  <i class="bi bi-clipboard me-1"></i>Copy
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       `;
@@ -8462,15 +8551,37 @@
       const bubble = btnEl.closest(".chat-bubble-ai");
       if (!bubble) return;
       const contentEl = bubble.querySelector(".chat-ai-content");
-      const textToCopy = contentEl ? contentEl.innerText : bubble.innerText;
+      const textToCopy = (contentEl ? contentEl.innerText : bubble.innerText).trim();
 
-      navigator.clipboard.writeText(textToCopy).then(() => {
+      const markCopied = () => {
         const origHtml = btnEl.innerHTML;
         btnEl.innerHTML = '<i class="bi bi-check-lg text-success me-1"></i>Tersalin!';
-        setTimeout(() => { btnEl.innerHTML = origHtml; }, 2000);
-      }).catch(err => {
+        setTimeout(() => { btnEl.innerHTML = origHtml; }, 1800);
+      };
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(textToCopy).then(markCopied).catch(() => {
+          fallbackCopyText(textToCopy, markCopied);
+        });
+      } else {
+        fallbackCopyText(textToCopy, markCopied);
+      }
+    }
+
+    function fallbackCopyText(text, onSuccess) {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        if (typeof onSuccess === "function") onSuccess();
+      } catch (err) {
         console.warn("Gagal menyalin teks:", err);
-      });
+      }
     }
 
     async function submitAiQuestion() {
@@ -8478,17 +8589,25 @@
       const q = input.value.trim();
       if (!q) return;
 
+      const replyQuote = activeAiReplyQuote;
+      clearAiReply();
+
       const container = document.getElementById("chatAiContainer");
       const timeStr = new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) + " WIB";
 
-      // Balon Chat Pengguna (Panitia) - Sisi Kanan
+      const replyHtml = replyQuote
+        ? `<div class="chat-reply-quote"><i class="bi bi-reply-fill me-1 text-warning"></i>${escapeHtml(replyQuote)}</div>`
+        : "";
+
+      // Balon Chat Pengguna (Bapak/Ibu Panitia) - Sisi Kanan
       container.insertAdjacentHTML("beforeend", `
         <div class="chat-message-row user">
-          <div class="chat-avatar user-avatar" title="Panitia">
+          <div class="chat-avatar user-avatar" title="Bapak/Ibu Panitia">
             <i class="bi bi-person-fill"></i>
           </div>
           <div class="chat-bubble chat-bubble-user">
-            <div class="fw-bold small text-white-50 mb-1">Panitia</div>
+            <div class="fw-bold small text-white-50 mb-1">Bapak/Ibu Panitia</div>
+            ${replyHtml}
             <div>${escapeHtml(q)}</div>
             <span class="chat-time">${timeStr}</span>
           </div>
@@ -8496,21 +8615,26 @@
       `);
       input.value = "";
 
+      const questionForApi = replyQuote
+        ? `[Membalas pesan R.A.D.I.T.: "${replyQuote}"]\n${q}`
+        : q;
+      const historySnapshot = aiChatHistory.slice(-10);
+
       const loadingId = "aiLoading" + Date.now();
-      // Balon Chat Indikator Loading AI - Sisi Kiri
+      // Balon Chat Indikator Loading R.A.D.I.T. - Sisi Kiri
       container.insertAdjacentHTML("beforeend", `
         <div id="${loadingId}" class="chat-message-row ai">
-          <div class="chat-avatar ai-avatar" title="Jemprot AI">
-            <i class="bi bi-robot"></i>
+          <div class="chat-avatar ai-avatar" title="R.A.D.I.T.">
+            <img src="./icons/radit-icon.png" alt="R.A.D.I.T.">
           </div>
           <div class="chat-bubble chat-bubble-ai">
             <div class="d-flex align-items-center gap-1.5 mb-1.5">
-              <strong class="text-primary small">Jemprot AI</strong>
-              <span class="badge bg-warning text-dark py-0.5 px-1.5 rounded-pill" style="font-size:0.65rem;">Asisten Panitia</span>
+              <strong class="text-primary small">R.A.D.I.T.</strong>
+              <span class="badge bg-warning text-dark py-0.5 px-1.5 rounded-pill" style="font-size:0.65rem;">Asisten Data Peserta</span>
             </div>
             <div class="d-flex align-items-center gap-2 py-1">
               <div class="typing-indicator"><span></span><span></span><span></span></div>
-              <span class="small text-muted">Sedang menganalisis data kegiatan...</span>
+              <span class="small text-muted">R.A.D.I.T. sedang memeriksa data peserta...</span>
             </div>
             <span class="chat-time">${timeStr}</span>
           </div>
@@ -8519,27 +8643,42 @@
       container.scrollTop = container.scrollHeight;
 
       try {
-        const res = await callGasApi("askGemini", { question: q, pin: currentAdminPin, targetEventIdOrName: activeEventId });
+        const res = await callGasApi("askGemini", {
+          question: questionForApi,
+          pin: currentAdminPin,
+          targetEventIdOrName: activeEventId,
+          chatHistory: historySnapshot
+        });
         const loadEl = document.getElementById(loadingId);
         if (loadEl) {
           const respTime = new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) + " WIB";
-          const formattedText = formatAiMarkdown(res.answer || res.message || "Tidak ada jawaban.");
+          const rawAnswer = res.answer || res.message || "Mohon maaf Bapak/Ibu Panitia, R.A.D.I.T. belum menerima jawaban.";
+          if (res && res.success && res.answer) {
+            aiChatHistory.push({ role: "user", text: questionForApi });
+            aiChatHistory.push({ role: "model", text: rawAnswer });
+          }
+          const formattedText = formatAiMarkdown(rawAnswer);
           loadEl.innerHTML = `
-            <div class="chat-avatar ai-avatar" title="Jemprot AI">
-              <i class="bi bi-robot"></i>
+            <div class="chat-avatar ai-avatar" title="R.A.D.I.T.">
+              <img src="./icons/radit-icon.png" alt="R.A.D.I.T.">
             </div>
             <div class="chat-bubble chat-bubble-ai">
-              <div class="d-flex align-items-center justify-content-between mb-1.5 gap-2">
-                <div class="d-flex align-items-center gap-1.5">
-                  <strong class="text-primary small">Jemprot AI</strong>
-                  <span class="badge bg-warning text-dark py-0.5 px-1.5 rounded-pill" style="font-size:0.65rem;">Asisten Panitia</span>
-                </div>
-                <button type="button" class="btn btn-outline-secondary btn-sm py-0.5 px-2 rounded-pill small" style="font-size: 0.68rem;" onclick="copyAiBubbleText(this)" title="Salin Teks Jawaban">
-                  <i class="bi bi-clipboard me-1"></i>Salin
-                </button>
+              <div class="d-flex align-items-center gap-1.5 mb-1.5">
+                <strong class="text-primary small">R.A.D.I.T.</strong>
+                <span class="badge bg-warning text-dark py-0.5 px-1.5 rounded-pill" style="font-size:0.65rem;">Asisten Data Peserta</span>
               </div>
               <div class="chat-ai-content">${formattedText}</div>
-              <span class="chat-time">${respTime}</span>
+              <div class="chat-bubble-actions">
+                <span class="chat-time m-0">${respTime}</span>
+                <div class="d-flex align-items-center gap-1">
+                  <button type="button" class="btn btn-light border btn-sm py-0.5 px-2 rounded-pill small text-secondary" style="font-size: 0.72rem;" onclick="replyToAiBubble(this)" title="Balas jawaban ini">
+                    <i class="bi bi-reply-fill me-1 text-primary"></i>Reply
+                  </button>
+                  <button type="button" class="btn btn-light border btn-sm py-0.5 px-2 rounded-pill small text-secondary" style="font-size: 0.72rem;" onclick="copyAiBubbleText(this)" title="Salin teks jawaban">
+                    <i class="bi bi-clipboard me-1"></i>Copy
+                  </button>
+                </div>
+              </div>
             </div>
           `;
         }
@@ -8547,11 +8686,11 @@
         const loadEl = document.getElementById(loadingId);
         if (loadEl) {
           loadEl.innerHTML = `
-            <div class="chat-avatar ai-avatar" title="Jemprot AI">
-              <i class="bi bi-robot"></i>
+            <div class="chat-avatar ai-avatar" title="R.A.D.I.T.">
+              <img src="./icons/radit-icon.png" alt="R.A.D.I.T.">
             </div>
             <div class="chat-bubble chat-bubble-ai border-danger">
-              <span class="text-danger small"><i class="bi bi-exclamation-triangle-fill me-1"></i> Gagal menghubungi Jemprot AI. Pastikan jaringan internet stabil.</span>
+              <span class="text-danger small"><i class="bi bi-exclamation-triangle-fill me-1"></i> Gagal menghubungi R.A.D.I.T. Pastikan jaringan internet stabil.</span>
             </div>
           `;
         }

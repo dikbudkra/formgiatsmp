@@ -3,7 +3,7 @@
  * PWA Offline Cache & Background Engine
  */
 
-const CACHE_NAME = 'formgiatsmp-v1.5.12';
+const CACHE_NAME = 'formgiatsmp-v1.5.13';
 
 // Daftar aset inti yang di-cache saat instalasi
 const PRECACHE_ASSETS = [
@@ -18,7 +18,8 @@ const PRECACHE_ASSETS = [
   './icons/icon-maskable-192.png',
   './icons/icon-maskable-512.png',
   './icons/apple-touch-icon.png',
-  './icons/favicon.png'
+  './icons/favicon.png',
+  './icons/radit-icon.png'
 ];
 
 // 1. Event Install: Pre-cache aset statis

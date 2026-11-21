@@ -691,7 +691,12 @@ function handleApiRequest_(action, payload) {
       return getSpjGeneratorData(payload.params || payload, payload.pin);
 
     case "askGemini":
-      return askGeminiAboutActiveEvent(payload.question || payload.prompt, payload.pin, payload.targetEventIdOrName || payload.eventId);
+      return askGeminiAboutActiveEvent(
+        payload.question || payload.prompt,
+        payload.pin,
+        payload.targetEventIdOrName || payload.eventId,
+        payload.chatHistory
+      );
 
     case "scanSpjTemplateWithGemini":
     case "scan_spj_template":
@@ -3307,10 +3312,10 @@ function getGeminiApiKey_() {
 }
 
 /**
- * Tanya Jawab Data Kegiatan Aktif dengan Gemini API
- * Dibatasi secara mutlak (strict grounding) hanya menjawab berdasarkan data kegiatan aktif.
+ * Tanya Jawab Data Kegiatan Aktif dengan R.A.D.I.T. (Gemini API)
+ * Dibatasi secara mutlak (strict grounding) hanya menjawab berdasarkan data peserta & kegiatan aktif.
  */
-function askGeminiAboutActiveEvent(question, pin, targetEventIdOrName) {
+function askGeminiAboutActiveEvent(question, pin, targetEventIdOrName, chatHistory) {
   if (!verifyAdminPin(pin)) {
     return { success: false, message: "Akses ditolak: PIN Panitia tidak valid." };
   }
@@ -3349,11 +3354,13 @@ function askGeminiAboutActiveEvent(question, pin, targetEventIdOrName) {
       };
     }
 
-    // Format ringkas data peserta agar hemat token dan mudah dianalisis AI
+    // Format ringkas data peserta agar hemat token dan mudah dianalisis R.A.D.I.T.
     const compactParticipants = participants.map((p, idx) => ({
       no: idx + 1,
+      regId: p.regId || "-",
       nama: p.namaLengkap,
-      sekolah: p.namaSekolah,
+      instansi: p.namaSekolah,
+      kategoriInstansi: p.statusSekolah || "-",
       npsn: p.npsn,
       kecamatan: p.kecamatan,
       statusPeg: p.statusKepegawaian,
@@ -3366,19 +3373,27 @@ function askGeminiAboutActiveEvent(question, pin, targetEventIdOrName) {
       modelLengan: p.panjangLengan,
       noWa: p.noWa,
       catatanKesehatan: p.riwayatPenyakit,
-      kontakDarurat: p.kontakDaruratNama ? `${p.kontakDaruratNama} (${p.kontakDaruratHp || '-'})` : "-"
+      kontakDarurat: p.kontakDaruratNama ? `${p.kontakDaruratNama} (${p.kontakDaruratHp || '-'})` : "-",
+      statusKehadiran: p.statusKehadiran || "BELUM HADIR",
+      waktuHadir: p.waktuHadir || "-"
     }));
 
     const activeEventName = settings.NAMA_KEGIATAN || "Kegiatan Aktif";
-    const systemInstruction = 
-      "Anda adalah 'Jemprot AI - Asisten Analis Data Kegiatan Bidang SMP DISDIKBUD Karanganyar'.\n" +
-      "Tugas Anda: Menjawab pertanyaan panitia secara cepat, to-the-point, ramah, dan akurat HANYA BERDASARKAN DATA KEGIATAN YANG SEDANG AKTIF DI LAYAR: '" + activeEventName + "'.\n\n" +
-      "ATURAN MUTLAK (STRICT GROUNDING KEGIATAN AKTIF):\n" +
-      "1. Anda HANYA BISA MEMBACA DAN MENGANALISIS kegiatan yang sedang dibuka di layar saat ini, yaitu: '" + activeEventName + "'. Anda TIDAK MEMILIKI akses atau informasi kegiatan lain di luar kegiatan aktif ini.\n" +
-      "2. Jika panitia bertanya tentang kegiatan, peserta, kuota, kaos, atau sekolah: jawab langsung to-the-point dan ringkas berdasarkan data kegiatan aktif '" + activeEventName + "' tanpa bertele-tele.\n" +
-      "3. Jika ada hal yang datanya tidak tercatat dalam lampiran, jawab singkat dan sopan bahwa informasi tidak tersedia pada kegiatan ini.\n" +
-      "4. Gunakan Bahasa Indonesia yang profesional, ringkas, dan jelas. Gunakan poin (bullet) atau angka persis jika menyajikan daftar peserta/sekolah.\n" +
-      "5. Tanggal & waktu saat ini: " + Utilities.formatDate(new Date(), Session.getScriptTimeZone() || "GMT+7", "dd MMMM yyyy HH:mm") + " WIB.";
+    const systemInstruction =
+      "Anda adalah R.A.D.I.T. (Robot Asisten Data dan Informasi Terpusat) milik Bidang SMP DISDIKBUD Kabupaten Karanganyar.\n" +
+      "Sapaan wajib Anda kepada pengguna/admin adalah 'Bapak/Ibu Panitia'.\n\n" +
+      "GAYA BAHASA & KEPRIBADIAN:\n" +
+      "1. Berkomunikasilah dengan bahasa Indonesia manusia yang ramah, luwes, hangat, jelas, dan profesional.\n" +
+      "2. Anda pintar memahami berbagai gaya bahasa manusia sehari-hari, termasuk kalimat santai, singkatan, maupun typo ringan (contoh: 'yg blm dtg sapa aja?', 'kaos L cewek brp?', 'smp 2 tawangmangu udah daftar blm?', 'tamu opd ada brp?').\n\n" +
+      "BATASAN RUANG LINGKUP MUTLAK (HANYA DATA PESERTA KEGIATAN AKTIF):\n" +
+      "1. Anda HANYA boleh menjawab pertanyaan yang berkaitan dengan data peserta, sekolah/OPD asal, kehadiran presensi, kuota, dan logistik pada kegiatan yang sedang aktif: '" + activeEventName + "'.\n" +
+      "2. Jika Bapak/Ibu Panitia bertanya di luar topik data peserta/kegiatan ini (misalnya pertanyaan umum, berita, resep, curhat, koding, dll.), tolak dengan sangat sopan dan ingatkan bahwa R.A.D.I.T. hanya bertugas membantu informasi data peserta kegiatan '" + activeEventName + "'.\n" +
+      "3. Dilarang mengarang atau menebak data yang tidak ada dalam JSON data kegiatan aktif.\n\n" +
+      "ATURAN KLARIFIKASI (WAJIB BERTANYA BALIK JIKA TIDAK PAHAM / AMBIGU):\n" +
+      "1. Jika kalimat Bapak/Ibu Panitia kurang jelas, terlalu singkat/tidak lengkap, maksudnya membingungkan, atau merujuk pada nama/sekolah yang cocok dengan lebih dari satu data (ambigu), JANGAN menebak-nebak.\n" +
+      "2. Bertanyalah balik dengan ramah dan spesifik agar Bapak/Ibu Panitia memperjelas maksudnya (contoh: sebutkan pilihan nama/sekolah yang mirip, atau tanyakan detail apa yang ingin dicek).\n" +
+      "3. Gunakan poin (bullet) atau angka yang rapi jika menyajikan daftar peserta/sekolah.\n" +
+      "4. Tanggal & waktu saat ini: " + Utilities.formatDate(new Date(), Session.getScriptTimeZone() || "GMT+7", "dd MMMM yyyy HH:mm") + " WIB.";
 
     const contextData = {
       kegiatanAktif: {
@@ -3391,6 +3406,7 @@ function askGeminiAboutActiveEvent(question, pin, targetEventIdOrName) {
       },
       ringkasanStatistik: {
         totalPesertaTerdaftar: stats.total,
+        rekapKehadiran: stats.kehadiran || { hadir: 0, belumHadir: 0 },
         totalSekolahDiDatabase: dashData.totalMasterSekolah,
         komposisiGender: stats.gender,
         komposisiKepegawaian: stats.kepegawaian,
@@ -3409,13 +3425,13 @@ function askGeminiAboutActiveEvent(question, pin, targetEventIdOrName) {
       daftarLengkapPeserta: compactParticipants
     };
 
-    const userPrompt = 
+    const userPrompt =
       "=== DATA RESMI KEGIATAN AKTIF ===\n" +
       JSON.stringify(contextData, null, 2) + "\n\n" +
-      "=== PERTANYAAN PANITIA ===\n" +
+      "=== PESAN TERBARU BAPAK/IBU PANITIA ===\n" +
       cleanQuestion;
 
-    return callGeminiAPI_(apiKey, userPrompt, systemInstruction);
+    return callGeminiAPI_(apiKey, userPrompt, systemInstruction, chatHistory);
 
   } catch (err) {
     Logger.log("Error askGeminiAboutActiveEvent: " + err.toString());
@@ -3426,24 +3442,36 @@ function askGeminiAboutActiveEvent(question, pin, targetEventIdOrName) {
 /**
  * Panggilan REST API ke Google Gemini dengan Model Utama & Cadangan
  */
-function callGeminiAPI_(apiKey, promptText, systemInstructionText) {
+function callGeminiAPI_(apiKey, promptText, systemInstructionText, chatHistory) {
   // Model Utama: gemini-3.1-flash-lite (Terbukti aktif, sangat cepat & hemat token)
   // Model Cadangan: gemini-3.8-flash (Rekomendasi resmi Google), gemini-3-flash-preview
   const models = ["gemini-3.1-flash-lite", "gemini-3.8-flash", "gemini-3-flash-preview"];
   let lastError = "";
 
+  const contents = [];
+  if (Array.isArray(chatHistory) && chatHistory.length > 0) {
+    const recentHistory = chatHistory.slice(-10);
+    for (const item of recentHistory) {
+      if (!item || !item.text) continue;
+      const role = item.role === "model" ? "model" : "user";
+      contents.push({
+        role: role,
+        parts: [{ text: String(item.text) }]
+      });
+    }
+  }
+  contents.push({
+    role: "user",
+    parts: [{ text: promptText }]
+  });
+
   for (const model of models) {
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
       const payload = {
-        contents: [
-          {
-            role: "user",
-            parts: [{ text: promptText }]
-          }
-        ],
+        contents: contents,
         generationConfig: {
-          temperature: 0.2,
+          temperature: 0.35,
           topP: 0.95
         }
       };
@@ -3487,7 +3515,7 @@ function callGeminiAPI_(apiKey, promptText, systemInstructionText) {
 
   return {
     success: false,
-    message: "Gagal mendapatkan respon dari Jemprot AI. " + lastError
+    message: "Gagal mendapatkan respon dari R.A.D.I.T. " + lastError
   };
 }
 
