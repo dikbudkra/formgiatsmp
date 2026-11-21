@@ -3449,17 +3449,17 @@ function callGeminiAPI_(apiKey, promptText, systemInstructionText, chatHistory, 
     super_fast: [
       { model: "gemini-3.5-flash-lite", thinkingLevel: "minimal" },
       { model: "gemini-2.5-flash-lite", thinkingLevel: null },
-      { model: "gemini-3.8-flash", thinkingLevel: "low" }
+      { model: "gemini-3.5-flash", thinkingLevel: "low" }
     ],
     fast: [
-      { model: "gemini-3.8-flash", thinkingLevel: "low" },
       { model: "gemini-3.5-flash-lite", thinkingLevel: "low" },
-      { model: "gemini-2.5-flash", thinkingLevel: "low" }
+      { model: "gemini-3.5-flash", thinkingLevel: "low" },
+      { model: "gemini-2.5-flash", thinkingLevel: null }
     ],
     medium: [
-      { model: "gemini-3.8-flash", thinkingLevel: "medium" },
       { model: "gemini-3.5-flash", thinkingLevel: "medium" },
-      { model: "gemini-2.5-flash", thinkingLevel: "medium" }
+      { model: "gemini-3.5-flash-lite", thinkingLevel: "medium" },
+      { model: "gemini-2.5-flash", thinkingLevel: null }
     ]
   };
   const modelPlan = modelPlanMap[mode] || modelPlanMap.super_fast;

@@ -8667,6 +8667,7 @@
       `);
       container.scrollTop = container.scrollHeight;
 
+      const reqStartMs = Date.now();
       try {
         const speedModeEl = document.querySelector('input[name="raditSpeedMode"]:checked');
         const speedMode = speedModeEl ? speedModeEl.value : "super_fast";
@@ -8677,6 +8678,7 @@
           chatHistory: historySnapshot,
           speedMode: speedMode
         });
+        const elapsedSec = ((Date.now() - reqStartMs) / 1000).toFixed(1);
         const loadEl = document.getElementById(loadingId);
         if (loadEl) {
           const respTime = new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) + " WIB";
@@ -8686,6 +8688,7 @@
             aiChatHistory.push({ role: "model", text: rawAnswer });
           }
           const formattedText = formatAiMarkdown(rawAnswer);
+          const speedLabel = speedMode === "medium" ? "🧠" : (speedMode === "fast" ? "🚀" : "⚡");
           loadEl.innerHTML = `
             <div class="chat-avatar ai-avatar" title="R.A.D.I.T.">
               <img src="./icons/radit-icon.png" alt="R.A.D.I.T.">
@@ -8697,7 +8700,7 @@
               </div>
               <div class="chat-ai-content">${formattedText}</div>
               <div class="chat-bubble-actions">
-                <span class="chat-time m-0">${respTime}</span>
+                <span class="chat-time m-0">${respTime} • ${speedLabel} ${elapsedSec} dtk</span>
                 <div class="d-flex align-items-center gap-1">
                   <button type="button" class="btn btn-light border btn-sm py-0.5 px-2 rounded-pill small text-secondary" style="font-size: 0.72rem;" onclick="replyToAiBubble(this)" title="Balas jawaban ini">
                     <i class="bi bi-reply-fill me-1 text-primary"></i>Reply
