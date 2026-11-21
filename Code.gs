@@ -695,7 +695,8 @@ function handleApiRequest_(action, payload) {
         payload.question || payload.prompt,
         payload.pin,
         payload.targetEventIdOrName || payload.eventId,
-        payload.chatHistory
+        payload.chatHistory,
+        payload.speedMode
       );
 
     case "scanSpjTemplateWithGemini":
@@ -3315,7 +3316,7 @@ function getGeminiApiKey_() {
  * Tanya Jawab Data Kegiatan Aktif dengan R.A.D.I.T. (Gemini API)
  * Dibatasi secara mutlak (strict grounding) hanya menjawab berdasarkan data peserta & kegiatan aktif.
  */
-function askGeminiAboutActiveEvent(question, pin, targetEventIdOrName, chatHistory) {
+function askGeminiAboutActiveEvent(question, pin, targetEventIdOrName, chatHistory, speedMode) {
   if (!verifyAdminPin(pin)) {
     return { success: false, message: "Akses ditolak: PIN Panitia tidak valid." };
   }
@@ -3427,11 +3428,11 @@ function askGeminiAboutActiveEvent(question, pin, targetEventIdOrName, chatHisto
 
     const userPrompt =
       "=== DATA RESMI KEGIATAN AKTIF ===\n" +
-      JSON.stringify(contextData, null, 2) + "\n\n" +
+      JSON.stringify(contextData) + "\n\n" +
       "=== PESAN TERBARU BAPAK/IBU PANITIA ===\n" +
       cleanQuestion;
 
-    return callGeminiAPI_(apiKey, userPrompt, systemInstruction, chatHistory);
+    return callGeminiAPI_(apiKey, userPrompt, systemInstruction, chatHistory, speedMode);
 
   } catch (err) {
     Logger.log("Error askGeminiAboutActiveEvent: " + err.toString());
@@ -3440,12 +3441,28 @@ function askGeminiAboutActiveEvent(question, pin, targetEventIdOrName, chatHisto
 }
 
 /**
- * Panggilan REST API ke Google Gemini dengan Model Utama & Cadangan
+ * Panggilan REST API ke Google Gemini dengan pilihan mode kecepatan (super_fast, fast, medium)
  */
-function callGeminiAPI_(apiKey, promptText, systemInstructionText, chatHistory) {
-  // Model Utama: gemini-3.1-flash-lite (Terbukti aktif, sangat cepat & hemat token)
-  // Model Cadangan: gemini-3.8-flash (Rekomendasi resmi Google), gemini-3-flash-preview
-  const models = ["gemini-3.1-flash-lite", "gemini-3.8-flash", "gemini-3-flash-preview"];
+function callGeminiAPI_(apiKey, promptText, systemInstructionText, chatHistory, speedMode) {
+  const mode = String(speedMode || "super_fast").trim().toLowerCase();
+  const modelPlanMap = {
+    super_fast: [
+      { model: "gemini-3.5-flash-lite", thinkingLevel: "minimal" },
+      { model: "gemini-2.5-flash-lite", thinkingLevel: null },
+      { model: "gemini-3.8-flash", thinkingLevel: "low" }
+    ],
+    fast: [
+      { model: "gemini-3.8-flash", thinkingLevel: "low" },
+      { model: "gemini-3.5-flash-lite", thinkingLevel: "low" },
+      { model: "gemini-2.5-flash", thinkingLevel: "low" }
+    ],
+    medium: [
+      { model: "gemini-3.8-flash", thinkingLevel: "medium" },
+      { model: "gemini-3.5-flash", thinkingLevel: "medium" },
+      { model: "gemini-2.5-flash", thinkingLevel: "medium" }
+    ]
+  };
+  const modelPlan = modelPlanMap[mode] || modelPlanMap.super_fast;
   let lastError = "";
 
   const contents = [];
@@ -3465,15 +3482,20 @@ function callGeminiAPI_(apiKey, promptText, systemInstructionText, chatHistory) 
     parts: [{ text: promptText }]
   });
 
-  for (const model of models) {
+  for (const cfg of modelPlan) {
+    const model = cfg.model;
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const genConfig = {
+        temperature: 0.35,
+        topP: 0.95
+      };
+      if (cfg.thinkingLevel) {
+        genConfig.thinkingConfig = { thinkingLevel: cfg.thinkingLevel };
+      }
       const payload = {
         contents: contents,
-        generationConfig: {
-          temperature: 0.35,
-          topP: 0.95
-        }
+        generationConfig: genConfig
       };
 
       if (systemInstructionText) {
