@@ -180,7 +180,9 @@ function JALANKAN_SETUP_DATABASE_MULTI_KEGIATAN() {
     "Konfigurasi Layout Sertifikat",
     "Modul Biodata",
     "Modul Jalur SMP",
-    "Modul Jalur OPD"
+    "Modul Jalur OPD",
+    "Modul Mapel",
+    "Daftar Mapel"
   ];
 
   let sheetKegiatan = ss.getSheetByName(SHEET_MASTER_KEGIATAN);
@@ -233,7 +235,8 @@ function JALANKAN_SETUP_DATABASE_MULTI_KEGIATAN() {
     "Nama Kontak Darurat",
     "No. HP Kontak Darurat",
     "Status Kehadiran",
-    "Waktu Hadir"
+    "Waktu Hadir",
+    "Mapel"
   ];
 
   let sheetPeserta = ss.getSheetByName(SHEET_PESERTA);
@@ -295,7 +298,7 @@ function JALANKAN_SETUP_DATABASE_MULTI_KEGIATAN() {
 function ensureDatabaseReady_() {
   const cache = CacheService.getScriptCache();
   try {
-    if (cache.get("db_ready_v3")) {
+    if (cache.get("db_ready_v4")) {
       return;
     }
   } catch (e) {}
@@ -353,7 +356,8 @@ function ensureDatabaseReady_() {
     "Nama Kontak Darurat",
     "No. HP Kontak Darurat",
     "Status Kehadiran",
-    "Waktu Hadir"
+    "Waktu Hadir",
+    "Mapel"
   ];
 
   let sheetPeserta = ss.getSheetByName(SHEET_PESERTA);
@@ -379,6 +383,10 @@ function ensureDatabaseReady_() {
         const lastCol = sheetPeserta.getLastColumn();
         sheetPeserta.getRange(1, lastCol + 1).setValue("Status Kehadiran");
         sheetPeserta.getRange(1, lastCol + 2).setValue("Waktu Hadir");
+      }
+      const headerLatest = sheetPeserta.getRange(1, 1, 1, Math.max(sheetPeserta.getLastColumn(), 1)).getValues()[0].map(h => String(h).trim().toLowerCase());
+      if (!headerLatest.includes("mapel")) {
+        sheetPeserta.getRange(1, sheetPeserta.getLastColumn() + 1).setValue("Mapel");
       }
     }
   }
@@ -426,7 +434,9 @@ function ensureDatabaseReady_() {
     "Konfigurasi Layout Sertifikat",
     "Modul Biodata",
     "Modul Jalur SMP",
-    "Modul Jalur OPD"
+    "Modul Jalur OPD",
+    "Modul Mapel",
+    "Daftar Mapel"
   ];
   let sheetKegiatan = ss.getSheetByName(SHEET_MASTER_KEGIATAN);
   if (!sheetKegiatan) {
@@ -453,7 +463,7 @@ function ensureDatabaseReady_() {
   }
 
   try {
-    cache.put("db_ready_v3", "true", 21600);
+    cache.put("db_ready_v4", "true", 21600);
   } catch (e) {}
 }
 
@@ -1043,6 +1053,8 @@ function getRegisteredSchoolList(namaKegiatan) {
     let idxSekolah = headerRow.findIndex(h => h.includes("satuan") || h.includes("sekolah"));
     let idxNpsn = headerRow.findIndex(h => h.includes("npsn"));
     let idxNamaPeserta = headerRow.findIndex(h => h.includes("nama lengkap") || h.includes("peserta"));
+    const idxMapel = headerRow.findIndex(h => h === "mapel");
+    const idxJabatan = headerRow.findIndex(h => h.includes("jabatan"));
 
     if (idxSekolah === -1) idxSekolah = idxKegiatan !== -1 ? 3 : 2;
     if (idxNpsn === -1) idxNpsn = idxKegiatan !== -1 ? 4 : 3;
@@ -1063,6 +1075,13 @@ function getRegisteredSchoolList(namaKegiatan) {
       const namaSekolah = String(row[idxSekolah] || "").trim();
       const npsn = String(row[idxNpsn] || "").replace(/^'/, "").trim();
       const namaPeserta = String(row[idxNamaPeserta] || "").trim();
+      let mapelVal = idxMapel !== -1 ? String(row[idxMapel] || "").trim() : "";
+      if ((!mapelVal || mapelVal === "-") && idxJabatan !== -1) {
+        const jabStr = String(row[idxJabatan] || "").trim();
+        if (jabStr.toLowerCase().startsWith("guru ")) {
+          mapelVal = jabStr.slice(5).trim();
+        }
+      }
 
       if (namaSekolah || npsn) {
         const key = npsn && npsn !== "-" ? npsn : namaSekolah.toLowerCase();
@@ -1072,11 +1091,16 @@ function getRegisteredSchoolList(namaKegiatan) {
             origNama: namaSekolah,
             npsn: npsn,
             count: 0,
-            participants: []
+            participants: [],
+            mapelCounts: {}
           };
         }
         schoolMap[key].count++;
         if (namaPeserta) schoolMap[key].participants.push(namaPeserta);
+        if (mapelVal && mapelVal !== "-") {
+          const mKey = mapelVal.toLowerCase();
+          schoolMap[key].mapelCounts[mKey] = (schoolMap[key].mapelCounts[mKey] || 0) + 1;
+        }
       }
     }
 
@@ -1119,6 +1143,15 @@ function getDefaultCertificateLayout_() {
       fontFamily: "Arial",
       fontWeight: "bold",
       color: "#000000"
+    },
+    mapel: {
+      show: false,
+      xPct: 50,
+      yPct: 53.5,
+      fontSize: 20,
+      fontFamily: "Arial",
+      fontWeight: "bold",
+      color: "#000000"
     }
   };
 }
@@ -1131,10 +1164,35 @@ function parseCertLayoutJson_(rawStr) {
     return {
       nomor: { ...def.nomor, ...(parsed.nomor || {}) },
       nama: { ...def.nama, ...(parsed.nama || {}) },
-      unit: { ...def.unit, ...(parsed.unit || {}) }
+      unit: { ...def.unit, ...(parsed.unit || {}) },
+      mapel: { ...def.mapel, ...(parsed.mapel || {}) }
     };
   } catch (e) {
     return def;
+  }
+}
+
+function parseDaftarMapel_(raw) {
+  if (!raw) return [];
+  try {
+    const arr = typeof raw === "string" ? JSON.parse(raw) : raw;
+    if (!Array.isArray(arr)) return [];
+    return arr
+      .map(item => {
+        if (typeof item === "string") {
+          const n = item.trim();
+          return n ? { nama: n, kuota: 1 } : null;
+        }
+        if (item && item.nama) {
+          const n = String(item.nama).trim();
+          const k = parseInt(item.kuota, 10);
+          return n ? { nama: n, kuota: isNaN(k) || k < 0 ? 1 : k } : null;
+        }
+        return null;
+      })
+      .filter(Boolean);
+  } catch (e) {
+    return [];
   }
 }
 
@@ -1178,7 +1236,9 @@ function getAllEventsForAdminInternal_() {
           layoutSertifikat: parseCertLayoutJson_(row[21]),
           modulBiodata: String(row[22] || "ON").trim().toUpperCase(),
           modulJalurSmp: String(row[23] || "ON").trim().toUpperCase(),
-          modulJalurOpd: String(row[24] || "ON").trim().toUpperCase()
+          modulJalurOpd: String(row[24] || "ON").trim().toUpperCase(),
+          modulMapel: String(row[25] || "OFF").trim().toUpperCase(),
+          daftarMapel: parseDaftarMapel_(row[26])
         });
       }
     }
@@ -1292,6 +1352,13 @@ function saveEvent(eventData, pin) {
     const finalModulJalurOpd = eventData.modulJalurOpd !== undefined
       ? (String(eventData.modulJalurOpd).trim().toUpperCase() === "OFF" ? "OFF" : "ON")
       : String(existingRow[24] || (targetRow === -1 ? "OFF" : "ON")).trim().toUpperCase();
+    const finalModulMapel = eventData.modulMapel !== undefined
+      ? (String(eventData.modulMapel).trim().toUpperCase() === "ON" ? "ON" : "OFF")
+      : String(existingRow[25] || "OFF").trim().toUpperCase();
+    const finalDaftarMapelArr = eventData.daftarMapel !== undefined
+      ? parseDaftarMapel_(eventData.daftarMapel)
+      : parseDaftarMapel_(existingRow[26]);
+    const finalDaftarMapelJson = JSON.stringify(finalDaftarMapelArr);
 
     const finalStatusForm = String(eventData.statusForm || "BUKA").trim().toUpperCase();
 
@@ -1320,7 +1387,9 @@ function saveEvent(eventData, pin) {
       finalLayoutJson,
       finalModulBiodata,
       finalModulJalurSmp,
-      finalModulJalurOpd
+      finalModulJalurOpd,
+      finalModulMapel,
+      finalDaftarMapelJson
     ];
 
     if (targetRow !== -1) {
@@ -1621,7 +1690,9 @@ function getActiveEventsForPublic() {
         layoutSertifikat: parseCertLayoutJson_(row[21]),
         modulBiodata: String(row[22] || "ON").trim().toUpperCase(),
         modulJalurSmp: String(row[23] || "ON").trim().toUpperCase(),
-        modulJalurOpd: String(row[24] || "ON").trim().toUpperCase()
+        modulJalurOpd: String(row[24] || "ON").trim().toUpperCase(),
+        modulMapel: String(row[25] || "OFF").trim().toUpperCase(),
+        daftarMapel: parseDaftarMapel_(row[26])
       };
 
       if (status === "BUKA") {
@@ -2308,6 +2379,8 @@ function getInitialFormData(targetEventIdOrName) {
           MODUL_BIODATA: matched.modulBiodata || "ON",
           MODUL_JALUR_SMP: matched.modulJalurSmp || "ON",
           MODUL_JALUR_OPD: matched.modulJalurOpd || "ON",
+          MODUL_MAPEL: matched.modulMapel || "OFF",
+          DAFTAR_MAPEL: matched.daftarMapel || [],
           TANGGAL_PELAKSANAAN: matched.tanggalPelaksanaan,
           LOKASI_KEGIATAN: matched.lokasiKegiatan
         };
@@ -2330,6 +2403,8 @@ function getInitialFormData(targetEventIdOrName) {
         MODUL_BIODATA: ev.modulBiodata || "ON",
         MODUL_JALUR_SMP: ev.modulJalurSmp || "ON",
         MODUL_JALUR_OPD: ev.modulJalurOpd || "ON",
+        MODUL_MAPEL: ev.modulMapel || "OFF",
+        DAFTAR_MAPEL: ev.daftarMapel || [],
         TANGGAL_PELAKSANAAN: ev.tanggalPelaksanaan,
         LOKASI_KEGIATAN: ev.lokasiKegiatan
       };
@@ -2432,6 +2507,8 @@ function submitRegistration(formData) {
         MODUL_BIODATA: matched.modulBiodata || "ON",
         MODUL_JALUR_SMP: matched.modulJalurSmp || "ON",
         MODUL_JALUR_OPD: matched.modulJalurOpd || "ON",
+        MODUL_MAPEL: matched.modulMapel || "OFF",
+        DAFTAR_MAPEL: matched.daftarMapel || [],
         TANGGAL_PELAKSANAAN: matched.tanggalPelaksanaan,
         LOKASI_KEGIATAN: matched.lokasiKegiatan
       };
@@ -2469,7 +2546,31 @@ function submitRegistration(formData) {
       };
     }
 
-    // 3. Proteksi Kuota per Satuan Pendidikan (SMP)
+    // 3. Proteksi Kuota per Satuan Pendidikan (SMP) & per Mapel (jika Modul Mapel ON)
+    const isMapelOn = String(settings.MODUL_MAPEL || "OFF").toUpperCase() === "ON";
+    const daftarMapelEvent = Array.isArray(settings.DAFTAR_MAPEL) ? settings.DAFTAR_MAPEL : [];
+    const rawMapel = String(formData.mapel || "").trim();
+    let finalMapel = "-";
+    let finalJabatan = String(formData.jabatan || "").trim();
+
+    if (isMapelOn) {
+      if (!rawMapel || rawMapel === "-") {
+        return {
+          success: false,
+          message: "Mata Pelajaran (Mapel) wajib dipilih untuk kegiatan ini!"
+        };
+      }
+      const matchedMapelObj = daftarMapelEvent.find(m => m.nama.toLowerCase() === rawMapel.toLowerCase());
+      if (daftarMapelEvent.length > 0 && !matchedMapelObj) {
+        return {
+          success: false,
+          message: `Mata Pelajaran "${rawMapel}" tidak termasuk dalam daftar mapel yang diundang pada kegiatan ini.`
+        };
+      }
+      finalMapel = matchedMapelObj ? matchedMapelObj.nama : rawMapel;
+      finalJabatan = finalMapel.toLowerCase().startsWith("guru ") ? finalMapel : ("Guru " + finalMapel);
+    }
+
     const cleanNpsn = String(formData.npsn || "").replace(/^'/, "").trim();
     const cleanStatusSekolah = String(formData.statusSekolah || "").trim().toLowerCase();
     const isUnitKerjaLain = cleanNpsn === "-" || 
@@ -2478,10 +2579,6 @@ function submitRegistration(formData) {
                             String(formData.kategoriUnit || "").toUpperCase() === "LAIN";
 
     if (!isUnitKerjaLain) {
-      const kuotaStr = String(settings.KUOTA_PER_SEKOLAH || "1").toLowerCase().trim();
-      const isBebas = kuotaStr === "bebas" || kuotaStr === "0";
-      const maxKuota = isBebas ? 999 : parseInt(kuotaStr, 10) || 1;
-
       const registeredList = getRegisteredSchoolList(settings.NAMA_KEGIATAN);
       const cleanNamaSekolah = cleanSekolah.toLowerCase();
 
@@ -2490,13 +2587,32 @@ function submitRegistration(formData) {
         (cleanNamaSekolah && cleanNamaSekolah !== "-" && r.nama === cleanNamaSekolah)
       );
 
-      if (existing && existing.count >= maxKuota) {
-        const pesertaList = existing.participants.length > 0 ? " (" + existing.participants.join(", ") + ")" : "";
-        return {
-          success: false,
-          isDuplicate: true,
-          message: `Batas kuota pendaftaran untuk sekolah "${formData.namaSekolah}" pada kegiatan "${settings.NAMA_KEGIATAN}" sudah terpenuhi (${existing.count} dari maksimal ${maxKuota} orang terdaftar: ${pesertaList}). Jika ada pergantian peserta, hubungi panitia.`
-        };
+      if (isMapelOn && daftarMapelEvent.length > 0) {
+        const matchedMapelCfg = daftarMapelEvent.find(m => m.nama.toLowerCase() === finalMapel.toLowerCase());
+        const maxMapelKuota = matchedMapelCfg ? Number(matchedMapelCfg.kuota) : 1;
+        if (maxMapelKuota > 0 && existing && existing.mapelCounts) {
+          const curMapelCount = existing.mapelCounts[finalMapel.toLowerCase()] || 0;
+          if (curMapelCount >= maxMapelKuota) {
+            return {
+              success: false,
+              isDuplicate: true,
+              message: `Kuota guru Mapel "${finalMapel}" untuk sekolah "${formData.namaSekolah}" sudah terpenuhi (${curMapelCount} dari maksimal ${maxMapelKuota} orang). Silakan pilih mapel lain yang masih tersedia atau hubungi panitia.`
+            };
+          }
+        }
+      } else {
+        const kuotaStr = String(settings.KUOTA_PER_SEKOLAH || "1").toLowerCase().trim();
+        const isBebas = kuotaStr === "bebas" || kuotaStr === "0";
+        const maxKuota = isBebas ? 999 : parseInt(kuotaStr, 10) || 1;
+
+        if (existing && existing.count >= maxKuota) {
+          const pesertaList = existing.participants.length > 0 ? " (" + existing.participants.join(", ") + ")" : "";
+          return {
+            success: false,
+            isDuplicate: true,
+            message: `Batas kuota pendaftaran untuk sekolah "${formData.namaSekolah}" pada kegiatan "${settings.NAMA_KEGIATAN}" sudah terpenuhi (${existing.count} dari maksimal ${maxKuota} orang terdaftar: ${pesertaList}). Jika ada pergantian peserta, hubungi panitia.`
+          };
+        }
       }
     }
 
@@ -2606,7 +2722,7 @@ function submitRegistration(formData) {
       nipClean ? "'" + nipClean : "-",
       finalGolongan,
       finalPangkat,
-      sanitizeFormula(formData.jabatan),
+      sanitizeFormula(finalJabatan),
       jenisKelaminFinal,
       ukuranKaosFinal,
       panjangLenganFinal,
@@ -2615,7 +2731,8 @@ function submitRegistration(formData) {
       sanitizeFormula(kontakNamaFinal),
       kontakHpFinal,
       String(settings.MODUL_ETICKET_PRESENSI || "ON").toUpperCase() === "OFF" ? "HADIR" : "BELUM HADIR",
-      "-"
+      "-",
+      sanitizeFormula(finalMapel)
     ];
 
     sheet.appendRow(newRow);
@@ -2685,6 +2802,7 @@ function searchParticipantForBiodata(query, targetEventIdOrName) {
 
     const headerRow = data[0].map(h => String(h).trim().toLowerCase());
     const hasKegiatanCol = headerRow.includes("nama kegiatan");
+    const idxMapel = headerRow.findIndex(h => h === "mapel");
     const offset = hasKegiatanCol ? 1 : 0;
 
     const matches = [];
@@ -2702,6 +2820,10 @@ function searchParticipantForBiodata(query, targetEventIdOrName) {
       const jabatan = String(row[11 + offset] || "-").trim();
       const noWa = String(row[hasKegiatanCol ? 16 : 14] || "-").replace(/^'/, "").trim();
       const noWaDigits = noWa.replace(/[^0-9]/g, "");
+      let mapelVal = idxMapel !== -1 ? String(row[idxMapel] || "-").trim() : "-";
+      if ((!mapelVal || mapelVal === "-") && jabatan.toLowerCase().startsWith("guru ")) {
+        mapelVal = jabatan.slice(5).trim();
+      }
 
       // Pencocokan fleksibel (NIP, No WA/HP, Nama Lengkap, atau ID Registrasi)
       const isMatch = (
@@ -2721,6 +2843,7 @@ function searchParticipantForBiodata(query, targetEventIdOrName) {
           golongan: golongan,
           namaSekolah: namaSekolah,
           jabatan: jabatan,
+          mapel: mapelVal,
           noWa: noWa
         });
 
@@ -2797,6 +2920,8 @@ function getAdminDashboardData(pin, targetEventIdOrName) {
         MODUL_BIODATA: selectedEvent.modulBiodata || "ON",
         MODUL_JALUR_SMP: selectedEvent.modulJalurSmp || "ON",
         MODUL_JALUR_OPD: selectedEvent.modulJalurOpd || "ON",
+        MODUL_MAPEL: selectedEvent.modulMapel || "OFF",
+        DAFTAR_MAPEL: selectedEvent.daftarMapel || [],
         TANGGAL_PELAKSANAAN: selectedEvent.tanggalPelaksanaan,
         LOKASI_KEGIATAN: selectedEvent.lokasiKegiatan,
         MODUL_SERTIFIKAT: selectedEvent.modulSertifikat || "OFF",
@@ -2845,6 +2970,7 @@ function getAdminDashboardData(pin, targetEventIdOrName) {
       golongan: {},
       golonganPNS: {},
       golonganPPPK: {},
+      mapel: {},
       catatanMedisCount: 0,
       kehadiran: { hadir: 0, belumHadir: 0 }
     };
@@ -2857,6 +2983,7 @@ function getAdminDashboardData(pin, targetEventIdOrName) {
       const hasKegiatanCol = headerRow.includes("nama kegiatan");
       const idxHadir = headerRow.findIndex(h => h.includes("status kehadiran") || h.includes("kehadiran"));
       const idxWaktuHadir = headerRow.findIndex(h => h.includes("waktu hadir") || h.includes("jam hadir"));
+      const idxMapel = headerRow.findIndex(h => h === "mapel");
 
       for (let i = 1; i < data.length; i++) {
         const row = data[i];
@@ -2905,8 +3032,13 @@ function getAdminDashboardData(pin, targetEventIdOrName) {
           kontakDaruratNama: String(row[hasKegiatanCol ? 18 : 16] || "-"),
           kontakDaruratHp: String(row[hasKegiatanCol ? 19 : 17] || "-").replace(/^'/, ""),
           statusKehadiran: statusHadirVal,
-          waktuHadir: waktuHadirVal
+          waktuHadir: waktuHadirVal,
+          mapel: (idxMapel !== -1 && row[idxMapel]) ? String(row[idxMapel]).trim() : (String(row[11 + offset] || "").trim().toLowerCase().startsWith("guru ") ? String(row[11 + offset]).trim().slice(5).trim() : "-")
         };
+
+        if (participant.mapel && participant.mapel !== "-") {
+          stats.mapel[participant.mapel] = (stats.mapel[participant.mapel] || 0) + 1;
+        }
 
         participants.push(participant);
         stats.total++;
@@ -3369,6 +3501,7 @@ function askGeminiAboutActiveEvent(question, pin, targetEventIdOrName, chatHisto
       gol: p.golongan,
       pangkat: p.pangkat,
       jabatan: p.jabatan,
+      mapel: p.mapel || "-",
       gender: p.jenisKelamin,
       ukuranKaos: p.ukuranKaos,
       modelLengan: p.panjangLengan,
@@ -3414,6 +3547,7 @@ function askGeminiAboutActiveEvent(question, pin, targetEventIdOrName, chatHisto
         rincianGolonganPNS: stats.golonganPNS,
         rincianGolonganPPPK: stats.golonganPPPK,
         rekapUkuranKaos: stats.kaos,
+        rekapMapel: stats.mapel || {},
         totalPesertaDenganCatatanKesehatan: stats.catatanMedisCount
       },
       sekolahBelumMemenuhiKuota: unregistered.map(s => ({

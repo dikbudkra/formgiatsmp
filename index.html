@@ -691,9 +691,21 @@
               </div>
             </div>
 
+            <!-- Pilihan Mata Pelajaran (Dinamis jika Modul Mapel ON) -->
+            <div class="col-md-6 d-none" id="modulMapelContainer">
+              <label class="form-label" for="selectMapel">Mata Pelajaran (Mapel) <span class="text-danger">*</span></label>
+              <select class="form-select" id="selectMapel" name="mapel" onchange="handleMapelSelectChange(this.value)">
+                <option value="">-- Pilih Mata Pelajaran --</option>
+              </select>
+              <div class="form-text small text-muted" id="mapelQuotaHint">Pilih sekolah terlebih dahulu untuk melihat sisa kuota per mapel.</div>
+            </div>
+
             <div class="col-md-6" id="boxJabatan">
               <label class="form-label" for="inputJabatan">Jabatan / Peran <span class="text-danger">*</span></label>
               <input type="text" class="form-control" id="inputJabatan" name="jabatan" required>
+              <div class="form-text small text-primary d-none" id="jabatanAutoHint">
+                <i class="bi bi-lock-fill me-1"></i>Terisi otomatis dari pilihan Mapel dan tidak dapat diedit.
+              </div>
             </div>
 
             <!-- Dynamic NIP for ASN (PNS, PPPK, PPPK PW) -->
@@ -1443,6 +1455,99 @@
       } else {
         if (boxKat) boxKat.classList.remove("d-none");
       }
+
+      // Modul Mapel
+      const isMapelOn = ev.modulMapel === "ON";
+      const modulMapelEl = document.getElementById("modulMapelContainer");
+      const selectMapelEl = document.getElementById("selectMapel");
+      const inputJabatanEl = document.getElementById("inputJabatan");
+      const jabatanHintEl = document.getElementById("jabatanAutoHint");
+      if (modulMapelEl) modulMapelEl.classList.toggle("d-none", !isMapelOn);
+      if (selectMapelEl) {
+        selectMapelEl.required = isMapelOn;
+        if (!isMapelOn) selectMapelEl.value = "";
+      }
+      if (inputJabatanEl) {
+        if (isMapelOn) {
+          inputJabatanEl.readOnly = true;
+          inputJabatanEl.classList.add("bg-light");
+          inputJabatanEl.placeholder = "Otomatis terisi setelah memilih Mapel";
+          if (!selectMapelEl || !selectMapelEl.value) inputJabatanEl.value = "";
+        } else {
+          inputJabatanEl.readOnly = false;
+          inputJabatanEl.classList.remove("bg-light");
+          inputJabatanEl.placeholder = "";
+        }
+      }
+      if (jabatanHintEl) jabatanHintEl.classList.toggle("d-none", !isMapelOn);
+      if (isMapelOn) {
+        renderMapelOptionsForSchool(null);
+      }
+    }
+
+    function renderMapelOptionsForSchool(sch) {
+      const selectEl = document.getElementById("selectMapel");
+      const hintEl = document.getElementById("mapelQuotaHint");
+      if (!selectEl || !activeSelectedEvent) return;
+
+      const list = Array.isArray(activeSelectedEvent.daftarMapel) ? activeSelectedEvent.daftarMapel : [];
+      const prevVal = selectEl.value;
+      let matchSchool = null;
+
+      if (sch && Array.isArray(registeredSchoolList)) {
+        const cleanSchNama = (sch.nama || "").toLowerCase().trim();
+        const cleanSchNpsn = String(sch.npsn || "").trim();
+        matchSchool = registeredSchoolList.find(r => {
+          const rNpsn = String(r.npsn || "").trim();
+          const rNama = String(r.nama || r.origNama || r.namaSekolah || "").toLowerCase().trim();
+          return (cleanSchNpsn && cleanSchNpsn !== "-" && rNpsn === cleanSchNpsn) ||
+                 (cleanSchNama && cleanSchNama !== "-" && rNama === cleanSchNama);
+        });
+      }
+
+      const mapelCounts = (matchSchool && matchSchool.mapelCounts) ? matchSchool.mapelCounts : {};
+      let optionsHtml = '<option value="">-- Pilih Mata Pelajaran --</option>';
+
+      list.forEach(item => {
+        const nama = typeof item === "string" ? item : item.nama;
+        const kuota = typeof item === "object" && item.kuota !== undefined ? Number(item.kuota) : 1;
+        const curCount = mapelCounts[String(nama).toLowerCase()] || 0;
+        const isFull = sch && kuota > 0 && curCount >= kuota;
+        let label = nama;
+        if (kuota > 0) {
+          label += sch ? ` (Terisi ${curCount}/${kuota}${isFull ? " - PENUH" : ""})` : ` (Maks ${kuota}/sekolah)`;
+        } else {
+          label += " (Bebas)";
+        }
+        optionsHtml += `<option value="${escapeHtml(nama)}" ${isFull ? "disabled" : ""}>${escapeHtml(label)}</option>`;
+      });
+
+      selectEl.innerHTML = optionsHtml;
+      if (prevVal) {
+        const prevOpt = Array.from(selectEl.options).find(o => o.value === prevVal && !o.disabled);
+        if (prevOpt) selectEl.value = prevVal;
+        else {
+          selectEl.value = "";
+          handleMapelSelectChange("");
+        }
+      }
+      if (hintEl) {
+        hintEl.textContent = sch
+          ? `Menampilkan sisa kuota mapel untuk ${sch.nama}.`
+          : "Pilih sekolah terlebih dahulu untuk melihat sisa kuota per mapel.";
+      }
+    }
+
+    function handleMapelSelectChange(val) {
+      if (!activeSelectedEvent || activeSelectedEvent.modulMapel !== "ON") return;
+      const inputJabatanEl = document.getElementById("inputJabatan");
+      if (!inputJabatanEl) return;
+      const cleanVal = String(val || "").trim();
+      if (!cleanVal) {
+        inputJabatanEl.value = "";
+      } else {
+        inputJabatanEl.value = cleanVal.toLowerCase().startsWith("guru ") ? cleanVal : ("Guru " + cleanVal);
+      }
     }
 
     /**
@@ -1560,8 +1665,9 @@
       );
       if (!sch) return;
 
-      // Cek Kuota Pendaftaran Sekolah
-      if (activeSelectedEvent && activeSelectedEvent.kuotaPerSekolah && activeSelectedEvent.kuotaPerSekolah !== "bebas") {
+      // Cek Kuota Pendaftaran Sekolah (jika Modul Mapel OFF; jika Mapel ON, kuota dicek per Mapel)
+      const isMapelMode = activeSelectedEvent && activeSelectedEvent.modulMapel === "ON";
+      if (!isMapelMode && activeSelectedEvent && activeSelectedEvent.kuotaPerSekolah && activeSelectedEvent.kuotaPerSekolah !== "bebas") {
         const maxQuota = parseInt(activeSelectedEvent.kuotaPerSekolah, 10) || 1;
         const cleanSchNama = (sch.nama || "").toLowerCase().trim();
         const cleanSchNpsn = String(sch.npsn || "").trim();
@@ -1604,6 +1710,10 @@
       document.getElementById("selectedSchoolBadge").classList.remove("d-none");
       document.getElementById("schoolSearchInput").parentElement.classList.add("d-none");
       document.getElementById("schoolListContainer").style.display = "none";
+
+      if (activeSelectedEvent && activeSelectedEvent.modulMapel === "ON") {
+        renderMapelOptionsForSchool(sch);
+      }
     }
 
     function resetSchoolSelection() {
@@ -1613,6 +1723,9 @@
       document.getElementById("selectedSchoolKecamatan").value = "";
 
       document.getElementById("selectedSchoolBadge").classList.add("d-none");
+      if (activeSelectedEvent && activeSelectedEvent.modulMapel === "ON") {
+        renderMapelOptionsForSchool(null);
+      }
       document.getElementById("schoolSearchInput").parentElement.classList.remove("d-none");
       document.getElementById("schoolSearchInput").value = "";
       const drop = document.getElementById("schoolListContainer");
@@ -1843,6 +1956,7 @@
         kecamatan: document.getElementById("selectedSchoolKecamatan").value || "-",
         kategoriUnit: isOpd ? "LAIN" : "SMP",
         statusKepegawaian: statusPegawai,
+        mapel: (activeSelectedEvent && activeSelectedEvent.modulMapel === "ON") ? (document.getElementById("selectMapel")?.value || "") : "-",
         jabatan: document.getElementById("inputJabatan").value.trim(),
         nip: (statusPegawai === "PNS" || statusPegawai === "PPPK" || statusPegawai === "PPPK PW" || statusPegawai.includes("PPPK")) ? cleanNip : "-",
         golongan: golonganVal,
@@ -3011,7 +3125,8 @@
           texts: {
             nomor: evData.nomorSertifikat || "",
             nama: p.namaLengkap,
-            unit: p.namaSekolah
+            unit: p.namaSekolah,
+            mapel: (p.mapel && p.mapel !== "-") ? ("Mapel " + p.mapel) : ""
           }
         });
 

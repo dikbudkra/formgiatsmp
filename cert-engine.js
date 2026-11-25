@@ -8,7 +8,7 @@
  */
 (function (global) {
   const MM_PX = 3.7795275591; // 1 mm = 3.78 px @96dpi
-  const ELEMENTS = ["nomor", "nama", "unit"];
+  const ELEMENTS = ["nomor", "nama", "unit", "mapel"];
 
   function pageMm(orient) {
     return orient === "PORTRAIT" ? { w: 210, h: 297 } : { w: 297, h: 210 };
@@ -18,7 +18,8 @@
     return {
       nomor: { xPct: 50, yPct: 33, fontSize: 18, fontFamily: "Times New Roman", fontWeight: "bold", color: "#000000" },
       nama: { xPct: 50, yPct: 48, fontSize: 40, fontFamily: "Times New Roman", fontWeight: "bold", color: "#000000" },
-      unit: { xPct: 50, yPct: 59, fontSize: 22, fontFamily: "Arial", fontWeight: "bold", color: "#000000" }
+      unit: { xPct: 50, yPct: 59, fontSize: 22, fontFamily: "Arial", fontWeight: "bold", color: "#000000" },
+      mapel: { show: false, xPct: 50, yPct: 53.5, fontSize: 20, fontFamily: "Arial", fontWeight: "bold", color: "#000000" }
     };
   }
 
@@ -35,6 +36,9 @@
       out[k].xPct = Number(out[k].xPct);
       out[k].yPct = Number(out[k].yPct);
       out[k].fontSize = Number(out[k].fontSize);
+      if (k === "mapel") {
+        out[k].show = Boolean(src.mapel && src.mapel.show);
+      }
     });
     return out;
   }
@@ -79,6 +83,7 @@
     ctx.textBaseline = "middle";
     ELEMENTS.forEach(k => {
       const el = layout[k];
+      if (k === "mapel" && (!el || !el.show)) return;
       const t = texts && texts[k];
       if (!el || !t) return;
       ctx.font = fontStr(el, scale);

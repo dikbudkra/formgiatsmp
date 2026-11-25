@@ -937,8 +937,30 @@
         </div>
       </div>
 
-      <!-- TABEL TUNGGAL REKAP KAOS KOMPREHENSIF -->
-      <div class="row g-4">
+      <!-- REKAP PESERTA PER MAPEL (Tampil jika Modul Mapel ON) -->
+      <div class="row g-4 mb-4 d-none" id="cardRekapMapelWrapper">
+        <div class="col-12">
+          <div class="card card-modern p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+              <div>
+                <h5 class="fw-bold text-dark mb-0">
+                  <i class="bi bi-journal-bookmark-fill text-primary me-2"></i> Rekapitulasi Peserta per Mata Pelajaran
+                </h5>
+                <p class="text-muted small mb-0">Jumlah pendaftar &amp; kehadiran berdasarkan pilihan Mata Pelajaran kegiatan aktif</p>
+              </div>
+              <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1.5 fw-bold rounded-pill" id="badgeTotalMapelAktif">
+                0 Mapel
+              </span>
+            </div>
+            <div class="row g-2" id="rekapMapelGrid">
+              <div class="col-12 text-muted small">Belum ada data mapel.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TABEL TUNGGAL REKAP KAOS KOMPREHENSIF (Tampil jika Modul Kaos ON) -->
+      <div class="row g-4" id="cardRekapKaosWrapper">
         <div class="col-12">
           <div class="card card-modern p-4">
             <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
@@ -1285,6 +1307,10 @@
               <input class="form-check-input" type="checkbox" id="certSwUnduh" onchange="certAutoSave()">
               <label class="form-check-label small fw-bold" for="certSwUnduh">Buka Unduh Sertifikat untuk Peserta</label>
             </div>
+            <div class="form-check form-switch mb-2">
+              <input class="form-check-input" type="checkbox" id="certSwMapel" onchange="certToggleMapelShow(this.checked)">
+              <label class="form-check-label small fw-bold" for="certSwMapel">Tampilkan Mapel di Sertifikat</label>
+            </div>
             <label class="form-label small fw-bold mt-2 mb-1">Kriteria Peserta yang Berhak</label>
             <select class="form-select form-select-sm mb-1" id="certKriteria" onchange="certAutoSave()">
               <option value="HADIR" id="optCertKriteriaHadir">Hanya Peserta HADIR</option>
@@ -1329,6 +1355,7 @@
               <button class="btn btn-outline-secondary btn-sm cert-el-btn" data-el="nomor" onclick="certSelect('nomor')">Nomor</button>
               <button class="btn btn-outline-secondary btn-sm cert-el-btn active" data-el="nama" onclick="certSelect('nama')">Nama</button>
               <button class="btn btn-outline-secondary btn-sm cert-el-btn" data-el="unit" onclick="certSelect('unit')">Unit Kerja</button>
+              <button class="btn btn-outline-secondary btn-sm cert-el-btn d-none" data-el="mapel" id="certElBtnMapel" onclick="certSelect('mapel')">Mapel</button>
             </div>
             <label class="small fw-bold mb-1">Jenis Font</label>
             <select class="form-select form-select-sm mb-2" id="certFont" onchange="certUpdateProp('fontFamily', this.value)">
@@ -1711,6 +1738,33 @@
                     <input class="form-check-input" type="checkbox" id="switchModulJalurOpd">
                     <label class="form-check-label" for="switchModulJalurOpd">Jalur Tamu / OPD Lain</label>
                   </div>
+                </div>
+                <div class="col-6 col-md-4">
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="switchModulMapel" onchange="handleSwitchModulMapelChange()">
+                    <label class="form-check-label" for="switchModulMapel">Mapel</label>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Konfigurasi Daftar Mapel & Kuota Per Sekolah (Muncul jika Mapel ON) -->
+              <div id="boxConfigMapel" class="d-none mt-3 pt-3 border-top">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                  <div>
+                    <div class="fw-bold small text-dark"><i class="bi bi-journal-check text-primary me-1"></i>Pilih Mapel yang Diundang &amp; Kuota per Sekolah</div>
+                    <div class="text-muted" style="font-size: 0.75rem;">Centang mapel yang diundang, lalu atur batas maksimal guru per sekolah untuk tiap mapel (`0` = bebas).</div>
+                  </div>
+                  <div class="d-flex gap-1.5">
+                    <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-2.5 py-0.5" style="font-size: 0.72rem;" onclick="toggleAllMapelCheckboxes(true)">Pilih Semua</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-2.5 py-0.5" style="font-size: 0.72rem;" onclick="toggleAllMapelCheckboxes(false)">Kosongkan</button>
+                  </div>
+                </div>
+
+                <div class="row g-2" id="mapelCheckboxListContainer"></div>
+
+                <div class="input-group input-group-sm mt-2">
+                  <input type="text" class="form-control" id="inputCustomMapelName" placeholder="Tambah nama mapel lain jika perlu...">
+                  <button type="button" class="btn btn-outline-primary fw-semibold" onclick="addCustomMapelOption()">+ Tambah Mapel</button>
                 </div>
               </div>
             </div>
@@ -3310,6 +3364,128 @@
       }
     }
 
+    const DEFAULT_MAPEL_LIST = [
+      "Pendidikan Agama Islam",
+      "Pendidikan Agama Kristen",
+      "Pendidikan Agama Hindu",
+      "PKn",
+      "Bahasa Indonesia",
+      "Matematika",
+      "IPA",
+      "IPS",
+      "Bahasa Inggris",
+      "PJOK",
+      "Seni Budaya",
+      "Prakarya",
+      "Bahasa Jawa",
+      "Informatika",
+      "Bimbingan Konseling"
+    ];
+
+    function handleSwitchModulMapelChange() {
+      const sw = document.getElementById("switchModulMapel");
+      const box = document.getElementById("boxConfigMapel");
+      if (!sw || !box) return;
+      box.classList.toggle("d-none", !sw.checked);
+    }
+
+    function renderMapelConfigCheckboxes(savedList = []) {
+      const container = document.getElementById("mapelCheckboxListContainer");
+      if (!container) return;
+
+      const savedMap = {};
+      if (Array.isArray(savedList)) {
+        savedList.forEach(item => {
+          const nama = typeof item === "string" ? item.trim() : String(item?.nama || "").trim();
+          const kuota = typeof item === "object" && item?.kuota !== undefined ? Number(item.kuota) : 1;
+          if (nama) savedMap[nama.toLowerCase()] = { nama, kuota: isNaN(kuota) || kuota < 0 ? 1 : kuota };
+        });
+      }
+
+      const combinedNames = [...DEFAULT_MAPEL_LIST];
+      Object.values(savedMap).forEach(item => {
+        if (!combinedNames.some(n => n.toLowerCase() === item.nama.toLowerCase())) {
+          combinedNames.push(item.nama);
+        }
+      });
+
+      container.innerHTML = combinedNames.map((nama, idx) => {
+        const matched = savedMap[nama.toLowerCase()];
+        const isChecked = Boolean(matched);
+        const kuotaVal = matched ? matched.kuota : 1;
+        return `
+          <div class="col-md-6 col-12 mapel-config-row">
+            <div class="d-flex align-items-center justify-content-between gap-2 bg-white border rounded-3 px-2.5 py-1.5">
+              <div class="form-check mb-0 flex-grow-1 min-w-0">
+                <input class="form-check-input mapel-chk" type="checkbox" id="chkMapel_${idx}" value="${escapeHtml(nama)}" ${isChecked ? "checked" : ""}>
+                <label class="form-check-label small fw-semibold text-truncate d-block" for="chkMapel_${idx}" title="${escapeHtml(nama)}">${escapeHtml(nama)}</label>
+              </div>
+              <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                <span class="text-muted" style="font-size: 0.7rem;">Kuota:</span>
+                <input type="number" class="form-control form-control-sm text-center mapel-kuota-input" min="0" max="99" value="${kuotaVal}" style="width: 56px; font-size: 0.76rem;" title="Maksimal peserta per sekolah untuk mapel ini (0 = bebas)">
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function toggleAllMapelCheckboxes(checked) {
+      document.querySelectorAll("#mapelCheckboxListContainer .mapel-chk").forEach(chk => {
+        chk.checked = Boolean(checked);
+      });
+    }
+
+    function addCustomMapelOption() {
+      const input = document.getElementById("inputCustomMapelName");
+      if (!input) return;
+      const nama = input.value.trim();
+      if (!nama) return;
+
+      const existing = collectMapelRowsState();
+      if (existing.some(x => x.nama.toLowerCase() === nama.toLowerCase())) {
+        Swal.fire({ toast: true, position: "top-end", icon: "info", title: "Mapel sudah ada di daftar", showConfirmButton: false, timer: 1600 });
+        input.value = "";
+        return;
+      }
+
+      const container = document.getElementById("mapelCheckboxListContainer");
+      const idx = document.querySelectorAll("#mapelCheckboxListContainer .mapel-config-row").length;
+      if (container) {
+        container.insertAdjacentHTML("beforeend", `
+          <div class="col-md-6 col-12 mapel-config-row">
+            <div class="d-flex align-items-center justify-content-between gap-2 bg-white border rounded-3 px-2.5 py-1.5">
+              <div class="form-check mb-0 flex-grow-1 min-w-0">
+                <input class="form-check-input mapel-chk" type="checkbox" id="chkMapel_${idx}" value="${escapeHtml(nama)}" checked>
+                <label class="form-check-label small fw-semibold text-truncate d-block" for="chkMapel_${idx}" title="${escapeHtml(nama)}">${escapeHtml(nama)}</label>
+              </div>
+              <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                <span class="text-muted" style="font-size: 0.7rem;">Kuota:</span>
+                <input type="number" class="form-control form-control-sm text-center mapel-kuota-input" min="0" max="99" value="1" style="width: 56px; font-size: 0.76rem;">
+              </div>
+            </div>
+          </div>
+        `);
+      }
+      input.value = "";
+    }
+
+    function collectMapelRowsState(onlyChecked = false) {
+      const rows = [];
+      document.querySelectorAll("#mapelCheckboxListContainer .mapel-config-row").forEach(row => {
+        const chk = row.querySelector(".mapel-chk");
+        const kuotaEl = row.querySelector(".mapel-kuota-input");
+        if (!chk) return;
+        if (onlyChecked && !chk.checked) return;
+        const kuotaNum = parseInt(kuotaEl ? kuotaEl.value : "1", 10);
+        rows.push({
+          nama: chk.value,
+          kuota: isNaN(kuotaNum) || kuotaNum < 0 ? 1 : kuotaNum
+        });
+      });
+      return rows;
+    }
+
     function openModalTambahKegiatan() {
       document.getElementById("modalKegiatanTitle").textContent = "Tambah Kegiatan Baru";
       document.getElementById("eventModalId").value = "";
@@ -3327,6 +3503,10 @@
       if (swSmp) swSmp.checked = true;
       const swOpd = document.getElementById("switchModulJalurOpd");
       if (swOpd) swOpd.checked = false;
+      const swMapel = document.getElementById("switchModulMapel");
+      if (swMapel) swMapel.checked = false;
+      renderMapelConfigCheckboxes([]);
+      handleSwitchModulMapelChange();
       const modal = new bootstrap.Modal(document.getElementById("modalKegiatan"));
       modal.show();
     }
@@ -3362,6 +3542,10 @@
       if (swSmp) swSmp.checked = (ev.modulJalurSmp !== "OFF");
       const swOpd = document.getElementById("switchModulJalurOpd");
       if (swOpd) swOpd.checked = (ev.modulJalurOpd !== "OFF");
+      const swMapel = document.getElementById("switchModulMapel");
+      if (swMapel) swMapel.checked = (ev.modulMapel === "ON");
+      renderMapelConfigCheckboxes(ev.daftarMapel || []);
+      handleSwitchModulMapelChange();
 
       const modal = new bootstrap.Modal(document.getElementById("modalKegiatan"));
       modal.show();
@@ -3373,11 +3557,22 @@
       const isLenganOn = isKaosOn && document.getElementById("switchModulLengan").checked;
       const isJalurSmpOn = document.getElementById("switchModulJalurSmp")?.checked !== false;
       const isJalurOpdOn = document.getElementById("switchModulJalurOpd")?.checked !== false;
+      const isMapelOn = document.getElementById("switchModulMapel")?.checked === true;
+      const selectedMapel = isMapelOn ? collectMapelRowsState(true) : [];
 
       if (!isJalurSmpOn && !isJalurOpdOn) {
         Swal.fire({
           title: "Jalur Pendaftaran Kosong",
           text: "Minimal satu jalur pendaftaran (Satuan Pendidikan SMP atau Tamu / OPD Lain) harus diaktifkan!",
+          icon: "warning"
+        });
+        return;
+      }
+
+      if (isMapelOn && selectedMapel.length === 0) {
+        Swal.fire({
+          title: "Daftar Mapel Kosong",
+          text: "Modul Mapel aktif, silakan centang minimal 1 Mata Pelajaran yang diundang!",
           icon: "warning"
         });
         return;
@@ -3400,7 +3595,9 @@
         modulSertifikat: document.getElementById("switchModulSertifikatModal")?.checked ? "ON" : "OFF",
         modulBiodata: document.getElementById("switchModulBiodata")?.checked ? "ON" : "OFF",
         modulJalurSmp: isJalurSmpOn ? "ON" : "OFF",
-        modulJalurOpd: isJalurOpdOn ? "ON" : "OFF"
+        modulJalurOpd: isJalurOpdOn ? "ON" : "OFF",
+        modulMapel: isMapelOn ? "ON" : "OFF",
+        daftarMapel: selectedMapel
       };
 
       Swal.fire({
@@ -3679,6 +3876,55 @@
               <strong>${escapeHtml(g)}</strong>: ${golPPPK[g]}
             </span>
           `).join("");
+        }
+      }
+
+      // Kondisional Rekap Kaos (sembunyikan jika Modul Kaos OFF) & Rekap Mapel (tampilkan jika Modul Mapel ON)
+      const activeSettings = currentDashboardData?.settings || {};
+      const isKaosOn = String(activeSettings.MODUL_KAOS || "ON").toUpperCase() !== "OFF";
+      const isMapelOn = String(activeSettings.MODUL_MAPEL || "OFF").toUpperCase() === "ON";
+      const kaosWrap = document.getElementById("cardRekapKaosWrapper");
+      const mapelWrap = document.getElementById("cardRekapMapelWrapper");
+      if (kaosWrap) kaosWrap.classList.toggle("d-none", !isKaosOn);
+      if (mapelWrap) {
+        mapelWrap.classList.toggle("d-none", !isMapelOn);
+        if (isMapelOn) {
+          const mapelCountMap = {};
+          participants.forEach(p => {
+            const mVal = String(p.mapel || "").trim();
+            if (mVal && mVal !== "-") {
+              mapelCountMap[mVal] = (mapelCountMap[mVal] || 0) + 1;
+            }
+          });
+          const configuredMapel = Array.isArray(activeSettings.DAFTAR_MAPEL) ? activeSettings.DAFTAR_MAPEL : [];
+          const allNames = [];
+          configuredMapel.forEach(item => {
+            const nm = typeof item === "string" ? item : item.nama;
+            if (nm && !allNames.includes(nm)) allNames.push(nm);
+          });
+          Object.keys(mapelCountMap).forEach(nm => {
+            if (!allNames.includes(nm)) allNames.push(nm);
+          });
+          const badgeTotalEl = document.getElementById("badgeTotalMapelAktif");
+          if (badgeTotalEl) badgeTotalEl.textContent = `${allNames.length} Mapel`;
+          const gridEl = document.getElementById("rekapMapelGrid");
+          if (gridEl) {
+            if (allNames.length === 0) {
+              gridEl.innerHTML = '<div class="col-12 text-muted small">Belum ada data peserta per mapel.</div>';
+            } else {
+              gridEl.innerHTML = allNames.map(nm => {
+                const cnt = mapelCountMap[nm] || 0;
+                return `
+                  <div class="col-6 col-md-4 col-lg-3">
+                    <div class="p-2.5 border rounded-3 bg-light d-flex align-items-center justify-content-between gap-2">
+                      <span class="small fw-semibold text-dark text-truncate" title="${escapeHtml(nm)}">${escapeHtml(nm)}</span>
+                      <span class="badge ${cnt > 0 ? "bg-primary" : "bg-secondary"} rounded-pill">${cnt}</span>
+                    </div>
+                  </div>
+                `;
+              }).join("");
+            }
+          }
         }
       }
 
@@ -4276,8 +4522,8 @@
      * MENU SERTIFIKAT: EDITOR KANVAS INTERAKTIF (DRAG, RESIZE SUDUT, GARIS MAGNETIS)
      * =========================================================================
      */
-    const CERT_SAMPLE = { nama: "Nama Lengkap Peserta, S.Pd., M.Pd.", unit: "SMP NEGERI 1 KARANGANYAR" };
-    const CERT_LABELS = { nomor: "Nomor Sertifikat", nama: "Nama Peserta", unit: "Unit Kerja" };
+    const CERT_SAMPLE = { nama: "Nama Lengkap Peserta, S.Pd., M.Pd.", unit: "SMP NEGERI 1 KARANGANYAR", mapel: "Mapel Matematika" };
+    const CERT_LABELS = { nomor: "Nomor Sertifikat", nama: "Nama Peserta", unit: "Unit Kerja", mapel: "Mata Pelajaran" };
     const CERT_SNAP = 12;
     const CERT_HANDLE = 9;
     let certState = {
@@ -4292,7 +4538,24 @@
 
     function certEditorTexts() {
       const nomor = document.getElementById("certNomor").value.trim() || "[Nomor Sertifikat]";
-      return { nomor, nama: CERT_SAMPLE.nama, unit: CERT_SAMPLE.unit };
+      return { nomor, nama: CERT_SAMPLE.nama, unit: CERT_SAMPLE.unit, mapel: CERT_SAMPLE.mapel };
+    }
+
+    function certToggleMapelShow(checked) {
+      if (!certState.layout.mapel) {
+        certState.layout.mapel = CertEngine.defaultLayout().mapel;
+      }
+      certState.layout.mapel.show = Boolean(checked);
+      const btnMapel = document.getElementById("certElBtnMapel");
+      if (btnMapel) btnMapel.classList.toggle("d-none", !checked);
+      if (!checked && certState.selected === "mapel") {
+        certState.selected = "nama";
+      } else if (checked) {
+        certState.selected = "mapel";
+      }
+      certSyncControls();
+      certRender();
+      certAutoSave();
     }
 
     function certSetupCanvas() {
@@ -4520,6 +4783,12 @@
 
         document.getElementById("certSwModul").checked = ev.modulSertifikat === "ON";
         document.getElementById("certSwUnduh").checked = ev.statusUnduhSertifikat === "BUKA";
+        const isCertMapelShow = Boolean(certState.layout.mapel && certState.layout.mapel.show);
+        const swCertMapel = document.getElementById("certSwMapel");
+        if (swCertMapel) swCertMapel.checked = isCertMapelShow;
+        const btnCertMapel = document.getElementById("certElBtnMapel");
+        if (btnCertMapel) btnCertMapel.classList.toggle("d-none", !isCertMapelShow);
+        if (!isCertMapelShow && certState.selected === "mapel") certState.selected = "nama";
         
         // Logika Presensi QR vs Kriteria Unduh
         const isEticketOn = (ev.modulEticketPresensi !== "OFF");
@@ -4724,13 +4993,17 @@
       }
     }
 
-    function certPdfFor(nama, unit) {
+    function certPdfFor(nama, unit, mapel = "") {
+      const cleanMapel = String(mapel || "").trim();
+      const mapelText = (cleanMapel && cleanMapel !== "-")
+        ? (cleanMapel.toLowerCase().startsWith("mapel ") ? cleanMapel : ("Mapel " + cleanMapel))
+        : "";
       return CertEngine.buildPdf({
         orient: certOrient(),
         front: certState.front,
         back: certState.back,
         layout: certState.layout,
-        texts: { nomor: document.getElementById("certNomor").value.trim(), nama, unit }
+        texts: { nomor: document.getElementById("certNomor").value.trim(), nama, unit, mapel: mapelText }
       });
     }
 
@@ -4746,7 +5019,7 @@
       if (!(await certLoad())) return;
       if (!certRequireFront()) return;
       await CertEngine.ensureFonts(certState.layout);
-      const doc = certPdfFor(CERT_SAMPLE.nama, CERT_SAMPLE.unit);
+      const doc = certPdfFor(CERT_SAMPLE.nama, CERT_SAMPLE.unit, CERT_SAMPLE.mapel);
       window.open(doc.output("bloburl"), "_blank");
     }
 
@@ -4756,7 +5029,7 @@
       if (!(await certLoad())) return;
       if (!certRequireFront()) return;
       await CertEngine.ensureFonts(certState.layout);
-      const doc = certPdfFor(p.namaLengkap, p.namaSekolah);
+      const doc = certPdfFor(p.namaLengkap, p.namaSekolah, p.mapel);
       doc.save(`Sertifikat_${CertEngine.safeName(p.namaLengkap)}.pdf`);
     }
 
@@ -4786,7 +5059,7 @@
           let base = `Sertifikat_${CertEngine.safeName(p.namaLengkap)}`;
           used[base] = (used[base] || 0) + 1;
           if (used[base] > 1) base += `_${used[base]}`;
-          const doc = certPdfFor(p.namaLengkap, p.namaSekolah);
+          const doc = certPdfFor(p.namaLengkap, p.namaSekolah, p.mapel);
           zip.file(`${base}.pdf`, doc.output("blob"));
           const prog = document.getElementById("certZipProgress");
           if (prog) prog.textContent = `${i + 1} / ${list.length}`;
