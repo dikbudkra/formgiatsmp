@@ -992,6 +992,7 @@
     let activeCertEvent = null;
     let masterSchoolList = [];
     let registeredSchoolList = [];
+    let isRegisteredSchoolsLoading = false;
     let activeSelectedEvent = null;
     let lastTicketData = null;
 
@@ -1313,7 +1314,13 @@
       document.getElementById("boxFormAktif").classList.remove("d-none");
       window.scrollTo({ top: 0, behavior: "smooth" });
 
-      // Ambil data kuota sekolah terdaftar untuk kegiatan ini
+      // Ambil data kuota sekolah terdaftar terbaru untuk kegiatan ini
+      registeredSchoolList = [];
+      isRegisteredSchoolsLoading = true;
+      if (ev.modulMapel === "ON") {
+        const hintEl = document.getElementById("mapelQuotaHint");
+        if (hintEl) hintEl.textContent = "Sedang memuat sisa kuota terbaru dari server...";
+      }
       try {
         const resRegistered = await callGasApi("getRegisteredSchools", { eventName: ev.namaKegiatan });
         if (Array.isArray(resRegistered)) {
@@ -1323,6 +1330,38 @@
         }
       } catch (e) {
         console.warn("Gagal update registeredSchoolList:", e);
+      } finally {
+        isRegisteredSchoolsLoading = false;
+        const chosenName = document.getElementById("selectedSchoolName")?.value || "";
+        const chosenNpsn = document.getElementById("selectedSchoolNpsn")?.value || "";
+        if (chosenName) {
+          const chosenSch = masterSchoolList.find(s =>
+            (chosenNpsn && chosenNpsn !== "-" && String(s.npsn).trim() === String(chosenNpsn).trim()) ||
+            s.nama === chosenName
+          ) || { nama: chosenName, npsn: chosenNpsn };
+          if (ev.modulMapel === "ON") {
+            renderMapelOptionsForSchool(chosenSch);
+          }
+          if (ev.kuotaPerSekolah && ev.kuotaPerSekolah !== "bebas" && ev.kuotaPerSekolah !== "0") {
+            const maxQ = parseInt(ev.kuotaPerSekolah, 10) || 1;
+            const matchSch = registeredSchoolList.find(r =>
+              (chosenNpsn && chosenNpsn !== "-" && String(r.npsn || "").trim() === String(chosenNpsn).trim()) ||
+              (chosenName && String(r.nama || r.origNama || "").toLowerCase().trim() === chosenName.toLowerCase().trim())
+            );
+            const curQ = matchSch ? (typeof matchSch.count === "number" ? matchSch.count : (matchSch.participants?.length || 1)) : 0;
+            if (curQ >= maxQ) {
+              Swal.fire({
+                title: "Kuota Sekolah Penuh!",
+                html: `Satuan pendidikan <strong>${escapeHtml(chosenName)}</strong> telah mencapai kuota maksimal pendaftaran (<strong>${curQ}/${maxQ}</strong>) untuk kegiatan ini.`,
+                icon: "warning",
+                confirmButtonColor: "#1e3a8a"
+              });
+              resetSchoolSelection();
+            }
+          }
+        } else if (ev.modulMapel === "ON") {
+          renderMapelOptionsForSchool(null);
+        }
       }
     }
 
@@ -1532,9 +1571,13 @@
         }
       }
       if (hintEl) {
-        hintEl.textContent = sch
-          ? `Menampilkan sisa kuota mapel untuk ${sch.nama}.`
-          : "Pilih sekolah terlebih dahulu untuk melihat sisa kuota per mapel.";
+        if (isRegisteredSchoolsLoading) {
+          hintEl.textContent = "Sedang memuat sisa kuota terbaru dari server...";
+        } else {
+          hintEl.textContent = sch
+            ? `Menampilkan sisa kuota mapel untuk ${sch.nama}.`
+            : "Pilih sekolah terlebih dahulu untuk melihat sisa kuota per mapel.";
+        }
       }
     }
 
