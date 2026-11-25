@@ -2587,6 +2587,21 @@ function submitRegistration(formData) {
         (cleanNamaSekolah && cleanNamaSekolah !== "-" && r.nama === cleanNamaSekolah)
       );
 
+      // Lapis 1: Cek Kuota Total Per Sekolah (kecuali diset Bebas / 0)
+      const kuotaStr = String(settings.KUOTA_PER_SEKOLAH || "1").toLowerCase().trim();
+      const isBebasSekolah = kuotaStr === "bebas" || kuotaStr === "0";
+      const maxKuota = isBebasSekolah ? 999 : parseInt(kuotaStr, 10) || 1;
+
+      if (!isBebasSekolah && existing && existing.count >= maxKuota) {
+        const pesertaList = existing.participants.length > 0 ? " (" + existing.participants.join(", ") + ")" : "";
+        return {
+          success: false,
+          isDuplicate: true,
+          message: `Batas kuota pendaftaran untuk sekolah "${formData.namaSekolah}" pada kegiatan "${settings.NAMA_KEGIATAN}" sudah terpenuhi (${existing.count} dari maksimal ${maxKuota} orang terdaftar: ${pesertaList}). Jika ada pergantian peserta, hubungi panitia.`
+        };
+      }
+
+      // Lapis 2: Cek Kuota Per Mapel per Sekolah (jika Modul Mapel ON)
       if (isMapelOn && daftarMapelEvent.length > 0) {
         const matchedMapelCfg = daftarMapelEvent.find(m => m.nama.toLowerCase() === finalMapel.toLowerCase());
         const maxMapelKuota = matchedMapelCfg ? Number(matchedMapelCfg.kuota) : 1;
@@ -2599,19 +2614,6 @@ function submitRegistration(formData) {
               message: `Kuota guru Mapel "${finalMapel}" untuk sekolah "${formData.namaSekolah}" sudah terpenuhi (${curMapelCount} dari maksimal ${maxMapelKuota} orang). Silakan pilih mapel lain yang masih tersedia atau hubungi panitia.`
             };
           }
-        }
-      } else {
-        const kuotaStr = String(settings.KUOTA_PER_SEKOLAH || "1").toLowerCase().trim();
-        const isBebas = kuotaStr === "bebas" || kuotaStr === "0";
-        const maxKuota = isBebas ? 999 : parseInt(kuotaStr, 10) || 1;
-
-        if (existing && existing.count >= maxKuota) {
-          const pesertaList = existing.participants.length > 0 ? " (" + existing.participants.join(", ") + ")" : "";
-          return {
-            success: false,
-            isDuplicate: true,
-            message: `Batas kuota pendaftaran untuk sekolah "${formData.namaSekolah}" pada kegiatan "${settings.NAMA_KEGIATAN}" sudah terpenuhi (${existing.count} dari maksimal ${maxKuota} orang terdaftar: ${pesertaList}). Jika ada pergantian peserta, hubungi panitia.`
-          };
         }
       }
     }

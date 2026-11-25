@@ -1665,9 +1665,8 @@
       );
       if (!sch) return;
 
-      // Cek Kuota Pendaftaran Sekolah (jika Modul Mapel OFF; jika Mapel ON, kuota dicek per Mapel)
-      const isMapelMode = activeSelectedEvent && activeSelectedEvent.modulMapel === "ON";
-      if (!isMapelMode && activeSelectedEvent && activeSelectedEvent.kuotaPerSekolah && activeSelectedEvent.kuotaPerSekolah !== "bebas") {
+      // Cek Kuota Total Per Sekolah (Lapis 1: berlaku selalu kecuali Kuota Per Sekolah = Bebas)
+      if (activeSelectedEvent && activeSelectedEvent.kuotaPerSekolah && activeSelectedEvent.kuotaPerSekolah !== "bebas" && activeSelectedEvent.kuotaPerSekolah !== "0") {
         const maxQuota = parseInt(activeSelectedEvent.kuotaPerSekolah, 10) || 1;
         const cleanSchNama = (sch.nama || "").toLowerCase().trim();
         const cleanSchNpsn = String(sch.npsn || "").trim();
