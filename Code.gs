@@ -2578,8 +2578,9 @@ function submitRegistration(formData) {
                             cleanStatusSekolah.includes("lain") ||
                             String(formData.kategoriUnit || "").toUpperCase() === "LAIN";
 
+    const registeredList = getRegisteredSchoolList(settings.NAMA_KEGIATAN);
+
     if (!isUnitKerjaLain) {
-      const registeredList = getRegisteredSchoolList(settings.NAMA_KEGIATAN);
       const cleanNamaSekolah = cleanSekolah.toLowerCase();
 
       const existing = registeredList.find(r => 
@@ -2600,20 +2601,21 @@ function submitRegistration(formData) {
           message: `Batas kuota pendaftaran untuk sekolah "${formData.namaSekolah}" pada kegiatan "${settings.NAMA_KEGIATAN}" sudah terpenuhi (${existing.count} dari maksimal ${maxKuota} orang terdaftar: ${pesertaList}). Jika ada pergantian peserta, hubungi panitia.`
         };
       }
+    }
 
-      // Lapis 2: Cek Kuota Per Mapel per Sekolah (jika Modul Mapel ON)
-      if (isMapelOn && daftarMapelEvent.length > 0) {
-        const matchedMapelCfg = daftarMapelEvent.find(m => m.nama.toLowerCase() === finalMapel.toLowerCase());
-        const maxMapelKuota = matchedMapelCfg ? Number(matchedMapelCfg.kuota) : 1;
-        if (maxMapelKuota > 0 && existing && existing.mapelCounts) {
-          const curMapelCount = existing.mapelCounts[finalMapel.toLowerCase()] || 0;
-          if (curMapelCount >= maxMapelKuota) {
-            return {
-              success: false,
-              isDuplicate: true,
-              message: `Kuota guru Mapel "${finalMapel}" untuk sekolah "${formData.namaSekolah}" sudah terpenuhi (${curMapelCount} dari maksimal ${maxMapelKuota} orang). Silakan pilih mapel lain yang masih tersedia atau hubungi panitia.`
-            };
-          }
+    // Lapis 2: Cek Kuota Global Per Mapel (lintas semua sekolah/peserta kegiatan ini)
+    if (isMapelOn && daftarMapelEvent.length > 0) {
+      const matchedMapelCfg = daftarMapelEvent.find(m => m.nama.toLowerCase() === finalMapel.toLowerCase());
+      const maxMapelKuota = matchedMapelCfg ? Number(matchedMapelCfg.kuota) : 1;
+      if (maxMapelKuota > 0) {
+        const mKey = finalMapel.toLowerCase();
+        const totalMapelCount = registeredList.reduce((acc, r) => acc + ((r.mapelCounts && r.mapelCounts[mKey]) || 0), 0);
+        if (totalMapelCount >= maxMapelKuota) {
+          return {
+            success: false,
+            isDuplicate: true,
+            message: `Kuota peserta untuk Mapel "${finalMapel}" pada kegiatan "${settings.NAMA_KEGIATAN}" sudah penuh (${totalMapelCount}/${maxMapelKuota} orang terdaftar). Silakan pilih mapel lain yang masih tersedia.`
+          };
         }
       }
     }

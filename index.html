@@ -697,7 +697,7 @@
               <select class="form-select" id="selectMapel" name="mapel" onchange="handleMapelSelectChange(this.value)">
                 <option value="">-- Pilih Mata Pelajaran --</option>
               </select>
-              <div class="form-text small text-muted" id="mapelQuotaHint">Pilih sekolah terlebih dahulu untuk melihat sisa kuota per mapel.</div>
+              <div class="form-text small text-muted" id="mapelQuotaHint">Menampilkan sisa kuota peserta per mapel untuk kegiatan ini.</div>
             </div>
 
             <div class="col-md-6" id="boxJabatan">
@@ -1314,8 +1314,13 @@
       document.getElementById("boxFormAktif").classList.remove("d-none");
       window.scrollTo({ top: 0, behavior: "smooth" });
 
-      // Ambil data kuota sekolah terdaftar terbaru untuk kegiatan ini
-      registeredSchoolList = [];
+      // Ambil data kuota sekolah & mapel terbaru untuk kegiatan ini
+      await refreshRegisteredSchoolsForActiveEvent(ev, true);
+    }
+
+    async function refreshRegisteredSchoolsForActiveEvent(ev = activeSelectedEvent, resetFirst = false) {
+      if (!ev) return;
+      if (resetFirst) registeredSchoolList = [];
       isRegisteredSchoolsLoading = true;
       if (ev.modulMapel === "ON") {
         const hintEl = document.getElementById("mapelQuotaHint");
@@ -1334,33 +1339,25 @@
         isRegisteredSchoolsLoading = false;
         const chosenName = document.getElementById("selectedSchoolName")?.value || "";
         const chosenNpsn = document.getElementById("selectedSchoolNpsn")?.value || "";
-        if (chosenName) {
-          const chosenSch = masterSchoolList.find(s =>
-            (chosenNpsn && chosenNpsn !== "-" && String(s.npsn).trim() === String(chosenNpsn).trim()) ||
-            s.nama === chosenName
-          ) || { nama: chosenName, npsn: chosenNpsn };
-          if (ev.modulMapel === "ON") {
-            renderMapelOptionsForSchool(chosenSch);
+        if (ev.modulMapel === "ON") {
+          renderMapelOptionsForSchool(chosenName ? { nama: chosenName, npsn: chosenNpsn } : null);
+        }
+        if (chosenName && ev.kuotaPerSekolah && ev.kuotaPerSekolah !== "bebas" && ev.kuotaPerSekolah !== "0") {
+          const maxQ = parseInt(ev.kuotaPerSekolah, 10) || 1;
+          const matchSch = registeredSchoolList.find(r =>
+            (chosenNpsn && chosenNpsn !== "-" && String(r.npsn || "").trim() === String(chosenNpsn).trim()) ||
+            (chosenName && String(r.nama || r.origNama || "").toLowerCase().trim() === chosenName.toLowerCase().trim())
+          );
+          const curQ = matchSch ? (typeof matchSch.count === "number" ? matchSch.count : (matchSch.participants?.length || 1)) : 0;
+          if (curQ >= maxQ) {
+            Swal.fire({
+              title: "Kuota Sekolah Penuh!",
+              html: `Satuan pendidikan <strong>${escapeHtml(chosenName)}</strong> telah mencapai kuota maksimal pendaftaran (<strong>${curQ}/${maxQ}</strong>) untuk kegiatan ini.`,
+              icon: "warning",
+              confirmButtonColor: "#1e3a8a"
+            });
+            resetSchoolSelection();
           }
-          if (ev.kuotaPerSekolah && ev.kuotaPerSekolah !== "bebas" && ev.kuotaPerSekolah !== "0") {
-            const maxQ = parseInt(ev.kuotaPerSekolah, 10) || 1;
-            const matchSch = registeredSchoolList.find(r =>
-              (chosenNpsn && chosenNpsn !== "-" && String(r.npsn || "").trim() === String(chosenNpsn).trim()) ||
-              (chosenName && String(r.nama || r.origNama || "").toLowerCase().trim() === chosenName.toLowerCase().trim())
-            );
-            const curQ = matchSch ? (typeof matchSch.count === "number" ? matchSch.count : (matchSch.participants?.length || 1)) : 0;
-            if (curQ >= maxQ) {
-              Swal.fire({
-                title: "Kuota Sekolah Penuh!",
-                html: `Satuan pendidikan <strong>${escapeHtml(chosenName)}</strong> telah mencapai kuota maksimal pendaftaran (<strong>${curQ}/${maxQ}</strong>) untuk kegiatan ini.`,
-                icon: "warning",
-                confirmButtonColor: "#1e3a8a"
-              });
-              resetSchoolSelection();
-            }
-          }
-        } else if (ev.modulMapel === "ON") {
-          renderMapelOptionsForSchool(null);
         }
       }
     }
@@ -1524,39 +1521,37 @@
       }
     }
 
-    function renderMapelOptionsForSchool(sch) {
+    function renderMapelOptionsForSchool() {
       const selectEl = document.getElementById("selectMapel");
       const hintEl = document.getElementById("mapelQuotaHint");
       if (!selectEl || !activeSelectedEvent) return;
 
       const list = Array.isArray(activeSelectedEvent.daftarMapel) ? activeSelectedEvent.daftarMapel : [];
       const prevVal = selectEl.value;
-      let matchSchool = null;
+      const globalMapelCounts = {};
 
-      if (sch && Array.isArray(registeredSchoolList)) {
-        const cleanSchNama = (sch.nama || "").toLowerCase().trim();
-        const cleanSchNpsn = String(sch.npsn || "").trim();
-        matchSchool = registeredSchoolList.find(r => {
-          const rNpsn = String(r.npsn || "").trim();
-          const rNama = String(r.nama || r.origNama || r.namaSekolah || "").toLowerCase().trim();
-          return (cleanSchNpsn && cleanSchNpsn !== "-" && rNpsn === cleanSchNpsn) ||
-                 (cleanSchNama && cleanSchNama !== "-" && rNama === cleanSchNama);
+      if (Array.isArray(registeredSchoolList)) {
+        registeredSchoolList.forEach(r => {
+          if (!r || !r.mapelCounts) return;
+          Object.keys(r.mapelCounts).forEach(k => {
+            const mKey = String(k).toLowerCase().trim();
+            globalMapelCounts[mKey] = (globalMapelCounts[mKey] || 0) + (Number(r.mapelCounts[k]) || 0);
+          });
         });
       }
 
-      const mapelCounts = (matchSchool && matchSchool.mapelCounts) ? matchSchool.mapelCounts : {};
       let optionsHtml = '<option value="">-- Pilih Mata Pelajaran --</option>';
 
       list.forEach(item => {
         const nama = typeof item === "string" ? item : item.nama;
         const kuota = typeof item === "object" && item.kuota !== undefined ? Number(item.kuota) : 1;
-        const curCount = mapelCounts[String(nama).toLowerCase()] || 0;
-        const isFull = sch && kuota > 0 && curCount >= kuota;
+        const curCount = globalMapelCounts[String(nama).toLowerCase().trim()] || 0;
+        const isFull = kuota > 0 && curCount >= kuota;
         let label = nama;
         if (kuota > 0) {
-          label += sch ? ` (Terisi ${curCount}/${kuota}${isFull ? " - PENUH" : ""})` : ` (Maks ${kuota}/sekolah)`;
+          label += ` (Terisi ${curCount}/${kuota}${isFull ? " - PENUH" : ""})`;
         } else {
-          label += " (Bebas)";
+          label += ` (Terisi ${curCount} - Bebas)`;
         }
         optionsHtml += `<option value="${escapeHtml(nama)}" ${isFull ? "disabled" : ""}>${escapeHtml(label)}</option>`;
       });
@@ -1571,13 +1566,9 @@
         }
       }
       if (hintEl) {
-        if (isRegisteredSchoolsLoading) {
-          hintEl.textContent = "Sedang memuat sisa kuota terbaru dari server...";
-        } else {
-          hintEl.textContent = sch
-            ? `Menampilkan sisa kuota mapel untuk ${sch.nama}.`
-            : "Pilih sekolah terlebih dahulu untuk melihat sisa kuota per mapel.";
-        }
+        hintEl.textContent = isRegisteredSchoolsLoading
+          ? "Sedang memuat sisa kuota terbaru dari server..."
+          : "Menampilkan sisa kuota peserta per mapel (lintas semua sekolah) untuk kegiatan ini.";
       }
     }
 
@@ -2073,11 +2064,15 @@
             });
           }
 
-          // Reset Form
+          // Reset Form & perbarui sisa kuota terbaru dari server
           document.getElementById("registrationForm").reset();
           resetSchoolSelection();
           handleStatusPegawaiChange("Non-ASN");
+          refreshRegisteredSchoolsForActiveEvent(activeSelectedEvent, false);
         } else {
+          if (response && response.isDuplicate) {
+            refreshRegisteredSchoolsForActiveEvent(activeSelectedEvent, false);
+          }
           Swal.fire({
             title: "Pendaftaran Gagal",
             text: response.message || "Terjadi kesalahan saat memproses pendaftaran.",
