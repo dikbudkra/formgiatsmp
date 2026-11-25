@@ -4651,6 +4651,12 @@
       return pt.x >= b.x && pt.x <= b.x + b.w && pt.y >= b.y && pt.y <= b.y + b.h;
     }
 
+    function certVisibleElements() {
+      return ["mapel", "nama", "unit", "nomor"].filter(
+        k => k !== "mapel" || (certState.layout.mapel && certState.layout.mapel.show)
+      );
+    }
+
     function certPointerDown(e) {
       const pt = certPt(e);
       const selBox = certBox(certState.selected);
@@ -4661,8 +4667,7 @@
           startSize: certState.layout[certState.selected].fontSize
         };
       } else {
-        const order = ["nama", "unit", "nomor"];
-        const hit = order.find(k => certHitBox(pt, certBox(k)));
+        const hit = certVisibleElements().find(k => certHitBox(pt, certBox(k)));
         if (!hit) return;
         certState.selected = hit;
         const b = certBox(hit);
@@ -4681,7 +4686,7 @@
       if (!d) {
         const sel = certBox(certState.selected);
         if (certHitHandle(pt, sel)) cv.style.cursor = "nwse-resize";
-        else if (CertEngine.ELEMENTS.some(k => certHitBox(pt, certBox(k)))) cv.style.cursor = "move";
+        else if (certVisibleElements().some(k => certHitBox(pt, certBox(k)))) cv.style.cursor = "move";
         else cv.style.cursor = "default";
         return;
       }
