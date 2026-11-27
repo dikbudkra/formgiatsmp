@@ -1745,6 +1745,23 @@
                     <label class="form-check-label" for="switchModulMapel">Mapel</label>
                   </div>
                 </div>
+                <div class="col-6 col-md-4">
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="switchModulWaGroup" onchange="handleSwitchModulWaGroupChange(true)">
+                    <label class="form-check-label" for="switchModulWaGroup">Grup WhatsApp</label>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Konfigurasi Link Grup WhatsApp (Muncul jika Grup WhatsApp ON) -->
+              <div id="boxConfigWaGroup" class="d-none mt-3 pt-3 border-top">
+                <label for="inputLinkWaGroup" class="form-label fw-bold small text-dark mb-1">
+                  <i class="bi bi-whatsapp text-success me-1"></i>Link Undangan Grup WhatsApp
+                </label>
+                <input type="url" class="form-control form-control-sm" id="inputLinkWaGroup" placeholder="https://chat.whatsapp.com/...">
+                <div class="text-muted mt-1" style="font-size: 0.75rem;">
+                  Tempel link undangan Grup WhatsApp kegiatan. Setelah peserta berhasil mendaftar, QR Code &amp; tombol gabung grup akan muncul otomatis.
+                </div>
               </div>
 
               <!-- Konfigurasi Daftar Mapel & Kuota Per Sekolah (Muncul jika Mapel ON) -->
@@ -3393,6 +3410,17 @@
       }
     }
 
+    function handleSwitchModulWaGroupChange(fromUserToggle = false) {
+      const sw = document.getElementById("switchModulWaGroup");
+      const box = document.getElementById("boxConfigWaGroup");
+      if (!sw || !box) return;
+      box.classList.toggle("d-none", !sw.checked);
+      if (fromUserToggle && sw.checked) {
+        const inp = document.getElementById("inputLinkWaGroup");
+        if (inp) setTimeout(() => inp.focus(), 50);
+      }
+    }
+
     function renderMapelConfigCheckboxes(savedList = []) {
       const container = document.getElementById("mapelCheckboxListContainer");
       if (!container) return;
@@ -3511,6 +3539,11 @@
       if (swMapel) swMapel.checked = false;
       renderMapelConfigCheckboxes([]);
       handleSwitchModulMapelChange();
+      const swWa = document.getElementById("switchModulWaGroup");
+      if (swWa) swWa.checked = false;
+      const inpWa = document.getElementById("inputLinkWaGroup");
+      if (inpWa) inpWa.value = "";
+      handleSwitchModulWaGroupChange();
       const modal = new bootstrap.Modal(document.getElementById("modalKegiatan"));
       modal.show();
     }
@@ -3550,6 +3583,11 @@
       if (swMapel) swMapel.checked = (ev.modulMapel === "ON");
       renderMapelConfigCheckboxes(ev.daftarMapel || []);
       handleSwitchModulMapelChange();
+      const swWa = document.getElementById("switchModulWaGroup");
+      if (swWa) swWa.checked = (ev.modulWaGroup === "ON");
+      const inpWa = document.getElementById("inputLinkWaGroup");
+      if (inpWa) inpWa.value = ev.linkWaGroup || "";
+      handleSwitchModulWaGroupChange();
 
       const modal = new bootstrap.Modal(document.getElementById("modalKegiatan"));
       modal.show();
@@ -3563,6 +3601,9 @@
       const isJalurOpdOn = document.getElementById("switchModulJalurOpd")?.checked !== false;
       const isMapelOn = document.getElementById("switchModulMapel")?.checked === true;
       const selectedMapel = isMapelOn ? collectMapelRowsState(true) : [];
+      const isWaGroupOn = document.getElementById("switchModulWaGroup")?.checked === true;
+      const rawWaLink = (document.getElementById("inputLinkWaGroup")?.value || "").trim();
+      const linkWaGroup = /^(chat\.whatsapp\.com|wa\.me)\//i.test(rawWaLink) ? ("https://" + rawWaLink) : rawWaLink;
 
       if (!isJalurSmpOn && !isJalurOpdOn) {
         Swal.fire({
@@ -3577,6 +3618,15 @@
         Swal.fire({
           title: "Daftar Mapel Kosong",
           text: "Modul Mapel aktif, silakan centang minimal 1 Mata Pelajaran yang diundang!",
+          icon: "warning"
+        });
+        return;
+      }
+
+      if (isWaGroupOn && !/^https?:\/\/\S+/i.test(linkWaGroup)) {
+        Swal.fire({
+          title: "Link Grup WA Belum Valid",
+          text: "Modul Grup WhatsApp aktif, silakan isi link undangan grup WhatsApp (contoh: https://chat.whatsapp.com/...).",
           icon: "warning"
         });
         return;
@@ -3601,7 +3651,9 @@
         modulJalurSmp: isJalurSmpOn ? "ON" : "OFF",
         modulJalurOpd: isJalurOpdOn ? "ON" : "OFF",
         modulMapel: isMapelOn ? "ON" : "OFF",
-        daftarMapel: selectedMapel
+        daftarMapel: selectedMapel,
+        modulWaGroup: isWaGroupOn ? "ON" : "OFF",
+        linkWaGroup: linkWaGroup
       };
 
       Swal.fire({

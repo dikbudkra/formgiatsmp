@@ -182,7 +182,9 @@ function JALANKAN_SETUP_DATABASE_MULTI_KEGIATAN() {
     "Modul Jalur SMP",
     "Modul Jalur OPD",
     "Modul Mapel",
-    "Daftar Mapel"
+    "Daftar Mapel",
+    "Modul Grup WA",
+    "Link Grup WA"
   ];
 
   let sheetKegiatan = ss.getSheetByName(SHEET_MASTER_KEGIATAN);
@@ -436,7 +438,9 @@ function ensureDatabaseReady_() {
     "Modul Jalur SMP",
     "Modul Jalur OPD",
     "Modul Mapel",
-    "Daftar Mapel"
+    "Daftar Mapel",
+    "Modul Grup WA",
+    "Link Grup WA"
   ];
   let sheetKegiatan = ss.getSheetByName(SHEET_MASTER_KEGIATAN);
   if (!sheetKegiatan) {
@@ -1172,6 +1176,14 @@ function parseCertLayoutJson_(rawStr) {
   }
 }
 
+function normalizeWaGroupLink_(raw) {
+  const s = String(raw || "").trim();
+  if (!s) return "";
+  if (/^https?:\/\//i.test(s)) return s;
+  if (/^(chat\.whatsapp\.com|wa\.me)\//i.test(s)) return "https://" + s;
+  return s;
+}
+
 function parseDaftarMapel_(raw) {
   if (!raw) return [];
   try {
@@ -1238,7 +1250,9 @@ function getAllEventsForAdminInternal_() {
           modulJalurSmp: String(row[23] || "ON").trim().toUpperCase(),
           modulJalurOpd: String(row[24] || "ON").trim().toUpperCase(),
           modulMapel: String(row[25] || "OFF").trim().toUpperCase(),
-          daftarMapel: parseDaftarMapel_(row[26])
+          daftarMapel: parseDaftarMapel_(row[26]),
+          modulWaGroup: String(row[27] || "OFF").trim().toUpperCase(),
+          linkWaGroup: normalizeWaGroupLink_(row[28])
         });
       }
     }
@@ -1359,6 +1373,12 @@ function saveEvent(eventData, pin) {
       ? parseDaftarMapel_(eventData.daftarMapel)
       : parseDaftarMapel_(existingRow[26]);
     const finalDaftarMapelJson = JSON.stringify(finalDaftarMapelArr);
+    const finalModulWaGroup = eventData.modulWaGroup !== undefined
+      ? (String(eventData.modulWaGroup).trim().toUpperCase() === "ON" ? "ON" : "OFF")
+      : String(existingRow[27] || "OFF").trim().toUpperCase();
+    const finalLinkWaGroup = eventData.linkWaGroup !== undefined
+      ? normalizeWaGroupLink_(eventData.linkWaGroup)
+      : normalizeWaGroupLink_(existingRow[28]);
 
     const finalStatusForm = String(eventData.statusForm || "BUKA").trim().toUpperCase();
 
@@ -1389,7 +1409,9 @@ function saveEvent(eventData, pin) {
       finalModulJalurSmp,
       finalModulJalurOpd,
       finalModulMapel,
-      finalDaftarMapelJson
+      finalDaftarMapelJson,
+      finalModulWaGroup,
+      finalLinkWaGroup
     ];
 
     if (targetRow !== -1) {
@@ -1692,7 +1714,9 @@ function getActiveEventsForPublic() {
         modulJalurSmp: String(row[23] || "ON").trim().toUpperCase(),
         modulJalurOpd: String(row[24] || "ON").trim().toUpperCase(),
         modulMapel: String(row[25] || "OFF").trim().toUpperCase(),
-        daftarMapel: parseDaftarMapel_(row[26])
+        daftarMapel: parseDaftarMapel_(row[26]),
+        modulWaGroup: String(row[27] || "OFF").trim().toUpperCase(),
+        linkWaGroup: normalizeWaGroupLink_(row[28])
       };
 
       if (status === "BUKA") {
@@ -2381,6 +2405,8 @@ function getInitialFormData(targetEventIdOrName) {
           MODUL_JALUR_OPD: matched.modulJalurOpd || "ON",
           MODUL_MAPEL: matched.modulMapel || "OFF",
           DAFTAR_MAPEL: matched.daftarMapel || [],
+          MODUL_WA_GROUP: matched.modulWaGroup || "OFF",
+          LINK_WA_GROUP: matched.linkWaGroup || "",
           TANGGAL_PELAKSANAAN: matched.tanggalPelaksanaan,
           LOKASI_KEGIATAN: matched.lokasiKegiatan
         };
@@ -2405,6 +2431,8 @@ function getInitialFormData(targetEventIdOrName) {
         MODUL_JALUR_OPD: ev.modulJalurOpd || "ON",
         MODUL_MAPEL: ev.modulMapel || "OFF",
         DAFTAR_MAPEL: ev.daftarMapel || [],
+        MODUL_WA_GROUP: ev.modulWaGroup || "OFF",
+        LINK_WA_GROUP: ev.linkWaGroup || "",
         TANGGAL_PELAKSANAAN: ev.tanggalPelaksanaan,
         LOKASI_KEGIATAN: ev.lokasiKegiatan
       };
@@ -2509,6 +2537,8 @@ function submitRegistration(formData) {
         MODUL_JALUR_OPD: matched.modulJalurOpd || "ON",
         MODUL_MAPEL: matched.modulMapel || "OFF",
         DAFTAR_MAPEL: matched.daftarMapel || [],
+        MODUL_WA_GROUP: matched.modulWaGroup || "OFF",
+        LINK_WA_GROUP: matched.linkWaGroup || "",
         TANGGAL_PELAKSANAAN: matched.tanggalPelaksanaan,
         LOKASI_KEGIATAN: matched.lokasiKegiatan
       };
@@ -2769,6 +2799,8 @@ function submitRegistration(formData) {
         modulEticket: settings.MODUL_ETICKET_PRESENSI || "ON",
         modulEticketPresensi: settings.MODUL_ETICKET_PRESENSI || "ON",
         modulBiodata: settings.MODUL_BIODATA || "ON",
+        modulWaGroup: settings.MODUL_WA_GROUP || "OFF",
+        linkWaGroup: settings.LINK_WA_GROUP || "",
         timestamp: timestamp
       }
     };
@@ -2926,6 +2958,8 @@ function getAdminDashboardData(pin, targetEventIdOrName) {
         MODUL_JALUR_OPD: selectedEvent.modulJalurOpd || "ON",
         MODUL_MAPEL: selectedEvent.modulMapel || "OFF",
         DAFTAR_MAPEL: selectedEvent.daftarMapel || [],
+        MODUL_WA_GROUP: selectedEvent.modulWaGroup || "OFF",
+        LINK_WA_GROUP: selectedEvent.linkWaGroup || "",
         TANGGAL_PELAKSANAAN: selectedEvent.tanggalPelaksanaan,
         LOKASI_KEGIATAN: selectedEvent.lokasiKegiatan,
         MODUL_SERTIFIKAT: selectedEvent.modulSertifikat || "OFF",
